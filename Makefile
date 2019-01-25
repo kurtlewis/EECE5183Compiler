@@ -1,26 +1,34 @@
 # $@ = target, $^ = preqrequisites
 # Compiler
-CC=g++
+CXX=g++
+# CPPFLAGS = 
+# CXXFLAGS = 
 # Include directory
 IDIR=./include
+# Look for *.h files in IDIR
+vpath %.h $(IDIR)
 # Source directory
 SDIR=./src
+# Look for *.cc files in SDIR
+vpath %.cc $(SDIR)
 # Out directory
 ODIR=./out
+#vpath %.o $(ODIR)
 # Name of outputed compiler
 OUT_NAME=kjlc
 
 # header files that are depended upon
-DEPS = $(INCLUDE_DIR)/*
+DEPS = $(addprefix $(IDIR)/, )
 # Object files for creating final executable
 OBJS = $(addprefix $(ODIR)/, main.o)
 
 # Create the compiler
 $(OUT_NAME): $(OBJS)
-	$(CC) $^ -o $@ 
+	$(CXX) -o $@ $^
 
-$(ODIR)/main.o : $(SDIR)/main.cc
-	$(CC) -c $^ -o $@
+# Rule for implicitly creating object files when they're found to be out of date
+$(ODIR)/%.o : %.cc $(DEPS)
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
 # mark the Out directory as a dependency only if it doesn't exist
 $(OBJS): | $(ODIR)
