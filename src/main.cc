@@ -6,8 +6,14 @@
  **/
 #include <iostream>
 
-int main() {
-
-    std::cout << "Hello world!" << std::endl;
-    return 0;
+/**
+ * Main function of program
+ */
+int main(int argc, char* argv[]) {
+  if (argc < 2) {
+    std::cout << "No filename entered." << std::endl;
+    return 1;
+  }
+  std::cout << "Entered filename: " << argv[1] << std::endl;
+  return 0;
 }
