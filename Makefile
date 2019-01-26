@@ -2,7 +2,7 @@
 # Compiler
 CXX=g++
 # CPPFLAGS = 
-# CXXFLAGS = 
+CXXFLAGS = -I $(IDIR)
 # Include directory
 IDIR=./include
 # Look for *.h files in IDIR
@@ -18,17 +18,17 @@ ODIR=./out
 OUT_NAME=kjlc
 
 # header files that are depended upon
-DEPS = $(addprefix $(IDIR)/, )
+DEPS = $(addprefix $(IDIR)/, $(addprefix kjlc/, scanner.h))
 # Object files for creating final executable
-OBJS = $(addprefix $(ODIR)/, main.o)
+OBJS = $(addprefix $(ODIR)/, main.o scanner.o)
 
 # Create the compiler
 $(OUT_NAME): $(OBJS)
-	$(CXX) -o $@ $^
+	$(CXX) -o $@ $(CXXFLAGS) $^
 
 # Rule for implicitly creating object files when they're found to be out of date
 $(ODIR)/%.o : %.cc $(DEPS)
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $< 
 
 # mark the Out directory as a dependency only if it doesn't exist
 $(OBJS): | $(ODIR)

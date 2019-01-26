@@ -6,6 +6,7 @@
  **/
 #include <iostream>
 
+#include "kjlc/scanner.h"
 /**
  * Main function of program
  */
