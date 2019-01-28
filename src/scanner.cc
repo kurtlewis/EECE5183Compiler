@@ -18,7 +18,7 @@ Scanner::~Scanner() {
 
 }
 
-static std::map<kjlc::TOKEN, std::string> generate_token_mapping() {
+std::map<kjlc::TOKEN, std::string> Scanner::generate_token_mapping() {
   std::map<kjlc::TOKEN, std::string> map = std::map<enum TOKEN, std::string>();
   // reserved words
   map[kjlc::T_BEGIN] = "begin"; 
