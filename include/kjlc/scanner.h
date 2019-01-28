@@ -7,54 +7,61 @@
 #ifndef EECE5138COMPILER_KJLC_SCANNER_H_
 #define EECE5138COMPILER_KJLC_SCANNER_H_
 
+#include <map>
+#include <string>
+
 namespace kjlc {
 
 enum TOKEN {
   // reserved words
-  BEGIN, // "begin"
-  ELSE, // "else"
-  END, // "end"
-  FALSE, // "false"
-  FOR, // "for"
-  GLOBAL, // "global"
-  IF, // "if"
-  IS, // "is"
-  NOT, // "not"
-  PROCEDURE, // "procedure"
-  PROGRAM, // "program"
-  RETURN, // "return"
-  THEN, // "then"
-  TRUE, // "true"
-  TYPE, // "type"
-  VARIABLE, // "variable"
+  T_BEGIN, // "begin"
+  T_ELSE, // "else"
+  T_END, // "end"
+  T_FALSE, // "false"
+  T_FOR, // "for"
+  T_GLOBAL, // "global"
+  T_IF, // "if"
+  T_IS, // "is"
+  T_NOT, // "not"
+  T_PROCEDURE, // "procedure"
+  T_PROGRAM, // "program"
+  T_RETURN, // "return"
+  T_THEN, // "then"
+  T_TRUE, // "true"
+  T_TYPE, // "type"
+  T_VARIABLE, // "variable"
   // character tokens
-  BRACK_LEFT, // "["
-  BRACK_RIGHT, // "]"
-  COMMA, // ","
-  CURLY_LEFT, // "{"
-  CURLY_RIGHT, // "}"
-  PAREN_LEFT, // "("
-  PAREN_RIGHT, // ")"
-  PERIOD, // "."
-  SEMI_COLON, // ";"
+  T_BRACK_LEFT, // "["
+  T_BRACK_RIGHT, // "]"
+  T_COMMA, // ","
+  T_CURLY_LEFT, // "{"
+  T_CURLY_RIGHT, // "}"
+  T_PAREN_LEFT, // "("
+  T_PAREN_RIGHT, // ")"
+  T_PERIOD, // "."
+  T_QUOTE, // """
+  T_SEMI_COLON, // ";"
   // operators
-  AND, // "&"
-  DIV, // "/"
-  EQ, // "=="
-  GT, // ">"
-  GT_EQ, // ">="
-  LT, // "<"
-  LT_EQ, // "<="
-  MINUS, // "-"
-  MULT, // "*"
-  NEQ, // "!="
-  PLUS, // "+"
+  T_AND, // "&"
+  T_DIV, // "/"
+  T_EQ, // "=="
+  T_GT, // ">"
+  T_GT_EQ, // ">="
+  T_LT, // "<"
+  T_LT_EQ, // "<="
+  T_MINUS, // "-"
+  T_MULT, // "*"
+  T_NEQ, // "!="
+  T_PLUS, // "+"
   // types
-  BOOL, // "bool"
-  ENUM, // "enum"
-  FLOAT, // "float"
-  INTEGER, // "integer"
-  STRING, // "string"
+  T_BOOL, // "bool"
+  T_ENUM, // "enum"
+  T_FLOAT, // "float"
+  T_INT, // "integer"
+  T_STRING, // "string"
+  // user tokens
+  T_ID, // user identifier
+  T_UNKNOWN // unknown identifier
 };
 
 
@@ -62,6 +69,7 @@ class Scanner {
   public:
     Scanner();
     ~Scanner();
+    static std::map<TOKEN, std::string> generate_token_mapping();
 };
 
 } // namespace kjlc
