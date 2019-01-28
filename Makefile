@@ -23,7 +23,7 @@ DEPS = $(addprefix $(IDIR)/, $(addprefix kjlc/, scanner.h))
 OBJS = $(addprefix $(ODIR)/, main.o scanner.o)
 
 # Create the compiler
-$(OUT_NAME): $(OBJS)
+$(ODIR)/$(OUT_NAME): $(OBJS)
 	$(CXX) -o $@ $(CXXFLAGS) $^
 
 # Rule for implicitly creating object files when they're found to be out of date
@@ -39,4 +39,4 @@ $(ODIR):
 
 clean:
 	rm -f $(ODIR)/*.o
-	rm $(OUT_NAME)
+	rm $(ODIR)/$(OUT_NAME)
