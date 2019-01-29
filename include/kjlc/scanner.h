@@ -7,6 +7,7 @@
 #ifndef EECE5138COMPILER_KJLC_SCANNER_H_
 #define EECE5138COMPILER_KJLC_SCANNER_H_
 
+#include <fstream>
 #include <map>
 #include <string>
 
@@ -67,9 +68,14 @@ enum Token {
 
 class Scanner {
   public:
-    Scanner();
+    Scanner(std::string filename);
     ~Scanner();
+    Token scanNext();
+    // static
     static std::map<Token, std::string> generate_token_mapping();
+  private:
+    std::fstream file;
+    std::map<Token, std::string> tokMap;
 };
 
 } // namespace kjlc

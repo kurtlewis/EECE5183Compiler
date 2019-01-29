@@ -7,15 +7,50 @@
 #include "kjlc/scanner.h"
 
 #include <iostream>
+#include <sstream>
 
 namespace kjlc {
 
-Scanner::Scanner() {
-  std::cout << "Hello World" << std::endl;
+Scanner::Scanner(std::string filename)
+    : file(filename.c_str(), std::fstream::in) {
+  // get token mapping
+  tokMap = Scanner::generate_token_mapping();
 }
 
 Scanner::~Scanner() {
 
+}
+
+kjlc::Token Scanner::scanNext() {
+  // check that the file is open
+  if (!this->file.is_open()) {
+    return kjlc::T_PERIOD;
+  }
+  //
+  // build up the next word
+  //
+  char ch;
+  std::ostringstream wordStream;
+  while (this->file >> std::noskipws >> ch) {
+    if (ch == '\n' || ch == ' ' || ch == '\t') {
+      // if a word has been gathered, break
+      if (wordStream.str().length() > 0) {
+        break;
+      }
+    } else {
+      // non white-space character, append it to the word
+      wordStream << ch;
+    }
+  }
+  //std::cout << wordStream.str() << std::endl;
+  std::string word = wordStream.str();
+  
+  if (word.compare(tokMap.find(kjlc::T_PERIOD)->second) == 0) {
+    return kjlc::T_PERIOD;
+  } else {
+    return  kjlc::T_BEGIN;
+  }
+  
 }
 
 std::map<kjlc::Token, std::string> Scanner::generate_token_mapping() {
