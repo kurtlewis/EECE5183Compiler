@@ -12,7 +12,7 @@
 
 namespace kjlc {
 
-enum TOKEN {
+enum Token {
   // reserved words
   T_BEGIN, // "begin"
   T_ELSE, // "else"
@@ -69,7 +69,7 @@ class Scanner {
   public:
     Scanner();
     ~Scanner();
-    static std::map<TOKEN, std::string> generate_token_mapping();
+    static std::map<Token, std::string> generate_token_mapping();
 };
 
 } // namespace kjlc
