@@ -31,18 +31,30 @@ kjlc::Token Scanner::scanNext() {
   //
   char ch;
   std::ostringstream wordStream;
+  bool quote = false;
+  int length = 0;
   while (this->file >> std::noskipws >> ch) {
-    if (ch == '\n' || ch == ' ' || ch == '\t') {
+    length++;
+    if (!quote && (ch == '\n' || ch == ' ' || ch == '\t')) {
       // if a word has been gathered, break
-      if (wordStream.str().length() > 0) {
+      if (length > 0) {
         break;
       }
     } else {
       // non white-space character, append it to the word
       wordStream << ch;
+      if (ch == '"' && length == 0) {
+        // there's a quote - which changes how whitespace is handled
+        // only flip the quote flag to true if its the first character
+        if (length == 0) {
+          quote = true;
+        } else {
+          quote = false;
+        }
+      }
     }
   }
-  //std::cout << wordStream.str() << std::endl;
+  std::cout << wordStream.str() << std::endl;
   std::string word = wordStream.str();
   
   if (word.compare(tokMap.find(kjlc::T_PERIOD)->second) == 0) {
