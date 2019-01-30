@@ -10,6 +10,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <utility>
 
 namespace kjlc {
 
@@ -70,12 +71,22 @@ class Scanner {
   public:
     Scanner(std::string filename);
     ~Scanner();
-    Token scanNext();
+
+    // Finds the next Lexeme (complete token)
+    Token scanNextLexeme();
     // static
     static std::map<Token, std::string> generate_token_mapping();
   private:
     std::fstream file;
     std::map<Token, std::string> tokMap;
+    bool fileComplete;
+
+    // scans the next character and returns it
+    char scanNextChar();
+    // peeks at the next character and returns it
+    char peekNextChar();
+    // returns true if the given ch is whitespace
+    bool isWhiteSpace(char ch);
 };
 
 } // namespace kjlc

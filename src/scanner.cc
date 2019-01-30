@@ -15,54 +15,37 @@ Scanner::Scanner(std::string filename)
     : file(filename.c_str(), std::fstream::in) {
   // get token mapping
   tokMap = Scanner::generate_token_mapping();
+  // mark the file as incomplete
+  fileComplete = false;
 }
 
 Scanner::~Scanner() {
 
 }
 
-kjlc::Token Scanner::scanNext() {
-  // check that the file is open
-  if (!this->file.is_open()) {
-    return kjlc::T_PERIOD;
+kjlc::Token Scanner::scanNextLexeme() {
+  // pull the char
+  char ch = scanNextChar();
+  if (ch == '\00' || fileComplete) {
+    return T_PERIOD;
   }
-  //
-  // build up the next word
-  //
-  char ch;
-  std::ostringstream wordStream;
-  bool quote = false;
-  int length = 0;
-  while (this->file >> std::noskipws >> ch) {
-    length++;
-    if (!quote && (ch == '\n' || ch == ' ' || ch == '\t')) {
-      // if a word has been gathered, break
-      if (length > 0) {
-        break;
-      }
-    } else {
-      // non white-space character, append it to the word
+
+  // scan until a non-whitespace character is found
+  while (isWhiteSpace(ch)) {
+    ch = scanNextChar();
+  }
+
+  // check for it to be an identifier or reserved word
+  if ('A' <= ch && ch <= 'z') {
+    std::ostringstream wordStream;
+    wordStream << ch;
+    while (isWhiteSpace(ch)) {
       wordStream << ch;
-      if (ch == '"' && length == 0) {
-        // there's a quote - which changes how whitespace is handled
-        // only flip the quote flag to true if its the first character
-        if (length == 0) {
-          quote = true;
-        } else {
-          quote = false;
-        }
-      }
     }
+    return T_ID;
+  } else if (ch == '.') {
+    return T_PERIOD;
   }
-  std::cout << wordStream.str() << std::endl;
-  std::string word = wordStream.str();
-  
-  if (word.compare(tokMap.find(kjlc::T_PERIOD)->second) == 0) {
-    return kjlc::T_PERIOD;
-  } else {
-    return  kjlc::T_BEGIN;
-  }
-  
 }
 
 std::map<kjlc::Token, std::string> Scanner::generate_token_mapping() {
@@ -116,6 +99,33 @@ std::map<kjlc::Token, std::string> Scanner::generate_token_mapping() {
 
   // return map
   return map;
+}
+
+char Scanner::scanNextChar() {
+  // check that the file is open
+  if (!this->file.is_open()) {
+    fileComplete = true;
+    return '\00'; // return null char
+  }
+  char ch;
+  this->file >> std::noskipws >> ch;
+  return ch;
+}
+
+char Scanner::peekNextChar() {
+  // get current position
+  //fpos_t position;
+  //fgetpos(this->file, &position);
+  // get next char
+  //char ch = scanNextChar();
+  // rewind file pointer
+  //fsetpos(this->file, &position);
+  //return ch;
+  return this->file.peek();
+}
+
+bool Scanner::isWhiteSpace(char ch) {
+  return (ch == '\n' || ch == ' ' || ch == '\t');
 }
 
 } // end kjlc namespace

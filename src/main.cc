@@ -17,6 +17,6 @@ int main(int argc, char* argv[]) {
   }
   std::cout << "Entered filename: " << argv[1] << std::endl;
   kjlc::Scanner scan(argv[1]);
-  while (kjlc::T_PERIOD != scan.scanNext());
+  while (kjlc::T_PERIOD != scan.scanNextLexeme());
   return 0;
 }
