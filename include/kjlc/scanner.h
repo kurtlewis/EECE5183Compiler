@@ -75,10 +75,10 @@ class Scanner {
     // Finds the next Lexeme (complete token)
     Token scanNextLexeme();
     // static
-    static std::map<Token, std::string> generate_token_mapping();
+    static std::map<std::string, Token> generate_token_mapping();
   private:
     std::fstream file;
-    std::map<Token, std::string> tokMap;
+    std::map<std::string, Token> tokMap;
     bool fileComplete;
 
     // scans the next character and returns it

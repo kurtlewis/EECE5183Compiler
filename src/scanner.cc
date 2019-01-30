@@ -82,54 +82,54 @@ kjlc::Token Scanner::scanNextLexeme() {
   }
 }
 
-std::map<kjlc::Token, std::string> Scanner::generate_token_mapping() {
-  std::map<kjlc::Token, std::string> map = std::map<enum Token, std::string>();
+std::map<std::string, kjlc::Token> Scanner::generate_token_mapping() {
+  std::map<std::string, kjlc::Token> map = std::map<std::string, enum Token>();
   // reserved words
-  map[kjlc::T_BEGIN] = "begin"; 
-  map[kjlc::T_ELSE] = "else";
-  map[kjlc::T_END] = "end";
-  map[kjlc::T_FALSE] = "false";
-  map[kjlc::T_FOR] = "for";
-  map[kjlc::T_GLOBAL] = "global";
-  map[kjlc::T_IF] = "if";
-  map[kjlc::T_IS] = "is";
-  map[kjlc::T_NOT] = "not";
-  map[kjlc::T_PROCEDURE] = "procedure";
-  map[kjlc::T_PROGRAM] = "program";
-  map[kjlc::T_RETURN] = "return";
-  map[kjlc::T_THEN] = "then";
-  map[kjlc::T_TRUE] = "true";
-  map[kjlc::T_TYPE] = "type";
-  map[kjlc::T_VARIABLE] = "variable";
+  map["begin"] = kjlc::T_BEGIN;
+  map["else"] = kjlc::T_ELSE;
+  map["end"] = kjlc::T_END;
+  map["false"] = kjlc::T_FALSE;
+  map["for"] = kjlc::T_FOR;
+  map["global"] = kjlc::T_GLOBAL;
+  map["if"] = kjlc::T_IF;
+  map["is"] = kjlc::T_IS;
+  map["not"] = kjlc::T_NOT;
+  map["procedure"] = kjlc::T_PROCEDURE;
+  map["program"] = kjlc::T_PROGRAM;
+  map["return"] = kjlc::T_RETURN;
+  map["then"] = kjlc::T_THEN;
+  map["true"] = kjlc::T_TRUE;
+  map["type"] = kjlc::T_TYPE;
+  map["variable"] = kjlc::T_VARIABLE;
   // character tokens
-  map[kjlc::T_BRACK_LEFT] = "]";
-  map[kjlc::T_BRACK_RIGHT] = "]";
-  map[kjlc::T_COMMA] = ",";
-  map[kjlc::T_CURLY_LEFT] = "{";
-  map[kjlc::T_CURLY_RIGHT] = "}";
-  map[kjlc::T_PAREN_LEFT] = "(";
-  map[kjlc::T_PAREN_RIGHT] = ")";
-  map[kjlc::T_PERIOD] = ".";
-  map[kjlc::T_QUOTE] = "\"";
-  map[kjlc::T_SEMI_COLON] = ";";
+  map["["] = kjlc::T_BRACK_LEFT;
+  map["]"] = kjlc::T_BRACK_RIGHT;
+  map[","] = kjlc::T_COMMA;
+  map["{"] = kjlc::T_CURLY_LEFT;
+  map["}"] = kjlc::T_CURLY_RIGHT;
+  map["("] = kjlc::T_PAREN_LEFT;
+  map[")"] = kjlc::T_PAREN_RIGHT;
+  map["."] = kjlc::T_PERIOD;
+  map["\""] = kjlc::T_QUOTE;
+  map[";"] = kjlc::T_SEMI_COLON;
   // operators
-  map[kjlc::T_AND] = "&";
-  map[kjlc::T_DIV] = "/";
-  map[kjlc::T_EQ] = "==";
-  map[kjlc::T_GT] = ">";
-  map[kjlc::T_GT_EQ] = ">=";
-  map[kjlc::T_LT] = "<";
-  map[kjlc::T_LT_EQ] = "<=";
-  map[kjlc::T_MINUS] = "-";
-  map[kjlc::T_MULT] = "*";
-  map[kjlc::T_NEQ] = "!=";
-  map[kjlc::T_PLUS] = "+";
+  map["&"] = kjlc::T_AND;
+  map["/"] = kjlc::T_DIV;
+  map["=="] = kjlc::T_EQ;
+  map[">"] = kjlc::T_GT;
+  map[">="] = kjlc::T_GT_EQ;
+  map["<"] = kjlc::T_LT;
+  map["<="] = kjlc::T_LT_EQ;
+  map["-"] = kjlc::T_MINUS;
+  map["*"] = kjlc::T_MULT;
+  map["!="] = kjlc::T_NEQ;
+  map["+"] = kjlc::T_PLUS;
   // types
-  map[kjlc::T_BOOL] = "bool";
-  map[kjlc::T_ENUM] = "enum";
-  map[kjlc::T_FLOAT] = "float";
-  map[kjlc::T_INT] = "integer";
-  map[kjlc::T_STRING] = "string";
+  map["bool"] = kjlc::T_BOOL;
+  map["enum"] = kjlc::T_ENUM;
+  map["float"] = kjlc::T_FLOAT;
+  map["integer"] = kjlc::T_INT;
+  map["string"] = kjlc::T_STRING;
 
   // return map
   return map;
