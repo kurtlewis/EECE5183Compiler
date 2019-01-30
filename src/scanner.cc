@@ -27,7 +27,7 @@ Scanner::~Scanner() {
 kjlc::Lexeme Scanner::ScanNextLexeme() {
   // create return struct
   struct kjlc::Lexeme lexeme;
-  
+
   // pull the char
   char ch = ScanNextChar();
   if (ch == '\00' || this->file_complete_) {
@@ -96,22 +96,22 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     return lexeme;
   }
 
+  // check to make sure it isn't a two character token
+  std::string twoCharString = std::string(1, ch) + PeekNextChar();
+  std::map<std::string, kjlc::Token>::iterator twoCharResult
+    = this->token_map_.find(twoCharString);
+  if (twoCharResult != this->token_map_.end()) {
+    // it is a two token reserved word, return that token type
+    lexeme.token = twoCharResult->second;
+    return lexeme;
+  }
+
   // check to see if character is in the reserved token map
   std::map<std::string, kjlc::Token>::iterator singleCharResult
     = this->token_map_.find(std::string(1, ch));
   if (singleCharResult != this->token_map_.end()) {
     // the single character is in the map
-    // check to make sure it isn't a two character token
-    std::string twoCharString = std::string(1, ch) + PeekNextChar();
-    std::map<std::string, kjlc::Token>::iterator twoCharResult
-      = this->token_map_.find(twoCharString);
-    if (twoCharResult != this->token_map_.end()) {
-      // it is a two token reserved word, return that token type
-      lexeme.token = twoCharResult->second;
-    } else {
-      // it is only a one character reserved word, return that token type
-      lexeme.token = singleCharResult->second;
-    }
+    lexeme.token = singleCharResult->second;
     return lexeme;
   }
 
