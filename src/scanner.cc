@@ -34,9 +34,43 @@ kjlc::Token Scanner::scanNextLexeme() {
   while (isWhiteSpace(ch)) {
     ch = scanNextChar();
   }
+  if (ch == '/') {
+    // it could be a comment
+    char nCh = peekNextChar();
+    if (nCh == '/' || nCh == '*') {
+      // it is a comment - how it's handled depends on the type
+      if (nCh == '/') {
+        // it is a one line comment
+        // read until new line
+        while (ch != '\n') {
+          ch = scanNextChar();
+        }
+      } else if (nCh == '*') {
+        // it is a block comment
+        // read until the comment ends
+        bool isOver = false;
+        while (!isOver) {
+          ch = scanNextChar();
+          if (ch == '*') {
+            // current char is '*', next char could be '/' ending comment
+            nCh = peekNextChar();
+            if (nCh == '/') {
+              // Comment is ending
+              isOver = true;
+              // move forward to where we peeked
+              scanNextChar();
+            }
+          }
+        }
+      }
+      // start over and return the next Lexeme
+      return scanNextLexeme();
+    }
+    // it was not a comment, so fall through
+  }
 
-  // check for it to be an identifier or reserved word
   if ('A' <= ch && ch <= 'z') {
+    // it is going to be an identifier or reserved word
     std::ostringstream wordStream;
     wordStream << ch;
     while (isWhiteSpace(ch)) {
