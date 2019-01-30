@@ -6,6 +6,7 @@
  **/
 #include "kjlc/scanner.h"
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
@@ -76,6 +77,18 @@ kjlc::Token Scanner::scanNextLexeme() {
   //
   // handle quotes
   //
+  if (ch == '"') {
+    // its the start of a quote. Rules are different, keep all whitespace until
+    // the end of the quote is found
+    std::ostringstream quote;
+    quote << ch;
+    ch = '\00'; // set char to null as to not stop while loop execution
+    while (ch != '"') {
+      ch = scanNextChar();
+      quote << ch;
+    }
+    return T_QUOTE;
+  }
 
   // check to see if character is in the reserved token map
   std::map<std::string, kjlc::Token>::iterator singleCharResult
@@ -102,6 +115,16 @@ kjlc::Token Scanner::scanNextLexeme() {
     while (isWhiteSpace(ch)) {
       wordStream << ch;
     }
+    std::string word = wordStream.str();
+    // convert string to lowercase since language is not case sensitive
+    std::transform(word.begin(), word.end(), word.begin(), ::tolower);
+    std::map<std::string, kjlc::Token>::iterator wordResult = 
+      tokMap.find(word);
+    if (wordResult != tokMap.end()) {
+      // this word is a reserved word
+      return wordResult->second;
+    }
+    // it is not a reserved word
     return T_ID;
   }
   return T_UNKNOWN;
