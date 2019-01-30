@@ -68,7 +68,7 @@ enum Token {
 };
 
 struct Lexeme {
-  Token type;
+  Token token;
   std::string str_value;
   int int_value;
 };
@@ -79,20 +79,21 @@ class Scanner {
     ~Scanner();
 
     // Finds the next Lexeme (complete token)
-    Lexeme scanNextLexeme();
+    Lexeme ScanNextLexeme();
+
     // static
     static std::map<std::string, Token> generate_token_mapping();
   private:
-    std::fstream file;
-    std::map<std::string, Token> tokMap;
-    bool fileComplete;
+    std::fstream file_;
+    std::map<std::string, Token> token_map_;
+    bool file_complete_;
 
     // scans the next character and returns it
-    char scanNextChar();
+    char ScanNextChar();
     // peeks at the next character and returns it
-    char peekNextChar();
+    char PeekNextChar();
     // returns true if the given ch is whitespace
-    bool isWhiteSpace(char ch);
+    bool IsWhiteSpace(char ch);
 };
 
 } // namespace kjlc

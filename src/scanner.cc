@@ -13,30 +13,30 @@
 namespace kjlc {
 
 Scanner::Scanner(std::string filename)
-    : file(filename.c_str(), std::fstream::in) {
+    : file_(filename.c_str(), std::fstream::in) {
   // get token mapping
-  this->tokMap = Scanner::generate_token_mapping();
+  this->token_map_ = Scanner::generate_token_mapping();
   // mark the file as incomplete
-  this->fileComplete = false;
+  this->file_complete_ = false;
 }
 
 Scanner::~Scanner() {
 
 }
 
-kjlc::Lexeme Scanner::scanNextLexeme() {
+kjlc::Lexeme Scanner::ScanNextLexeme() {
   // create return struct
   struct kjlc::Lexeme lexeme;
   // pull the char
-  char ch = scanNextChar();
-  if (ch == '\00' || this->fileComplete) {
-    lexeme.type = T_PERIOD;
+  char ch = ScanNextChar();
+  if (ch == '\00' || this->file_complete_) {
+    lexeme.token = T_PERIOD;
     return lexeme;
   }
 
   // scan until a non-whitespace character is found
-  while (isWhiteSpace(ch) && !this->fileComplete) {
-    ch = scanNextChar();
+  while (IsWhiteSpace(ch) && !this->file_complete_) {
+    ch = ScanNextChar();
   }
 
   //
@@ -44,35 +44,35 @@ kjlc::Lexeme Scanner::scanNextLexeme() {
   //
   if (ch == '/') {
     // it could be a comment
-    char nCh = peekNextChar();
+    char nCh = PeekNextChar();
     if (nCh == '/' || nCh == '*') {
       // it is a comment - how it's handled depends on the type
       if (nCh == '/') {
         // it is a one line comment
         // read until new line
-        while (ch != '\n' && !this->fileComplete) {
-          ch = scanNextChar();
+        while (ch != '\n' && !this->file_complete_) {
+          ch = ScanNextChar();
         }
       } else if (nCh == '*') {
         // it is a block comment
         // read until the comment ends
         bool isOver = false;
-        while (!isOver && !this->fileComplete) {
-          ch = scanNextChar();
+        while (!isOver && !this->file_complete_) {
+          ch = ScanNextChar();
           if (ch == '*') {
             // current char is '*', next char could be '/' ending comment
-            nCh = peekNextChar();
+            nCh = PeekNextChar();
             if (nCh == '/') {
               // Comment is ending
               isOver = true;
               // move forward to where we peeked
-              scanNextChar();
+              ScanNextChar();
             }
           }
         }
       }
       // start over and return the next Lexeme
-      return scanNextLexeme();
+      return ScanNextLexeme();
     }
     // it was not a comment, so fall through
   }
@@ -86,30 +86,30 @@ kjlc::Lexeme Scanner::scanNextLexeme() {
     std::ostringstream quote;
     quote << ch;
     ch = '\00'; // set char to null as to not stop while loop execution
-    while (ch != '"' && !this->fileComplete) {
-      ch = scanNextChar();
+    while (ch != '"' && !this->file_complete_) {
+      ch = ScanNextChar();
       quote << ch;
     }
-    lexeme.type = T_QUOTE;
+    lexeme.token = T_QUOTE;
     lexeme.str_value = quote.str();
     return lexeme;
   }
 
   // check to see if character is in the reserved token map
   std::map<std::string, kjlc::Token>::iterator singleCharResult
-    = this->tokMap.find(std::string(1, ch));
-  if (singleCharResult != this->tokMap.end()) {
+    = this->token_map_.find(std::string(1, ch));
+  if (singleCharResult != this->token_map_.end()) {
     // the single character is in the map
     // check to make sure it isn't a two character token
-    std::string twoCharString = std::string(1, ch) + peekNextChar();
+    std::string twoCharString = std::string(1, ch) + PeekNextChar();
     std::map<std::string, kjlc::Token>::iterator twoCharResult
-      = this->tokMap.find(twoCharString);
-    if (twoCharResult != this->tokMap.end()) {
+      = this->token_map_.find(twoCharString);
+    if (twoCharResult != this->token_map_.end()) {
       // it is a two token reserved word, return that token type
-      lexeme.type = twoCharResult->second;
+      lexeme.token = twoCharResult->second;
     } else {
       // it is only a one character reserved word, return that token type
-      lexeme.type = singleCharResult->second;
+      lexeme.token = singleCharResult->second;
     }
     return lexeme;
   }
@@ -118,9 +118,9 @@ kjlc::Lexeme Scanner::scanNextLexeme() {
     // it is going to be an identifier or reserved word
     std::ostringstream wordStream;
     wordStream << ch;
-    while (!isWhiteSpace(ch) && !this->fileComplete) {
+    while (!IsWhiteSpace(ch) && !this->file_complete_) {
       wordStream << ch;
-      ch = scanNextChar();
+      ch = ScanNextChar();
     }
     std::string word = wordStream.str();
     // convert string to lowercase since language is not case sensitive
@@ -128,14 +128,14 @@ kjlc::Lexeme Scanner::scanNextLexeme() {
     
     // check to see if the word is a reserved word
     std::map<std::string, kjlc::Token>::iterator wordResult = 
-      this->tokMap.find(word);
-    if (wordResult != this->tokMap.end()) {
+      this->token_map_.find(word);
+    if (wordResult != this->token_map_.end()) {
       // this word is a reserved word
-      lexeme.type = wordResult->second;
+      lexeme.token = wordResult->second;
       return lexeme;
     }
     // it is not a reserved word
-    lexeme.type = T_ID;
+    lexeme.token = T_ID;
     lexeme.str_value = word;
     return lexeme;
   }
@@ -144,17 +144,17 @@ kjlc::Lexeme Scanner::scanNextLexeme() {
     // it is a number constant
     std::ostringstream numStream;
     numStream << ch;
-    char nextCh = peekNextChar();
+    char nextCh = PeekNextChar();
     while ('0' <= nextCh && nextCh <= '9') {
-      ch = scanNextChar();
+      ch = ScanNextChar();
       numStream << ch;
-      nextCh = peekNextChar();
+      nextCh = PeekNextChar();
     }
-    lexeme.type =T_NUM;
+    lexeme.token =T_NUM;
     lexeme.int_value = T_NUM;
     return lexeme;
   }
-  lexeme.type = T_UNKNOWN;
+  lexeme.token = T_UNKNOWN;
   return lexeme;
 }
 
@@ -211,31 +211,23 @@ std::map<std::string, kjlc::Token> Scanner::generate_token_mapping() {
   return map;
 }
 
-char Scanner::scanNextChar() {
+char Scanner::ScanNextChar() {
   // check that the file is open
-  if (!this->file.is_open()) {
-    this->fileComplete = true;
+  if (!this->file_.is_open()) {
+    this->file_complete_ = true;
     return '\00'; // return null char
   }
   char ch;
-  this->file.get(ch);
-  this->fileComplete = this->file.eof();
+  this->file_.get(ch);
+  this->file_complete_ = this->file_.eof();
   return ch;
 }
 
-char Scanner::peekNextChar() {
-  // get current position
-  //fpos_t position;
-  //fgetpos(this->file, &position);
-  // get next char
-  //char ch = scanNextChar();
-  // rewind file pointer
-  //fsetpos(this->file, &position);
-  //return ch;
-  return this->file.peek();
+char Scanner::PeekNextChar() {
+  return this->file_.peek();
 }
 
-bool Scanner::isWhiteSpace(char ch) {
+bool Scanner::IsWhiteSpace(char ch) {
   return (ch == '\n' || ch == ' ' || ch == '\t');
 }
 
