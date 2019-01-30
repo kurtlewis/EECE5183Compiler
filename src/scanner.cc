@@ -27,6 +27,7 @@ Scanner::~Scanner() {
 kjlc::Lexeme Scanner::ScanNextLexeme() {
   // create return struct
   struct kjlc::Lexeme lexeme;
+  
   // pull the char
   char ch = ScanNextChar();
   if (ch == '\00' || this->file_complete_) {

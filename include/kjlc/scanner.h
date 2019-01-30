@@ -84,14 +84,21 @@ class Scanner {
     // static
     static std::map<std::string, Token> generate_token_mapping();
   private:
+    // file the scanner is reading
     std::fstream file_;
+    // map of string values that tokens represent to Token enum value
     std::map<std::string, Token> token_map_;
+    // flag representing if the file is done being read
     bool file_complete_;
 
     // scans the next character and returns it
+    // moves the file pointer forward
     char ScanNextChar();
+
     // peeks at the next character and returns it
+    // does not move the filer pointer
     char PeekNextChar();
+    
     // returns true if the given ch is whitespace
     bool IsWhiteSpace(char ch);
 };
