@@ -127,6 +127,20 @@ kjlc::Token Scanner::scanNextLexeme() {
     // it is not a reserved word
     return T_ID;
   }
+
+  if ('0' <= ch && ch <= '9') {
+    // it is a number constant
+    std::ostringstream numStream;
+    numStream << ch;
+    char nextCh = peekNextChar();
+    while ('0' <= nextCh && nextCh <= '9') {
+      ch = scanNextChar();
+      numStream << ch;
+      nextCh = peekNextChar();
+    }
+    return T_NUM;
+  }
+
   return T_UNKNOWN;
 }
 

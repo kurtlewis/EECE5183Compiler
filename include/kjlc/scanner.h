@@ -63,6 +63,7 @@ enum Token {
   T_STRING, // "string"
   // user tokens
   T_ID, // user identifier
+  T_NUM, // number literal
   T_UNKNOWN // unknown identifier
 };
 
