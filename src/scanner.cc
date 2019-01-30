@@ -15,9 +15,9 @@ namespace kjlc {
 Scanner::Scanner(std::string filename)
     : file(filename.c_str(), std::fstream::in) {
   // get token mapping
-  tokMap = Scanner::generate_token_mapping();
+  this->tokMap = Scanner::generate_token_mapping();
   // mark the file as incomplete
-  fileComplete = false;
+  this->fileComplete = false;
 }
 
 Scanner::~Scanner() {
@@ -27,12 +27,12 @@ Scanner::~Scanner() {
 kjlc::Token Scanner::scanNextLexeme() {
   // pull the char
   char ch = scanNextChar();
-  if (ch == '\00' || fileComplete) {
+  if (ch == '\00' || this->fileComplete) {
     return T_PERIOD;
   }
 
   // scan until a non-whitespace character is found
-  while (isWhiteSpace(ch)) {
+  while (isWhiteSpace(ch) && !this->fileComplete) {
     ch = scanNextChar();
   }
 
@@ -47,14 +47,14 @@ kjlc::Token Scanner::scanNextLexeme() {
       if (nCh == '/') {
         // it is a one line comment
         // read until new line
-        while (ch != '\n') {
+        while (ch != '\n' && !this->fileComplete) {
           ch = scanNextChar();
         }
       } else if (nCh == '*') {
         // it is a block comment
         // read until the comment ends
         bool isOver = false;
-        while (!isOver) {
+        while (!isOver && !this->fileComplete) {
           ch = scanNextChar();
           if (ch == '*') {
             // current char is '*', next char could be '/' ending comment
@@ -83,7 +83,7 @@ kjlc::Token Scanner::scanNextLexeme() {
     std::ostringstream quote;
     quote << ch;
     ch = '\00'; // set char to null as to not stop while loop execution
-    while (ch != '"') {
+    while (ch != '"' && !this->fileComplete) {
       ch = scanNextChar();
       quote << ch;
     }
@@ -92,14 +92,14 @@ kjlc::Token Scanner::scanNextLexeme() {
 
   // check to see if character is in the reserved token map
   std::map<std::string, kjlc::Token>::iterator singleCharResult
-    = tokMap.find(std::string(1, ch));
-  if (singleCharResult != tokMap.end()) {
+    = this->tokMap.find(std::string(1, ch));
+  if (singleCharResult != this->tokMap.end()) {
     // the single character is in the map
     // check to make sure it isn't a two character token
     std::string twoCharString = std::string(1, ch) + peekNextChar();
     std::map<std::string, kjlc::Token>::iterator twoCharResult
-      = tokMap.find(twoCharString);
-    if (twoCharResult != tokMap.end()) {
+      = this->tokMap.find(twoCharString);
+    if (twoCharResult != this->tokMap.end()) {
       // it is a two token reserved word, return that token type
       return twoCharResult->second;
     } else {
@@ -112,15 +112,18 @@ kjlc::Token Scanner::scanNextLexeme() {
     // it is going to be an identifier or reserved word
     std::ostringstream wordStream;
     wordStream << ch;
-    while (isWhiteSpace(ch)) {
+    while (!isWhiteSpace(ch) && !this->fileComplete) {
       wordStream << ch;
+      ch = scanNextChar();
     }
     std::string word = wordStream.str();
     // convert string to lowercase since language is not case sensitive
     std::transform(word.begin(), word.end(), word.begin(), ::tolower);
+    
+    // check to see if the word is a reserved word
     std::map<std::string, kjlc::Token>::iterator wordResult = 
-      tokMap.find(word);
-    if (wordResult != tokMap.end()) {
+      this->tokMap.find(word);
+    if (wordResult != this->tokMap.end()) {
       // this word is a reserved word
       return wordResult->second;
     }
@@ -200,11 +203,12 @@ std::map<std::string, kjlc::Token> Scanner::generate_token_mapping() {
 char Scanner::scanNextChar() {
   // check that the file is open
   if (!this->file.is_open()) {
-    fileComplete = true;
+    this->fileComplete = true;
     return '\00'; // return null char
   }
   char ch;
-  this->file >> std::noskipws >> ch;
+  this->file.get(ch);
+  this->fileComplete = this->file.eof();
   return ch;
 }
 
