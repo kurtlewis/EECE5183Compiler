@@ -34,6 +34,10 @@ kjlc::Token Scanner::scanNextLexeme() {
   while (isWhiteSpace(ch)) {
     ch = scanNextChar();
   }
+
+  //
+  // handle possible comments
+  //
   if (ch == '/') {
     // it could be a comment
     char nCh = peekNextChar();
@@ -69,6 +73,28 @@ kjlc::Token Scanner::scanNextLexeme() {
     // it was not a comment, so fall through
   }
 
+  //
+  // handle quotes
+  //
+
+  // check to see if character is in the reserved token map
+  std::map<std::string, kjlc::Token>::iterator singleCharResult
+    = tokMap.find(std::string(1, ch));
+  if (singleCharResult != tokMap.end()) {
+    // the single character is in the map
+    // check to make sure it isn't a two character token
+    std::string twoCharString = std::string(1, ch) + peekNextChar();
+    std::map<std::string, kjlc::Token>::iterator twoCharResult
+      = tokMap.find(twoCharString);
+    if (twoCharResult != tokMap.end()) {
+      // it is a two token reserved word, return that token type
+      return twoCharResult->second;
+    } else {
+      // it is only a one character reserved word, return that token type
+      return singleCharResult->second;
+    }
+  }
+
   if ('A' <= ch && ch <= 'z') {
     // it is going to be an identifier or reserved word
     std::ostringstream wordStream;
@@ -77,9 +103,8 @@ kjlc::Token Scanner::scanNextLexeme() {
       wordStream << ch;
     }
     return T_ID;
-  } else if (ch == '.') {
-    return T_PERIOD;
   }
+  return T_UNKNOWN;
 }
 
 std::map<std::string, kjlc::Token> Scanner::generate_token_mapping() {
