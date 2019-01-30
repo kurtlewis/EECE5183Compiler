@@ -24,11 +24,14 @@ Scanner::~Scanner() {
 
 }
 
-kjlc::Token Scanner::scanNextLexeme() {
+kjlc::Lexeme Scanner::scanNextLexeme() {
+  // create return struct
+  struct kjlc::Lexeme lexeme;
   // pull the char
   char ch = scanNextChar();
   if (ch == '\00' || this->fileComplete) {
-    return T_PERIOD;
+    lexeme.type = T_PERIOD;
+    return lexeme;
   }
 
   // scan until a non-whitespace character is found
@@ -87,7 +90,9 @@ kjlc::Token Scanner::scanNextLexeme() {
       ch = scanNextChar();
       quote << ch;
     }
-    return T_QUOTE;
+    lexeme.type = T_QUOTE;
+    lexeme.str_value = quote.str();
+    return lexeme;
   }
 
   // check to see if character is in the reserved token map
@@ -101,11 +106,12 @@ kjlc::Token Scanner::scanNextLexeme() {
       = this->tokMap.find(twoCharString);
     if (twoCharResult != this->tokMap.end()) {
       // it is a two token reserved word, return that token type
-      return twoCharResult->second;
+      lexeme.type = twoCharResult->second;
     } else {
       // it is only a one character reserved word, return that token type
-      return singleCharResult->second;
+      lexeme.type = singleCharResult->second;
     }
+    return lexeme;
   }
 
   if ('A' <= ch && ch <= 'z') {
@@ -125,10 +131,13 @@ kjlc::Token Scanner::scanNextLexeme() {
       this->tokMap.find(word);
     if (wordResult != this->tokMap.end()) {
       // this word is a reserved word
-      return wordResult->second;
+      lexeme.type = wordResult->second;
+      return lexeme;
     }
     // it is not a reserved word
-    return T_ID;
+    lexeme.type = T_ID;
+    lexeme.str_value = word;
+    return lexeme;
   }
 
   if ('0' <= ch && ch <= '9') {
@@ -141,10 +150,12 @@ kjlc::Token Scanner::scanNextLexeme() {
       numStream << ch;
       nextCh = peekNextChar();
     }
-    return T_NUM;
+    lexeme.type =T_NUM;
+    lexeme.int_value = T_NUM;
+    return lexeme;
   }
-
-  return T_UNKNOWN;
+  lexeme.type = T_UNKNOWN;
+  return lexeme;
 }
 
 std::map<std::string, kjlc::Token> Scanner::generate_token_mapping() {

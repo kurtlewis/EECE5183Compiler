@@ -67,6 +67,11 @@ enum Token {
   T_UNKNOWN // unknown identifier
 };
 
+struct Lexeme {
+  Token type;
+  std::string str_value;
+  int int_value;
+};
 
 class Scanner {
   public:
@@ -74,7 +79,7 @@ class Scanner {
     ~Scanner();
 
     // Finds the next Lexeme (complete token)
-    Token scanNextLexeme();
+    Lexeme scanNextLexeme();
     // static
     static std::map<std::string, Token> generate_token_mapping();
   private:
