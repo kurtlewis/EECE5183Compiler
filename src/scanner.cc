@@ -126,8 +126,8 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     word_stream << ch;
     char next_char = PeekNextChar();
     while (IsValidWordChar(next_char, true) && !this->file_complete_) {
-      word_stream << ch;
       ch = ScanNextChar();
+      word_stream << ch;
       // peek the next character to make sure the identifier/word is continuing
       next_char = PeekNextChar();
     }
