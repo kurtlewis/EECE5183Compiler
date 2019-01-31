@@ -148,16 +148,25 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
 
   if ('0' <= ch && ch <= '9') {
     // it is a number constant
-    std::ostringstream numStream;
-    numStream << ch;
-    char nextCh = PeekNextChar();
-    while ('0' <= nextCh && nextCh <= '9') {
+    bool floating_point = false;
+    std::ostringstream num_stream;
+    num_stream << ch;
+    char next_char = PeekNextChar();
+    while ('0' <= next_char && next_char <= '9' || next_char == '.') {
       ch = ScanNextChar();
-      numStream << ch;
-      nextCh = PeekNextChar();
+      if (ch == '.') {
+        floating_point = true;
+      }
+      num_stream << ch;
+      next_char = PeekNextChar();
     }
-    lexeme.token =T_NUM;
-    lexeme.int_value = T_NUM;
+    if (floating_point) {
+      lexeme.token = T_FLOAT_LITERAL;
+      lexeme.float_value = ::atof(num_stream.str().c_str());
+    } else {
+      lexeme.token = T_INT_LITERAL;
+      lexeme.int_value = ::atof(num_stream.str().c_str());
+    }
     return lexeme;
   }
   lexeme.token = T_UNKNOWN;

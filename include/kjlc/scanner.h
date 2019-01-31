@@ -63,7 +63,8 @@ enum Token {
   T_STRING, // "string"
   // user tokens
   T_ID, // user identifier
-  T_NUM, // number literal
+  T_INT_LITERAL, // integer literal
+  T_FLOAT_LITERAL, // float literal
   T_UNKNOWN // unknown identifier
 };
 
@@ -71,6 +72,7 @@ struct Lexeme {
   Token token;
   std::string str_value;
   int int_value;
+  float float_value;
   int line;
   int column;
 };
