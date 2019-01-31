@@ -71,6 +71,8 @@ struct Lexeme {
   Token token;
   std::string str_value;
   int int_value;
+  int line;
+  int column;
 };
 
 class Scanner {
@@ -90,6 +92,10 @@ class Scanner {
     std::map<std::string, Token> token_map_;
     // flag representing if the file is done being read
     bool file_complete_;
+    // counter for line the scanner is on
+    int line_;
+    // counter for column the scanner is on
+    int column_;
 
     // scans the next character and returns it
     // moves the file pointer forward

@@ -18,6 +18,8 @@ Scanner::Scanner(std::string filename)
   this->token_map_ = Scanner::generate_token_mapping();
   // mark the file as incomplete
   this->file_complete_ = false;
+  this->line_ = 1;
+  this->column_ = 1;
 }
 
 Scanner::~Scanner() {
@@ -27,6 +29,9 @@ Scanner::~Scanner() {
 kjlc::Lexeme Scanner::ScanNextLexeme() {
   // create return struct
   struct kjlc::Lexeme lexeme;
+  // mark the line and column the token starts on
+  lexeme.line = this->line_;
+  lexeme.column = this->column_;
 
   // pull the char
   char ch = ScanNextChar();
@@ -218,9 +223,19 @@ char Scanner::ScanNextChar() {
     this->file_complete_ = true;
     return '\00'; // return null char
   }
+
+  // get the character
   char ch;
   this->file_.get(ch);
   this->file_complete_ = this->file_.eof();
+
+  // handle line and column counting
+  this->column_++;
+  if (ch == '\n') {
+    // if its a newline, reset the line count
+    this->line_++;
+    this->column_ = 1;
+  }
   return ch;
 }
 
