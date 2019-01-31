@@ -120,12 +120,12 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     return lexeme;
   }
 
-  if (IsValidWordChar(ch, false)) {
+  if (IsValidWordChar(ch, true)) {
     // it is going to be an identifier or reserved word
     std::ostringstream word_stream;
     word_stream << ch;
     char next_char = PeekNextChar();
-    while (IsValidWordChar(next_char, true) && !this->file_complete_) {
+    while (IsValidWordChar(next_char, false) && !this->file_complete_) {
       ch = ScanNextChar();
       word_stream << ch;
       // peek the next character to make sure the identifier/word is continuing
@@ -155,12 +155,12 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     std::ostringstream num_stream;
     num_stream << ch;
     char next_char = PeekNextChar();
-    while ('0' <= next_char && next_char <= '9' || next_char == '.') {
+    while (('0' <= next_char && next_char <= '9') || next_char == '.') {
       ch = ScanNextChar();
+      num_stream << ch;
       if (ch == '.') {
         floating_point = true;
       }
-      num_stream << ch;
       next_char = PeekNextChar();
     }
     if (floating_point) {
@@ -259,12 +259,14 @@ bool Scanner::IsWhiteSpace(char ch) {
   return (ch == '\n' || ch == ' ' || ch == '\t');
 }
 
-bool Scanner::IsValidWordChar(char ch, bool accept_underscore) {
+bool Scanner::IsValidWordChar(char ch, bool apply_first_char_rules) {
   return (!IsWhiteSpace(ch) && 
-          (('A' <= ch && ch <= 'Z') ||
-          ('a' <= ch && ch <= 'z') ||
-          ('0' <= ch && ch <= '9') ||
-          (accept_underscore && ch == '_'))
+          (('A' <= ch && ch <= 'Z') || // is it a capital letter
+           ('a' <= ch && ch <= 'z') || // is it lowercase
+           (!apply_first_char_rules && // rules for non first chars
+            (('0' <= ch && ch <= '9') || ch == '_') // allow digits or '_'
+           )
+          )
          );
 }
 

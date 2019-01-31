@@ -112,9 +112,10 @@ class Scanner {
 
     /* returns true if the given character is a valid word char
      * @param ch - character to check
-     * @param accept_underscore - indicates if the underscore should be accepted
+     * @param apply_first_char_rules - denotes if first char rules should be
+     *                                 applied
      */ 
-    bool IsValidWordChar(char ch, bool accept_underscore);
+    bool IsValidWordChar(char ch, bool apply_first_char_rules);
 };
 
 } // namespace kjlc
