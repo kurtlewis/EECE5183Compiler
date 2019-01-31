@@ -120,15 +120,18 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     return lexeme;
   }
 
-  if ('A' <= ch && ch <= 'z') {
+  if (IsValidWordChar(ch, false)) {
     // it is going to be an identifier or reserved word
-    std::ostringstream wordStream;
-    wordStream << ch;
-    while (!IsWhiteSpace(ch) && !this->file_complete_) {
-      wordStream << ch;
+    std::ostringstream word_stream;
+    word_stream << ch;
+    char next_char = PeekNextChar();
+    while (IsValidWordChar(next_char, true) && !this->file_complete_) {
+      word_stream << ch;
       ch = ScanNextChar();
+      // peek the next character to make sure the identifier/word is continuing
+      next_char = PeekNextChar();
     }
-    std::string word = wordStream.str();
+    std::string word = word_stream.str();
     // convert string to lowercase since language is not case sensitive
     std::transform(word.begin(), word.end(), word.begin(), ::tolower);
     
@@ -254,6 +257,15 @@ char Scanner::PeekNextChar() {
 
 bool Scanner::IsWhiteSpace(char ch) {
   return (ch == '\n' || ch == ' ' || ch == '\t');
+}
+
+bool Scanner::IsValidWordChar(char ch, bool accept_underscore) {
+  return (!IsWhiteSpace(ch) && 
+          (('A' <= ch && ch <= 'Z') ||
+          ('a' <= ch && ch <= 'z') ||
+          ('0' <= ch && ch <= '9') ||
+          (accept_underscore && ch == '_'))
+         );
 }
 
 } // end kjlc namespace

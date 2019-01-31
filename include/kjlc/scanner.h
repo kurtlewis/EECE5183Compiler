@@ -109,6 +109,12 @@ class Scanner {
     
     // returns true if the given ch is whitespace
     bool IsWhiteSpace(char ch);
+
+    /* returns true if the given character is a valid word char
+     * @param ch - character to check
+     * @param accept_underscore - indicates if the underscore should be accepted
+     */ 
+    bool IsValidWordChar(char ch, bool accept_underscore);
 };
 
 } // namespace kjlc
