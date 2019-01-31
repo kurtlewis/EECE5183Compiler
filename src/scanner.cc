@@ -102,21 +102,23 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
   }
 
   // check to make sure it isn't a two character token
-  std::string twoCharString = std::string(1, ch) + PeekNextChar();
-  std::map<std::string, kjlc::Token>::iterator twoCharResult
-    = this->token_map_.find(twoCharString);
-  if (twoCharResult != this->token_map_.end()) {
+  std::string two_char_string = std::string(1, ch) + PeekNextChar();
+  std::map<std::string, kjlc::Token>::iterator two_char_result
+    = this->token_map_.find(two_char_string);
+  if (two_char_result != this->token_map_.end()) {
+    // move the file pointer ahead in the token
+    ScanNextChar();
     // it is a two token reserved word, return that token type
-    lexeme.token = twoCharResult->second;
+    lexeme.token = two_char_result->second;
     return lexeme;
   }
 
   // check to see if character is in the reserved token map
-  std::map<std::string, kjlc::Token>::iterator singleCharResult
+  std::map<std::string, kjlc::Token>::iterator single_char_result
     = this->token_map_.find(std::string(1, ch));
-  if (singleCharResult != this->token_map_.end()) {
+  if (single_char_result != this->token_map_.end()) {
     // the single character is in the map
-    lexeme.token = singleCharResult->second;
+    lexeme.token = single_char_result->second;
     return lexeme;
   }
 
