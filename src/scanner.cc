@@ -50,16 +50,16 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
   //
   if (ch == '/') {
     // it could be a comment
-    char nCh = PeekNextChar();
-    if (nCh == '/' || nCh == '*') {
+    char next_char = PeekNextChar();
+    if (next_char == '/' || next_char == '*') {
       // it is a comment - how it's handled depends on the type
-      if (nCh == '/') {
+      if (next_char == '/') {
         // it is a one line comment
         // read until new line
         while (ch != '\n' && !this->file_complete_) {
           ch = ScanNextChar();
         }
-      } else if (nCh == '*') {
+      } else if (next_char == '*') {
         // it is a block comment
         // read until the comment ends
         bool isOver = false;
@@ -67,8 +67,8 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
           ch = ScanNextChar();
           if (ch == '*') {
             // current char is '*', next char could be '/' ending comment
-            nCh = PeekNextChar();
-            if (nCh == '/') {
+            next_char = PeekNextChar();
+            if (next_char == '/') {
               // Comment is ending
               isOver = true;
               // move forward to where we peeked
@@ -138,11 +138,11 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     std::transform(word.begin(), word.end(), word.begin(), ::tolower);
     
     // check to see if the word is a reserved word
-    std::map<std::string, kjlc::Token>::iterator wordResult = 
+    std::map<std::string, kjlc::Token>::iterator word_result = 
       this->token_map_.find(word);
-    if (wordResult != this->token_map_.end()) {
+    if (word_result != this->token_map_.end()) {
       // this word is a reserved word
-      lexeme.token = wordResult->second;
+      lexeme.token = word_result->second;
       return lexeme;
     }
     // it is not a reserved word
