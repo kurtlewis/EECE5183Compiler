@@ -65,6 +65,7 @@ enum Token {
   T_ID, // user identifier
   T_INT_LITERAL, // integer literal
   T_FLOAT_LITERAL, // float literal
+  T_STRING_LITERAL, // string literal
   T_UNKNOWN // unknown identifier
 };
 

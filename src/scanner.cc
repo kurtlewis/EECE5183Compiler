@@ -96,7 +96,7 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
       ch = ScanNextChar();
       quote << ch;
     }
-    lexeme.token = T_QUOTE;
+    lexeme.token = T_STRING_LITERAL;
     lexeme.str_value = quote.str();
     return lexeme;
   }
