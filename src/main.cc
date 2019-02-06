@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
   bool quit = false;
   while (!quit) {
     kjlc::Lexeme lexeme = scan.ScanNextLexeme();
-    if (lexeme.token == kjlc::T_ID || lexeme.token == kjlc::T_QUOTE) {
+    if (lexeme.token == kjlc::T_ID || lexeme.token == kjlc::T_STRING_LITERAL) {
       std::cout << lexeme.str_value;
     } else  if (lexeme.token ==  kjlc::T_INT_LITERAL) {
       std::cout << lexeme.int_value;
