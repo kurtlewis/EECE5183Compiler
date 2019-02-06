@@ -62,18 +62,29 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
       } else if (next_char == '*') {
         // it is a block comment
         // read until the comment ends
-        bool isOver = false;
-        while (!isOver && !this->file_complete_) {
+        // but, block comments can be nested
+        int block_count = 1;
+        bool is_over = false;
+        while (!is_over && !this->file_complete_) {
           ch = ScanNextChar();
-          if (ch == '*') {
-            // current char is '*', next char could be '/' ending comment
-            next_char = PeekNextChar();
-            if (next_char == '/') {
-              // Comment is ending
-              isOver = true;
-              // move forward to where we peeked
-              ScanNextChar();
+          next_char = PeekNextChar();
+          if (ch == '*' && next_char == '/') {
+            // current char is '*' and next char is '/'
+            // which ends the comment
+            block_count--;
+            // move forward to where we peeked
+            ScanNextChar();
+            if (block_count == 0) {
+              // this comment lexing only ends if we've exited the top level
+              // block comment
+              is_over = true;
             }
+          } else if (ch == '/' && next_char == '*') {
+            // check for the opening of a nested block comment
+            // a nested comment is starting
+            block_count++;
+            // move forward to where we peeked
+            ScanNextChar();
           }
         }
       }
