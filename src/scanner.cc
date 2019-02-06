@@ -95,7 +95,7 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
   }
 
   //
-  // handle quotes
+  // handle quotes - string literals
   //
   if (ch == '"') {
     // its the start of a quote. Rules are different, keep all whitespace until
@@ -112,6 +112,9 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     return lexeme;
   }
 
+  //
+  // Check for two and one character individual tokens via map lookup
+  //
   // check to make sure it isn't a two character token
   std::string two_char_string = std::string(1, ch) + PeekNextChar();
   std::map<std::string, kjlc::Token>::iterator two_char_result
@@ -133,6 +136,9 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     return lexeme;
   }
 
+  //
+  // Check for identifiers and reserved words
+  //
   if (IsValidWordChar(ch, true)) {
     // it is going to be an identifier or reserved word
     std::ostringstream word_stream;
@@ -162,6 +168,9 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     return lexeme;
   }
 
+  //
+  // handle numeric constants
+  //
   if ('0' <= ch && ch <= '9') {
     // it is a number constant
     bool floating_point = false;
@@ -185,6 +194,8 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     }
     return lexeme;
   }
+
+  // the token at this point is unknown and an error will later be raised
   lexeme.token = T_UNKNOWN;
   return lexeme;
 }
