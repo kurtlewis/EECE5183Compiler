@@ -177,9 +177,14 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     std::ostringstream num_stream;
     num_stream << ch;
     char next_char = PeekNextChar();
-    while (('0' <= next_char && next_char <= '9') || next_char == '.') {
+    while (('0' <= next_char && next_char <= '9') ||
+           (next_char == '.' && !floating_point) || // no '.' if already fp
+           next_char == '_') {
       ch = ScanNextChar();
-      num_stream << ch;
+      if (ch != '_') {
+        // just ignore '_' - everything else is added
+        num_stream << ch;
+      }
       if (ch == '.') {
         floating_point = true;
       }
@@ -191,6 +196,7 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
     } else {
       lexeme.token = T_INT_LITERAL;
       lexeme.int_value = ::atof(num_stream.str().c_str());
+      // TODO: warning on integer value that exceeds maximum?
     }
     return lexeme;
   }
