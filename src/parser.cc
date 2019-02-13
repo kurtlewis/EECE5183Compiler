@@ -5,12 +5,13 @@
  * Parser Class. Handles verifying grammar of language
  **/
 #include "kjlc/parser.h"
+#include "kjlc/scanner.h"
 
 namespace kjlc {
 
 // Default Constructor
-Parser::Parser() {
-
+Parser::Parser(std::string filename) : scanner_(filename) {
+  
 }
 
 // Deconstructor

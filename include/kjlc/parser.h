@@ -7,15 +7,22 @@
 #ifndef EECE5138COMPILER_KJLC_PARSER_H_
 #define EECE5138COMPILER_KJLC_PARSER_H_
 
+#include "scanner.h"
+
 namespace kjlc {
 
 class Parser {
   public:
-    Parser();
+    // Constructor sets things up for parsing.
+    // takes a string of the file for parsing.
+    Parser(std::string filename);
+
+    // Deconstructor cleans up any allocated memory.
     ~Parser();
-
+    
   private:
-
+    // Scanner being used to drive the parse
+    Scanner scanner_;
 };
 
 } // namespace kjlc
