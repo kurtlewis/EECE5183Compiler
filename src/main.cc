@@ -20,15 +20,12 @@ int main(int argc, char* argv[]) {
   bool quit = false;
   while (!quit) {
     kjlc::Lexeme lexeme = scan.ScanNextLexeme();
-    if (lexeme.token == kjlc::T_ID || lexeme.token == kjlc::T_STRING_LITERAL) {
-      std::cout << lexeme.str_value;
-    } else  if (lexeme.token ==  kjlc::T_INT_LITERAL) {
-      std::cout << lexeme.int_value;
-    } else if (lexeme.token == kjlc::T_FLOAT_LITERAL) {
-      std::cout << lexeme.float_value;
-    } else {
-      std::cout << "tok: " << lexeme.token;
-    }
+    std::cout << "token: " << lexeme.token << std::endl;
+    std::cout << "str_value: " << lexeme.str_value << std::endl;
+    std::cout << "int_value: " << lexeme.int_value << std::endl;
+    std::cout << "float_value: " << lexeme.float_value << std::endl;
+    std::cout << "line,column: " << lexeme.line << "," << lexeme.column
+        << std::endl;
     if (lexeme.token == kjlc::T_PERIOD) quit = true;
     std::cout << std::endl;
   }

@@ -70,6 +70,7 @@ enum Token {
 };
 
 struct Lexeme {
+  Lexeme(): str_value(""), int_value(0), float_value(0.0) {}
   Token token;
   std::string str_value;
   int int_value;
