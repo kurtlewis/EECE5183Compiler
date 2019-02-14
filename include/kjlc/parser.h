@@ -23,6 +23,18 @@ class Parser {
   private:
     // Scanner being used to drive the parse
     Scanner scanner_;
+    Lexeme next_lexeme_;
+    bool peeked_;
+
+    // Get next lexeme
+    Lexeme GetNextLexeme();
+
+    // Peek next lexeme
+    Lexeme PeekNextLexeme();
+
+    // Handle parsing if statement
+    void ParseIfStatement();
+
 };
 
 } // namespace kjlc
