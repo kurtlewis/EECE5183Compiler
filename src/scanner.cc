@@ -13,7 +13,7 @@
 namespace kjlc {
 
 Scanner::Scanner(std::string filename)
-    : file_(filename.c_str(), std::fstream::in) {
+    : file_(filename.c_str(), std::fstream::in), peeked_(false) {
   // get token mapping
   this->token_map_ = Scanner::generate_token_mapping();
   // mark the file as incomplete
@@ -24,6 +24,25 @@ Scanner::Scanner(std::string filename)
 
 Scanner::~Scanner() {
 
+}
+
+Lexeme Scanner::GetNextLexeme() {
+  if (peeked_) {
+    peeked_ = false;
+    return next_lexeme_;
+  } else { 
+    return ScanNextLexeme();
+  }
+}
+
+Lexeme Scanner::PeekNextLexeme() {
+  if (peeked_) {
+    return next_lexeme_;
+  } else {
+    peeked_ = true;
+    next_lexeme_ = ScanNextLexeme();
+    return next_lexeme_;
+  }
 }
 
 kjlc::Lexeme Scanner::ScanNextLexeme() {

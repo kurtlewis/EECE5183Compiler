@@ -84,22 +84,39 @@ class Scanner {
     Scanner(std::string filename);
     ~Scanner();
 
-    // Finds the next Lexeme (complete token)
-    Lexeme ScanNextLexeme();
+    // Read the next lexeme irreversably
+    Lexeme GetNextLexeme();
+
+    // Peek the next lexeme
+    Lexeme PeekNextLexeme();
 
     // static
     static std::map<std::string, Token> generate_token_mapping();
   private:
     // file the scanner is reading
     std::fstream file_;
+
     // map of string values that tokens represent to Token enum value
     std::map<std::string, Token> token_map_;
+
     // flag representing if the file is done being read
     bool file_complete_;
+
     // counter for line the scanner is on
     int line_;
+
     // counter for column the scanner is on
     int column_;
+
+    // Lexeme that represents the next lexeme for tracking peeks
+    Lexeme next_lexeme_;
+    
+    // boolean for if there has already been a peek
+    bool peeked_;
+
+
+    // Finds the next Lexeme (complete token)
+    Lexeme ScanNextLexeme();
 
     // scans the next character and returns it
     // moves the file pointer forward

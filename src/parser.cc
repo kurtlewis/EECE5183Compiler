@@ -14,7 +14,7 @@
 namespace kjlc {
 
 // Default Constructor
-Parser::Parser(std::string filename) : scanner_(filename), peeked_(false) {
+Parser::Parser(std::string filename) : scanner_(filename) {
 
 }
 
@@ -23,33 +23,13 @@ Parser::~Parser() {
 
 }
 
-Lexeme Parser::GetNextLexeme() {
-  if (peeked_) {
-    peeked_ = false;
-    return next_lexeme_;
-  } else {
-    return scanner_.ScanNextLexeme();
-  }
-}
-
-Lexeme Parser::PeekNextLexeme() {
-  if (peeked_) {
-    return next_lexeme_;
-  } else {
-    peeked_ = true;
-    next_lexeme_ = scanner_.ScanNextLexeme();
-    return next_lexeme_;
-  }
-}
-    
-
 void Parser::ParseIfStatement() {
-  Lexeme lexeme = GetNextLexeme(); 
+  Lexeme lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_IF) {
     // p&d
   }
 
-  lexeme = GetNextLexeme();
+  lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_LEFT) {
     // p&d
   }
@@ -57,12 +37,12 @@ void Parser::ParseIfStatement() {
   // handle parsing the expression
   //ReturnType ret = ParseExpression();
 
-  lexeme = GetNextLexeme();
+  lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_RIGHT) {
     // p&d
   }
 
-  lexeme = GetNextLexeme(); 
+  lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_THEN) {
     // p&d
   }
@@ -72,28 +52,28 @@ void Parser::ParseIfStatement() {
   while (lexeme.token != T_ELSE && lexeme.token != T_END) {
     // Handle parsing the statement
     // ReturnType ret = ParseStatement();
-    lexeme = GetNextLexeme();
+    lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       // p&d
     }
-    lexeme = PeekNextLexeme();
+    lexeme = scanner_.PeekNextLexeme();
   }
 
   // the last lexeme was only peeked, read it now
-  lexeme = GetNextLexeme();
+  lexeme = scanner_.GetNextLexeme();
   if (lexeme.token == T_ELSE) {
     // handle else statement
     while (lexeme.token != T_END) {
       // handle parsing the statements
       // ReturnType ret = ParseStatement();
-      lexeme = GetNextLexeme();
+      lexeme = scanner_.GetNextLexeme();
       if (lexeme.token != T_SEMI_COLON) {
         // p&d
       }
-      lexeme = PeekNextLexeme();
+      lexeme = scanner_.PeekNextLexeme();
     }
     // read the peeeked lexeme
-    lexeme = GetNextLexeme();
+    lexeme = scanner_.GetNextLexeme();
   }
 
   // now at end
@@ -102,7 +82,7 @@ void Parser::ParseIfStatement() {
   }
 
   // 'if'
-  lexeme = GetNextLexeme();
+  lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_IF) {
     // p&d
   }

@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     kjlc::Scanner scan(argv[1]);
     bool quit = false;
     while (!quit) {
-      kjlc::Lexeme lexeme = scan.ScanNextLexeme();
+      kjlc::Lexeme lexeme = scan.GetNextLexeme();
       std::cout << "token: " << lexeme.token << std::endl;
       std::cout << "str_value: " << lexeme.str_value << std::endl;
       std::cout << "int_value: " << lexeme.int_value << std::endl;
@@ -42,7 +42,6 @@ int main(int argc, char* argv[]) {
       if (lexeme.token == kjlc::T_PERIOD) quit = true;
       std::cout << std::endl;
     }
-    while (scan.ScanNextLexeme().token != kjlc::T_PERIOD);
   } else {
     // run the whole compiler
     kjlc::Parser parser(argv[1]);
