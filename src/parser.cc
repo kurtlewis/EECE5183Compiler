@@ -8,13 +8,12 @@
 
 #include <iostream>
 
-
 #include "kjlc/scanner.h"
 
 namespace kjlc {
 
 // Default Constructor
-Parser::Parser(std::string filename) : scanner_(filename) {
+Parser::Parser(std::string filename) : scanner_(filename), error_state_(false) {
 
 }
 
@@ -23,15 +22,23 @@ Parser::~Parser() {
 
 }
 
+void Parser::EmitParsingError(std::string message, Lexeme lexeme) {
+  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
+  std::cout << " - " << message << std::endl;
+  error_state_ = true;
+}
+
 void Parser::ParseIfStatement() {
   Lexeme lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_IF) {
-    // p&d
+    EmitParsingError("Expected 'if'", lexeme);
+    return;
   }
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_LEFT) {
-    // p&d
+    EmitParsingError("Expected '('", lexeme);
+    return;
   }
 
   // handle parsing the expression
@@ -39,12 +46,14 @@ void Parser::ParseIfStatement() {
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_RIGHT) {
-    // p&d
+    EmitParsingError("Expected ')'", lexeme);
+    return;
   }
 
   lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_THEN) {
-    // p&d
+    EmitParsingError("Expected 'then'", lexeme);
+    return;
   }
 
   // only read statements until we peek a T_ELSE or T_END
@@ -54,7 +63,8 @@ void Parser::ParseIfStatement() {
     // ReturnType ret = ParseStatement();
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
-      // p&d
+      EmitParsingError("Expected ';'", lexeme);
+      return;
     }
     lexeme = scanner_.PeekNextLexeme();
   }
@@ -68,7 +78,8 @@ void Parser::ParseIfStatement() {
       // ReturnType ret = ParseStatement();
       lexeme = scanner_.GetNextLexeme();
       if (lexeme.token != T_SEMI_COLON) {
-        // p&d
+        EmitParsingError("Expected ';'", lexeme);
+        return;
       }
       lexeme = scanner_.PeekNextLexeme();
     }
@@ -78,13 +89,15 @@ void Parser::ParseIfStatement() {
 
   // now at end
   if (lexeme.token != T_END) {
-    // p&d
+    EmitParsingError("Expected 'end'", lexeme);
+    return;
   }
 
   // 'if'
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_IF) {
-    // p&d
+    EmitParsingError("Expected 'if'", lexeme);
+    return;
   }
 }
 

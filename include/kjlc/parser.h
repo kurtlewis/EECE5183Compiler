@@ -23,6 +23,11 @@ class Parser {
   private:
     // Scanner being used to drive the parse
     Scanner scanner_;
+    // True if error state
+    bool error_state_;
+
+    // Error Handling function
+    void EmitParsingError(std::string message, Lexeme lexeme);
 
     // Handle parsing if statement
     void ParseIfStatement();
