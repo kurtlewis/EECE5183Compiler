@@ -28,16 +28,23 @@ void Parser::EmitParsingError(std::string message, Lexeme lexeme) {
   error_state_ = true;
 }
 
+void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
+  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
+  std::cout << " - " << "Expected token '" << expected_token << "'";
+  std::cout << std::endl;
+  error_state_ = true;
+}
+
 void Parser::ParseIfStatement() {
   Lexeme lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_IF) {
-    EmitParsingError("Expected 'if'", lexeme);
+    EmitExpectedTokenError("if", lexeme);
     return;
   }
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_LEFT) {
-    EmitParsingError("Expected '('", lexeme);
+    EmitExpectedTokenError("(", lexeme);
     return;
   }
 
@@ -46,13 +53,13 @@ void Parser::ParseIfStatement() {
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_RIGHT) {
-    EmitParsingError("Expected ')'", lexeme);
+    EmitExpectedTokenError(")", lexeme);
     return;
   }
 
   lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_THEN) {
-    EmitParsingError("Expected 'then'", lexeme);
+    EmitExpectedTokenError("then", lexeme);
     return;
   }
 
@@ -63,7 +70,7 @@ void Parser::ParseIfStatement() {
     // ReturnType ret = ParseStatement();
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
-      EmitParsingError("Expected ';'", lexeme);
+      EmitExpectedTokenError(";", lexeme);
       return;
     }
     lexeme = scanner_.PeekNextLexeme();
@@ -78,7 +85,7 @@ void Parser::ParseIfStatement() {
       // ReturnType ret = ParseStatement();
       lexeme = scanner_.GetNextLexeme();
       if (lexeme.token != T_SEMI_COLON) {
-        EmitParsingError("Expected ';'", lexeme);
+        EmitExpectedTokenError(";", lexeme);
         return;
       }
       lexeme = scanner_.PeekNextLexeme();
@@ -89,14 +96,14 @@ void Parser::ParseIfStatement() {
 
   // now at end
   if (lexeme.token != T_END) {
-    EmitParsingError("Expected 'end'", lexeme);
+    EmitExpectedTokenError("end", lexeme);
     return;
   }
 
   // 'if'
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_IF) {
-    EmitParsingError("Expected 'if'", lexeme);
+    EmitExpectedTokenError("if", lexeme);
     return;
   }
 }

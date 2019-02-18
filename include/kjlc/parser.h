@@ -26,8 +26,12 @@ class Parser {
     // True if error state
     bool error_state_;
 
-    // Error Handling function
+    // Generic Error Handling function
     void EmitParsingError(std::string message, Lexeme lexeme);
+
+    // Error for missing token
+    void EmitExpectedTokenError(std::string expected_token, Lexeme lexeme);
+
 
     // Handle parsing if statement
     void ParseIfStatement();
