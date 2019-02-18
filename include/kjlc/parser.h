@@ -19,6 +19,9 @@ class Parser {
 
     // Deconstructor cleans up any allocated memory.
     ~Parser();
+
+    // Parse Program. Starting point of the parse
+    void ParseProgram();
     
   private:
     // Scanner being used to drive the parse
@@ -35,6 +38,12 @@ class Parser {
 
     // Handle parsing if statement
     void ParseIfStatement();
+
+    // Parse the Program body rule
+    void ParseProgramBody();
+
+    // Parse the Program Header Rule
+    void ParseProgramHeader();
 
 };
 

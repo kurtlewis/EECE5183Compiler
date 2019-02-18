@@ -22,6 +22,11 @@ Parser::~Parser() {
 
 }
 
+void Parser::ParseProgram() {
+  ParseProgramHeader();
+  ParseProgramBody();
+}
+
 void Parser::EmitParsingError(std::string message, Lexeme lexeme) {
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
   std::cout << " - " << message << std::endl;
@@ -106,6 +111,87 @@ void Parser::ParseIfStatement() {
     EmitExpectedTokenError("if", lexeme);
     return;
   }
+}
+
+void Parser::ParseProgramBody() {
+  // Parse leading declarations
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  while (lexeme.token != T_BEGIN) {
+    // parse declaration
+    // TODO: declaration parse
+    // retType ret = ParseDeclaration();
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token != T_SEMI_COLON) {
+      EmitExpectedTokenError(";", lexeme);
+      return;
+    }
+    lexeme = scanner_.PeekNextLexeme();
+  }
+
+  // Parse 'begin'
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_BEGIN) {
+    EmitExpectedTokenError(";", lexeme);
+    return;
+  }
+
+  // parse statements
+  lexeme = scanner_.PeekNextLexeme();
+  while (lexeme.token != T_END) {
+    // parse statements
+    // TODO: statement parse
+    // retType ret = ParseStatement();
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token != T_SEMI_COLON) {
+      EmitExpectedTokenError(";", lexeme);
+      return;
+    }
+    lexeme = scanner_.PeekNextLexeme();
+  }
+
+  // parse 'end'
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_END) {
+    EmitExpectedTokenError("end", lexeme);
+    return;
+  }
+
+  // parse 'program'
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_PROGRAM) {
+    EmitExpectedTokenError("program", lexeme);
+    return;
+  }
+  
+  // successfully parsed rule
+  return;
+}
+
+void Parser::ParseProgramHeader() {
+  // read 'program'
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_PROGRAM) {
+    EmitExpectedTokenError("program", lexeme);
+    return;
+  }
+
+  // read the identifier
+  // TODO: idk what to do with it right now
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_ID) {
+    EmitParsingError("Expected identifier", lexeme);
+    return;
+  }
+
+  // read 'is'
+  lexeme = scanner_.GetNextLexeme(); 
+  if (lexeme.token != T_IS) {
+    EmitExpectedTokenError("is", lexeme);
+    return;
+  }
+
+  // successful parse
+  return;
 }
 
 } // namespace kjlc
