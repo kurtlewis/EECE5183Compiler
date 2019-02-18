@@ -45,6 +45,14 @@ Lexeme Scanner::PeekNextLexeme() {
   }
 }
 
+// The order in which a Lexeme (specific instance of a token) is recognized
+// is important - we should do it in the order that allows for the greediest
+// scan possible without over-scanning. The complete order is below.
+// for instance, many tokens can appear within string literals, so its
+// important to check for string literals early. But, even quotes can appear
+// in comments, so check for comments first.
+// Order: comments, string literals, two character tokens (not if/is),
+// one character tokens, identifiers/reserved words, numeric literals
 kjlc::Lexeme Scanner::ScanNextLexeme() {
   // create return struct
   struct kjlc::Lexeme lexeme;
@@ -138,7 +146,9 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
   std::string two_char_string = std::string(1, ch) + PeekNextChar();
   std::map<std::string, kjlc::Token>::iterator two_char_result
     = this->token_map_.find(two_char_string);
-  if (two_char_result != this->token_map_.end()) {
+  if (two_char_result != this->token_map_.end() &&
+      two_char_result->second != T_IF && // don't allow matching of words
+      two_char_result->second != T_IS) { // don't allow matching of words here
     // move the file pointer ahead in the token
     ScanNextChar();
     // it is a two token reserved word, return that token type
