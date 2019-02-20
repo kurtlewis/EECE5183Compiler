@@ -48,6 +48,9 @@ class Parser {
     // Handle parsing if statement
     void ParseIfStatement();
 
+    // Handle parsing a parameter
+    void ParseParameter();
+
     // Handle parsing parameter list
     void ParseParameterList();
 

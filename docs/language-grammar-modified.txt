@@ -18,5 +18,7 @@ specification.
 procedure_declaration => {procedure}
 variable_declaration => {variable}
 type_declaration => {type}
+parameter_list => {variable}
+parameter => {variable}
 
 ===== Right Recursive Rules =====

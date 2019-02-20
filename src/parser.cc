@@ -149,8 +149,21 @@ void Parser::ParseIfStatement() {
   }
 }
 
+void Parser::ParseParameter() {
+  ParseVariableDeclaration(); 
+}
+
 void Parser::ParseParameterList() {
-  // TODO
+  ParseParameter();
+
+  // check to see if there are multiple parameters - indicated by ','
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_COMMA) {
+    // read the lexeme for real
+    lexeme = scanner_.GetNextLexeme();
+    // recursive call to read more parameters
+    ParseParameterList();
+  }
 }
 
 void Parser::ParseProcedureBody() {
@@ -183,8 +196,12 @@ void Parser::ParseProcedureHeader() {
     return;
   }
 
-  // read parameter list
-  ParseParameterList();
+  // peek to see if there is an optional parameter list
+  lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_VARIABLE) {
+    // read parameter list
+    ParseParameterList();
+  }
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_RIGHT) {
