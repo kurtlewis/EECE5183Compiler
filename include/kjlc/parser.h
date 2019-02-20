@@ -39,6 +39,9 @@ class Parser {
     // Parse rules functions
     //
 
+    // Handle parsing bound
+    void ParseBound();
+
     // Handle parsing declarationr ule
     void ParseDeclaration();
 
@@ -47,6 +50,9 @@ class Parser {
 
     // Handle parsing if statement
     void ParseIfStatement();
+
+    // Handle parsing number
+    void ParseNumber();
 
     // Handle parsing a parameter
     void ParseParameter();

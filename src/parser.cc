@@ -40,6 +40,17 @@ void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
   error_state_ = true;
 }
 
+void Parser::ParseBound() {
+  // peek for '-'
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_MINUS) {
+    // read the dash off the input 
+    lexeme = scanner_.GetNextLexeme();
+  }
+
+  ParseNumber();
+}
+
 void Parser::ParseDeclaration() {
   // peek because the first terminal could be a number of things, some of
   // which involve reaching down rule evaluations
@@ -151,6 +162,10 @@ void Parser::ParseIfStatement() {
     EmitExpectedTokenError("if", lexeme);
     return;
   }
+}
+
+void Parser::ParseNumber() {
+  // TODO
 }
 
 void Parser::ParseParameter() {
@@ -352,7 +367,32 @@ void Parser::ParseTypeMark() {
 }
 
 void Parser::ParseVariableDeclaration() {
-  // TODO
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_VARIABLE) {
+    EmitExpectedTokenError("variable", lexeme);
+    return;
+  }
+
+  ParseIdentifier();
+
+  ParseTypeMark();
+
+  // peek to look for optional bound
+  lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_BRACK_LEFT) {
+    // there are bounds
+    lexeme = scanner_.GetNextLexeme();
+    // we already know it's a left bracket
+
+    ParseBound();
+
+    // read right bracket
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token != T_BRACK_RIGHT) {
+      EmitExpectedTokenError("]", lexeme);
+      return;
+    }
+  }
 }
 
 } // namespace kjlc
