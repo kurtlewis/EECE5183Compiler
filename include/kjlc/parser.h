@@ -68,6 +68,9 @@ class Parser {
 
     // Parse the Program Header Rule
     void ParseProgramHeader();
+    
+    // Handle parsing Statement
+    void ParseStatement();
 
     // Parse Type Declaration
     void ParseTypeDeclaration();

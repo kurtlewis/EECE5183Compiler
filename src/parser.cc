@@ -64,6 +64,10 @@ void Parser::ParseDeclaration() {
   } else if (lexeme.token == T_TYPE) {
     // Type declaration rule
     ParseTypeDeclaration();
+  } else {
+    EmitParsingError("Could not parse declaration - expected a variable, "
+                     "type, or procedure",
+                     lexeme);
   }
 }
 
@@ -167,7 +171,56 @@ void Parser::ParseParameterList() {
 }
 
 void Parser::ParseProcedureBody() {
-  // TODO
+  // Peek the first lexeme to determine if there are any declarations
+  Lexeme lexeme = scanner_.PeekNextLexeme(); 
+  while (lexeme.token != T_BEGIN) {
+    // There are declarations
+    ParseDeclaration();
+    // Parse ';'
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token != T_SEMI_COLON) {
+      EmitExpectedTokenError(";", lexeme);
+      return;
+    }
+    // peek to see if there are more declarations
+    lexeme = scanner_.PeekNextLexeme();
+  }
+  
+  // Parse the 'begin'
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_BEGIN) {
+    EmitExpectedTokenError("begin", lexeme);
+    return;
+  }
+
+  // Parse statements until 'end' is found
+  lexeme = scanner_.PeekNextLexeme();
+  while (lexeme.token != T_END) {
+    // there are statement(s) to read
+    ParseStatement();
+    // Parse ';'
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token != T_SEMI_COLON) {
+      EmitExpectedTokenError(";", lexeme);
+      return;
+    }
+    // peek to look for more statements
+    lexeme = scanner_.PeekNextLexeme();
+  }
+
+  // Parse 'end'
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_END) {
+    EmitExpectedTokenError("end", lexeme);
+    return;
+  }
+
+  // Parse 'procedure'
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_PROCEDURE) {
+    EmitExpectedTokenError("procedure", lexeme);
+    return;
+  }
 }
 
 void Parser::ParseProcedureDeclaration() {
@@ -284,6 +337,10 @@ void Parser::ParseProgramHeader() {
 
   // successful parse
   return;
+}
+
+void Parser::ParseStatement() {
+  // TODO
 }
 
 void Parser::ParseTypeDeclaration() {
