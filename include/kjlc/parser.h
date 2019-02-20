@@ -35,15 +35,42 @@ class Parser {
     // Error for missing token
     void EmitExpectedTokenError(std::string expected_token, Lexeme lexeme);
 
+    //
+    // Parse rules functions
+    //
+
+    // Handle parsing declarationr ule
+    void ParseDeclaration();
 
     // Handle parsing if statement
     void ParseIfStatement();
+
+    // Handle parsing parameter list
+    void ParseParameterList();
+
+    // Handle parsing a procedure body
+    void ParseProcedureBody();
+    
+    // Handle parsing a procedure declaration
+    void ParseProcedureDeclaration();
+
+    // Handle parsing procedure header
+    void ParseProcedureHeader();
 
     // Parse the Program body rule
     void ParseProgramBody();
 
     // Parse the Program Header Rule
     void ParseProgramHeader();
+
+    // Parse Type Declaration
+    void ParseTypeDeclaration();
+
+    // Parse Type Mark
+    void ParseTypeMark();
+
+    // Parse Variable Declaration
+    void ParseVariableDeclaration();
 
 };
 

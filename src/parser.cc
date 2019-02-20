@@ -40,6 +40,33 @@ void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
   error_state_ = true;
 }
 
+void Parser::ParseDeclaration() {
+  // peek because the first terminal could be a number of things, some of
+  // which involve reaching down rule evaluations
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_GLOBAL) {
+    // there's a global keyword
+    // scan it for real
+    lexeme = scanner_.GetNextLexeme();
+    // TODO: Probably do things with this in the symbol table
+    
+    // now prepare lexeme for guessing the next rule
+    lexeme = scanner_.PeekNextLexeme();
+  }
+
+  // Rule can evaluate to three different rules, so check their FIRST sets
+  if (lexeme.token == T_PROCEDURE) {
+    // Procedure Declaration rule
+    ParseProcedureDeclaration();
+  } else if (lexeme.token == T_VARIABLE) {
+    // Variable declaration rule
+    ParseVariableDeclaration();
+  } else if (lexeme.token == T_TYPE) {
+    // Type declaration rule
+    ParseTypeDeclaration();
+  }
+}
+
 void Parser::ParseIfStatement() {
   Lexeme lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_IF) {
@@ -109,6 +136,55 @@ void Parser::ParseIfStatement() {
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_IF) {
     EmitExpectedTokenError("if", lexeme);
+    return;
+  }
+}
+
+void Parser::ParseParameterList() {
+  // TODO
+}
+
+void Parser::ParseProcedureBody() {
+  // TODO
+}
+
+void Parser::ParseProcedureDeclaration() {
+  ParseProcedureHeader();
+  ParseProcedureBody();
+}
+
+void Parser::ParseProcedureHeader() {
+  // parse procedure keyword
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_PROCEDURE) {
+    EmitExpectedTokenError("procedure", lexeme);
+    return;
+  }
+  
+  // read the identifier
+  // TODO revisit this
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_ID) {
+    EmitParsingError("Expected Identifier", lexeme);
+    return;
+  }
+
+  // type mark - todo
+  ParseTypeMark();
+
+  // read left paren
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_PAREN_LEFT) {
+    EmitExpectedTokenError("(", lexeme);
+    return;
+  }
+
+  // read parameter list
+  ParseParameterList();
+
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_PAREN_RIGHT) {
+    EmitExpectedTokenError(")", lexeme);
     return;
   }
 }
@@ -192,6 +268,18 @@ void Parser::ParseProgramHeader() {
 
   // successful parse
   return;
+}
+
+void Parser::ParseTypeDeclaration() {
+  // TODO
+}
+
+void Parser::ParseTypeMark() {
+  // TODO
+}
+
+void Parser::ParseVariableDeclaration() {
+  // TODO
 }
 
 } // namespace kjlc
