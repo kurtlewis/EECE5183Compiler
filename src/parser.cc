@@ -359,11 +359,76 @@ void Parser::ParseStatement() {
 }
 
 void Parser::ParseTypeDeclaration() {
-  // TODO
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_TYPE) {
+    EmitExpectedTokenError("type", lexeme);
+    return;
+  }
+
+  // Read the identifier
+  ParseIdentifier();
+
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_IS) {
+    EmitExpectedTokenError("is", lexeme);
+    return;
+  }
+
+  // Parse type mark
+  ParseTypeMark();
 }
 
 void Parser::ParseTypeMark() {
-  // TODO
+  // Need to peek, because it could be an identifier so we can't consume the
+  // token
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_BOOL || lexeme.token == T_FLOAT ||
+      lexeme.token == T_INT || lexeme.token == T_STRING ||
+      lexeme.token == T_ENUM) {
+    // read the token because it's consumed here
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token == T_BOOL) {
+      // boolean
+    } else if (lexeme.token == T_FLOAT) {
+      // float
+    } else if (lexeme.token == T_INT) {
+      // int
+    } else if (lexeme.token == T_STRING) {
+      // string
+    } else if (lexeme.token == T_ENUM) {
+      // enum - additional rules
+      lexeme = scanner_.GetNextLexeme();
+      if (lexeme.token != T_CURLY_LEFT) {
+        EmitExpectedTokenError("{", lexeme);
+        return;
+      }
+
+      // always at least one identifier
+      ParseIdentifier();
+
+      lexeme = scanner_.PeekNextLexeme();
+      while (lexeme.token == T_COMMA) {
+        lexeme = scanner_.GetNextLexeme();
+        if (lexeme.token != T_COMMA) {
+          EmitExpectedTokenError(",", lexeme);
+          return;
+        }
+
+        // there's going to be another identifier
+        ParseIdentifier();
+
+      }
+
+      lexeme = scanner_.GetNextLexeme();
+      if (lexeme.token != T_CURLY_RIGHT) {
+        EmitExpectedTokenError("}", lexeme);
+        return;
+      }
+    } // end enum if
+  } else {
+    // It must be an identifier, because it's not the other evaluations
+    ParseIdentifier();
+  }
 }
 
 void Parser::ParseVariableDeclaration() {
