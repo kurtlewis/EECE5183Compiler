@@ -1,0 +1,22 @@
+In parsing grammars, sometimes rules need to be modified to support predictive
+parsing. This involves making rules right recursive when they are left
+recursive, and defining 'first' sets for rules - the possible set of terminal
+symbols that are the first appearing terminal symbols for any evaluation of
+that rule.
+
+This file does not attempt to rewrite the entire grammar, it is intended to be
+used a supplement to the official language spec. Only those rules which are
+affected by predictive parsing needs are rewritten here, and not always in their
+entirety.
+
+The rules below appear in the same order they are referenced in the language
+specification.
+
+===== First Sets =====
+* The items in the sets here are the first appearing terminals for all possible
+* evaluations of the rule on the left.
+procedure_declaration => {procedure}
+variable_declaration => {variable}
+type_declaration => {type}
+
+===== Right Recursive Rules =====
