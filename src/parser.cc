@@ -67,6 +67,15 @@ void Parser::ParseDeclaration() {
   }
 }
 
+void Parser::ParseIdentifier() {
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_ID) {
+    EmitParsingError("Expected Identifier", lexeme);
+    return;
+  }
+  // TODO: probably some symbol table stuff
+}
+
 void Parser::ParseIfStatement() {
   Lexeme lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_IF) {
@@ -162,12 +171,7 @@ void Parser::ParseProcedureHeader() {
   }
   
   // read the identifier
-  // TODO revisit this
-  lexeme = scanner_.GetNextLexeme();
-  if (lexeme.token != T_ID) {
-    EmitParsingError("Expected Identifier", lexeme);
-    return;
-  }
+  ParseIdentifier();
 
   // type mark - todo
   ParseTypeMark();
@@ -252,12 +256,7 @@ void Parser::ParseProgramHeader() {
   }
 
   // read the identifier
-  // TODO: idk what to do with it right now
-  lexeme = scanner_.GetNextLexeme();
-  if (lexeme.token != T_ID) {
-    EmitParsingError("Expected identifier", lexeme);
-    return;
-  }
+  ParseIdentifier();
 
   // read 'is'
   lexeme = scanner_.GetNextLexeme(); 

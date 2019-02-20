@@ -42,6 +42,9 @@ class Parser {
     // Handle parsing declarationr ule
     void ParseDeclaration();
 
+    // Handle Parsing Identifier r ule
+    void ParseIdentifier();
+
     // Handle parsing if statement
     void ParseIfStatement();
 
