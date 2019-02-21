@@ -40,6 +40,10 @@ void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
   error_state_ = true;
 }
 
+void Parser::ParseAssignmentStatement() {
+  // TODO
+}
+
 void Parser::ParseBound() {
   // peek for '-'
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -162,6 +166,10 @@ void Parser::ParseIfStatement() {
     EmitExpectedTokenError("if", lexeme);
     return;
   }
+}
+
+void Parser::ParseLoopStatement() {
+  // TODO
 }
 
 void Parser::ParseNumber() {
@@ -354,8 +362,27 @@ void Parser::ParseProgramHeader() {
   return;
 }
 
-void Parser::ParseStatement() {
+void Parser::ParseReturnStatement() {
   // TODO
+}
+
+void Parser::ParseStatement() {
+  // Parse statement has four possible evaluations so peek and take the one
+  // that we can predict using the respective first sets of the possible
+  // rule evaluations
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_ID) {
+    ParseAssignmentStatement();
+  } else if (lexeme.token == T_IF) {
+    ParseIfStatement();
+  } else if (lexeme.token == T_FOR) {
+    ParseLoopStatement();
+  } else if (lexeme.token == T_RETURN) {
+    ParseReturnStatement();
+  } else {
+    EmitParsingError("Expected identifier, if, for, or return", lexeme);
+    return;
+  }
 }
 
 void Parser::ParseTypeDeclaration() {
@@ -425,9 +452,12 @@ void Parser::ParseTypeMark() {
         return;
       }
     } // end enum if
-  } else {
-    // It must be an identifier, because it's not the other evaluations
+  } else if(lexeme.token == T_ID) {
     ParseIdentifier();
+  } else {
+    EmitParsingError("Expected int, string, bool, enum, float, or identifier",
+                     lexeme);
+    return;
   }
 }
 

@@ -20,5 +20,10 @@ variable_declaration => {variable}
 type_declaration => {type}
 parameter_list => {variable}
 parameter => {variable}
+assignment_statement => {<identifier>}
+destination => {<identifier>}
+if_statement => {if}
+loop_statement => {for}
+return_statement => {return}
 
 ===== Right Recursive Rules =====

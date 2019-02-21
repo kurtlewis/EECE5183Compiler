@@ -38,6 +38,8 @@ class Parser {
     //
     // Parse rules functions
     //
+    // Handle parsing assignment statement
+    void ParseAssignmentStatement();
 
     // Handle parsing bound
     void ParseBound();
@@ -50,6 +52,9 @@ class Parser {
 
     // Handle parsing if statement
     void ParseIfStatement();
+
+    // Handle parsing loop statement
+    void ParseLoopStatement();
 
     // Handle parsing number
     void ParseNumber();
@@ -74,6 +79,9 @@ class Parser {
 
     // Parse the Program Header Rule
     void ParseProgramHeader();
+
+    // Handle parsing return statements
+    void ParseReturnStatement();
     
     // Handle parsing Statement
     void ParseStatement();
