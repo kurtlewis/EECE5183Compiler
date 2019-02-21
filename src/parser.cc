@@ -40,6 +40,18 @@ void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
   error_state_ = true;
 }
 
+void Parser::ParseArgumentList() {
+  ParseExpression();
+
+  // more arguments are optional
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_COMMA) {
+    // consume comma
+    lexeme = scanner_.GetNextLexeme();
+    ParseArgumentList();
+  }
+}
+
 void Parser::ParseAssignmentStatement() {
   // TODO
 }
@@ -84,6 +96,10 @@ void Parser::ParseDeclaration() {
                      "type, or procedure",
                      lexeme);
   }
+}
+
+void Parser::ParseExpression() {
+  // TODO
 }
 
 void Parser::ParseIdentifier() {
@@ -242,6 +258,24 @@ void Parser::ParseProcedureBody() {
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PROCEDURE) {
     EmitExpectedTokenError("procedure", lexeme);
+    return;
+  }
+}
+
+void Parser::ParseProcedureCall() {
+  ParseIdentifier();
+
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_PAREN_LEFT) {
+    EmitExpectedTokenError("(", lexeme);
+    return;
+  }
+
+  ParseArgumentList();
+
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_PAREN_RIGHT) {
+    EmitExpectedTokenError(")", lexeme);
     return;
   }
 }

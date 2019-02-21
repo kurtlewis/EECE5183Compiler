@@ -38,6 +38,10 @@ class Parser {
     //
     // Parse rules functions
     //
+
+    // Handle parsing argument list
+    void ParseArgumentList();
+
     // Handle parsing assignment statement
     void ParseAssignmentStatement();
 
@@ -46,6 +50,9 @@ class Parser {
 
     // Handle parsing declarationr ule
     void ParseDeclaration();
+    
+    // Handle Parsing expression
+    void ParseExpression();
 
     // Handle Parsing Identifier r ule
     void ParseIdentifier();
@@ -67,6 +74,9 @@ class Parser {
 
     // Handle parsing a procedure body
     void ParseProcedureBody();
+
+    // Handle parsing a procedure call
+    void ParseProcedureCall();
     
     // Handle parsing a procedure declaration
     void ParseProcedureDeclaration();
