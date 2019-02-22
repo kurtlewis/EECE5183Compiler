@@ -50,6 +50,9 @@ class Parser {
 
     // Handle parsing declarationr ule
     void ParseDeclaration();
+
+    // Hanlde parsing destination
+    void ParseDestination();
     
     // Handle Parsing expression
     void ParseExpression();

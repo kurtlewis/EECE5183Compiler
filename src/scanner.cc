@@ -267,6 +267,7 @@ std::map<std::string, kjlc::Token> Scanner::generate_token_mapping() {
   map[";"] = kjlc::T_SEMI_COLON;
   // operators
   map["&"] = kjlc::T_AND;
+  map[":="] = kjlc::T_COL_EQ;
   map["/"] = kjlc::T_DIV;
   map["=="] = kjlc::T_EQ;
   map[">"] = kjlc::T_GT;

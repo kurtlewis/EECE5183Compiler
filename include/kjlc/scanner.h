@@ -45,6 +45,7 @@ enum Token {
   T_SEMI_COLON, // ";"
   // operators
   T_AND, // "&"
+  T_COL_EQ, // ":="
   T_DIV, // "/"
   T_EQ, // "=="
   T_GT, // ">"

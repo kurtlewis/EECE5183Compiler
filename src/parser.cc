@@ -53,7 +53,15 @@ void Parser::ParseArgumentList() {
 }
 
 void Parser::ParseAssignmentStatement() {
-  // TODO
+  ParseDestination();
+
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token == T_COL_EQ) {
+    EmitExpectedTokenError(":=", lexeme);
+    return;
+  }
+
+  ParseExpression();
 }
 
 void Parser::ParseBound() {
@@ -95,6 +103,26 @@ void Parser::ParseDeclaration() {
     EmitParsingError("Could not parse declaration - expected a variable, "
                      "type, or procedure",
                      lexeme);
+  }
+}
+
+void Parser::ParseDestination() {
+  ParseIdentifier();
+
+  // peek to see if there are brackets
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_BRACK_LEFT) {
+    // consume token
+    lexeme = scanner_.GetNextLexeme();
+
+    ParseExpression();
+
+    // ending bracket is required
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token == T_BRACK_RIGHT) {
+      EmitExpectedTokenError("]", lexeme);
+      return;
+    }
   }
 }
 
