@@ -213,7 +213,56 @@ void Parser::ParseIfStatement() {
 }
 
 void Parser::ParseLoopStatement() {
-  // TODO
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_FOR) {
+    EmitExpectedTokenError("for", lexeme);
+    return;
+  }
+
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_PAREN_LEFT) {
+    EmitExpectedTokenError("(", lexeme);
+    return;
+  }
+
+  ParseAssignmentStatement();
+
+  lexeme  = scanner_.GetNextLexeme();
+  if (lexeme.token != T_SEMI_COLON) {
+    EmitExpectedTokenError(";", lexeme);
+    return;
+  }
+
+  ParseExpression();
+
+  if (lexeme.token != T_PAREN_RIGHT) {
+    EmitExpectedTokenError(")", lexeme);
+    return;
+  }
+
+  lexeme = scanner_.PeekNextLexeme();
+  while (lexeme.token != T_END) {
+    ParseStatement();
+
+    scanner_.GetNextLexeme();
+    if (lexeme.token != T_SEMI_COLON) {
+      EmitExpectedTokenError(";", lexeme);
+      return;
+    }
+    lexeme = scanner_.PeekNextLexeme();
+  }
+
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_END) {
+    EmitExpectedTokenError("end", lexeme);
+    return;
+  }
+
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_FOR) {
+    EmitExpectedTokenError("for", lexeme);
+    return;
+  }
 }
 
 void Parser::ParseNumber() {
@@ -425,7 +474,13 @@ void Parser::ParseProgramHeader() {
 }
 
 void Parser::ParseReturnStatement() {
-  // TODO
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_RETURN) {
+    EmitExpectedTokenError("return", lexeme);
+    return;
+  }
+
+  ParseExpression();
 }
 
 void Parser::ParseStatement() {
