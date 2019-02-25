@@ -33,6 +33,7 @@ enum Token {
   T_TYPE, // "type"
   T_VARIABLE, // "variable"
   // character tokens
+  T_BAR, // "|"
   T_BRACK_LEFT, // "["
   T_BRACK_RIGHT, // "]"
   T_COMMA, // ","

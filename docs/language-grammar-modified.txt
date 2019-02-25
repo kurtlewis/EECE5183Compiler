@@ -27,3 +27,8 @@ loop_statement => {for}
 return_statement => {return}
 
 ===== Right Recursive Rules =====
+* Rewritng grammars to make them right recursive
+<expression> => [_not_] <arithOp> <expression_tail>
+<expression_tail> => _&_ <arithOp> <expression_tail> |
+                     _|_ <arithOp> <expression_tail> |
+                     *empty*

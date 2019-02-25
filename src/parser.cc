@@ -64,6 +64,10 @@ void Parser::ParseAssignmentStatement() {
   ParseExpression();
 }
 
+void Parser::ParseArithOp() {
+  // TODO
+}
+
 void Parser::ParseBound() {
   // peek for '-'
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -126,8 +130,34 @@ void Parser::ParseDestination() {
   }
 }
 
+// this is a left recursive rule made right recursive
+// see `docs/language-gramamr-modified` for notes on the rules
 void Parser::ParseExpression() {
-  // TODO
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_NOT) {
+    // consume "not"
+    lexeme = scanner_.GetNextLexeme();
+  }
+
+  // parse arithOp
+  ParseArithOp();
+
+  ParseExpressionTail();
+}
+
+void Parser::ParseExpressionTail() {
+  // there is an lambda(empty) evaluation of this rule, so start with a peek
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_AND || lexeme.token == T_BAR) {
+    // consume the token, not empty evaluation
+    lexeme = scanner_.GetNextLexeme();
+    
+    // Next is arith op
+    ParseArithOp();
+
+    // Right recursive call
+    ParseExpressionTail();
+  }
 }
 
 void Parser::ParseIdentifier() {

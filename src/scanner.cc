@@ -255,6 +255,7 @@ std::map<std::string, kjlc::Token> Scanner::generate_token_mapping() {
   map["type"] = kjlc::T_TYPE;
   map["variable"] = kjlc::T_VARIABLE;
   // character tokens
+  map["|"] = kjlc::T_BAR;
   map["["] = kjlc::T_BRACK_LEFT;
   map["]"] = kjlc::T_BRACK_RIGHT;
   map[","] = kjlc::T_COMMA;
