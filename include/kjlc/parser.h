@@ -78,6 +78,9 @@ class Parser {
     // Handle parsing loop statement
     void ParseLoopStatement();
 
+    // Handle parsing name
+    void ParseName();
+
     // Handle parsing number
     void ParseNumber();
 
@@ -116,6 +119,9 @@ class Parser {
     
     // Handle parsing Statement
     void ParseStatement();
+
+    // Handle parsings tring
+    void ParseString();
 
     // Handle parsing term
     void ParseTerm();

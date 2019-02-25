@@ -180,7 +180,52 @@ void Parser::ParseExpressionTail() {
 }
 
 void Parser::ParseFactor() {
-  // TODO
+  // Need to use first sets to determine evaluation, so peek
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_PAREN_LEFT) {
+    // ( <expression> ) evaluation
+    // consume paren
+    lexeme = scanner_.GetNextLexeme();
+    
+    ParseExpression();
+
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token != T_PAREN_RIGHT) {
+      EmitExpectedTokenError(")", lexeme);
+      return;
+    }
+  } else if (lexeme.token == T_ID) {
+    // TODO
+    // could be a ParseProcedureCall()
+    // or a ParseName();
+  } else if (lexeme.token == T_MINUS) {
+    // consume T_MINUS
+    lexeme = scanner_.GetNextLexeme();
+    // Parse Name or Number depending on next token
+    lexeme = scanner_.PeekNextLexeme();
+    if (lexeme.token == T_INT_LITERAL || lexeme.token == T_FLOAT_LITERAL) {
+      ParseNumber();
+    } else if (lexeme.token == T_ID) {
+      ParseName();
+    } else {
+      EmitParsingError("Expected numeric literal or identifier reference",
+                      lexeme);
+      return;
+    }
+  } else if (lexeme.token == T_INT_LITERAL || lexeme.token == T_FLOAT_LITERAL) {
+    ParseNumber();
+  } else if (lexeme.token == T_STRING_LITERAL) {
+    ParseString();
+  } else if (lexeme.token == T_TRUE) {
+    // consume true
+    lexeme = scanner_.GetNextLexeme();
+  } else if (lexeme.token == T_FALSE) {
+    // consume false
+    lexeme = scanner_.GetNextLexeme();
+  } else {
+    EmitParsingError("Exected valid factor", lexeme);
+    return;
+  }
 }
 
 void Parser::ParseIdentifier() {
@@ -206,7 +251,7 @@ void Parser::ParseIfStatement() {
   }
 
   // handle parsing the expression
-  //ReturnType ret = ParseExpression();
+  ParseExpression();
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_RIGHT) {
@@ -224,7 +269,7 @@ void Parser::ParseIfStatement() {
   // it is required that there is at least one statement
   while (lexeme.token != T_ELSE && lexeme.token != T_END) {
     // Handle parsing the statement
-    // ReturnType ret = ParseStatement();
+    ParseStatement();
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       EmitExpectedTokenError(";", lexeme);
@@ -315,6 +360,25 @@ void Parser::ParseLoopStatement() {
   if (lexeme.token != T_FOR) {
     EmitExpectedTokenError("for", lexeme);
     return;
+  }
+}
+
+void Parser::ParseName() {
+  ParseIdentifier();
+
+  // possible [ <expression> ]
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_BRACK_LEFT) {
+    // consume "["
+    lexeme = scanner_.GetNextLexeme();
+
+    ParseExpression();
+
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token != T_BRACK_RIGHT) {
+      EmitExpectedTokenError("]", lexeme);
+      return;
+    }
   }
 }
 
@@ -421,8 +485,7 @@ void Parser::ParseProcedureHeader() {
   if (lexeme.token != T_PROCEDURE) {
     EmitExpectedTokenError("procedure", lexeme);
     return;
-  }
-  
+  } 
   // read the identifier
   ParseIdentifier();
 
@@ -577,6 +640,14 @@ void Parser::ParseStatement() {
   } else {
     EmitParsingError("Expected identifier, if, for, or return", lexeme);
     return;
+  }
+}
+
+void Parser::ParseString() {
+  // consume the string token
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_STRING_LITERAL) {
+    EmitParsingError("Expected string literal", lexeme);
   }
 }
 

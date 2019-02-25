@@ -15,16 +15,27 @@ specification.
 ===== First Sets =====
 * The items in the sets here are the first appearing terminals for all possible
 * evaluations of the rule on the left.
+* The notation here is kind of my own design
+* Term on the left = rule I'm calculating the first set for
+* Set on the right, the first set
+* Values in "<>" are other rules which doesn't make sense without the context
+* that I can identify some things as identifiers and strings in the lexer,
+* so I can just know what those are
 procedure_declaration => {procedure}
 variable_declaration => {variable}
 type_declaration => {type}
 parameter_list => {variable}
 parameter => {variable}
+procedure_call => {<identifier>}
 assignment_statement => {<identifier>}
 destination => {<identifier>}
 if_statement => {if}
 loop_statement => {for}
 return_statement => {return}
+name => {<identifier>}
+number => {<number>}
+string => {<string>}
+
 
 ===== Right Recursive Rules =====
 * Rewritng grammars to make them right recursive
