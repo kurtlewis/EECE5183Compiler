@@ -64,8 +64,27 @@ void Parser::ParseAssignmentStatement() {
   ParseExpression();
 }
 
+// this is a left recursive rule that has been modified to be right recursive
+// see docs/language-grammar-modified.txt for more information
 void Parser::ParseArithOp() {
-  // TODO
+  ParseRelation();
+
+  ParseArithOpTail();
+}
+
+// because this is a left recursive rule made right recursive, it is necessary
+// to support empty evaluations
+void Parser::ParseArithOpTail() {
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_PLUS || lexeme.token == T_MINUS) {
+    // consume the "+" or "-"
+    lexeme = scanner_.GetNextLexeme();
+
+    ParseRelation();
+
+    // recursive call
+    ParseArithOpTail();
+  }
 }
 
 void Parser::ParseBound() {
@@ -503,6 +522,31 @@ void Parser::ParseProgramHeader() {
   return;
 }
 
+// this is a left recursive rule made right recursive
+// see docs for full write-out of rule
+void Parser::ParseRelation() {
+  ParseTerm();
+
+  ParseRelationTail();
+}
+
+// Right recursive portion of the rule
+void Parser::ParseRelationTail() {
+  // Need to allow for empty evaluation so peek
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_LT || lexeme.token == T_GT_EQ ||
+      lexeme.token == T_LT_EQ || lexeme.token == T_GT ||
+      lexeme.token == T_EQ || lexeme.token == T_NEQ) {
+    // consume the token
+    lexeme = scanner_.GetNextLexeme();
+
+    ParseTerm();
+
+    // Recursive call
+    ParseRelationTail();
+  }
+}
+
 void Parser::ParseReturnStatement() {
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_RETURN) {
@@ -530,6 +574,10 @@ void Parser::ParseStatement() {
     EmitParsingError("Expected identifier, if, for, or return", lexeme);
     return;
   }
+}
+
+void Parser::ParseTerm() {
+  // TODO
 }
 
 void Parser::ParseTypeDeclaration() {

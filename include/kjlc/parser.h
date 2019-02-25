@@ -42,8 +42,11 @@ class Parser {
     // Handle parsing argument list
     void ParseArgumentList();
 
-    // hadnle parsing arithmetic operators
+    // handle parsing arithmetic operators
     void ParseArithOp();
+
+    // handle parsing the right recursive ArithOp rule
+    void ParseArithOpTail();
 
     // Handle parsing assignment statement
     void ParseAssignmentStatement();
@@ -99,11 +102,20 @@ class Parser {
     // Parse the Program Header Rule
     void ParseProgramHeader();
 
+    // Handle parsing relation rule
+    void ParseRelation();
+
+    // Handle parsing right recursive Relation rule
+    void ParseRelationTail();
+
     // Handle parsing return statements
     void ParseReturnStatement();
     
     // Handle parsing Statement
     void ParseStatement();
+
+    // Handle parsing term
+    void ParseTerm();
 
     // Parse Type Declaration
     void ParseTypeDeclaration();

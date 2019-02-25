@@ -32,3 +32,15 @@ return_statement => {return}
 <expression_tail> => _&_ <arithOp> <expression_tail> |
                      _|_ <arithOp> <expression_tail> |
                      *empty*
+<arithOp> => <relation> <arithOp_tail>
+<arithOp_tail> => _+_ <relation> <arithOp_tail> |
+                  _-_ <relation> <arithOp_tail> |
+                  *empty*
+<relation> => <term> <relation_tail>
+<relation_tail> => _<_ <term> <relation_tail> |
+                   _>=_ <term> <relation_tail> |
+                   _<=_ <term> <relation_tail> |
+                   _>_ <term> <relation_tail> |
+                   _==_ <term> <relation_tail> |
+                   _!=_ <term> <relation_tail> |
+                   *empty*
