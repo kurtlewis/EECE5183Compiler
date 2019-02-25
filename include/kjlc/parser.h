@@ -66,7 +66,10 @@ class Parser {
     // Handle right recursive part of ParseExpression
     void ParseExpressionTail();
 
-    // Handle Parsing Identifier r ule
+    // Handle parsing factor rule
+    void ParseFactor();
+
+    // Handle Parsing Identifier rule
     void ParseIdentifier();
 
     // Handle parsing if statement
@@ -116,6 +119,9 @@ class Parser {
 
     // Handle parsing term
     void ParseTerm();
+    
+    // handle parsing right recursive term
+    void ParseTermTail();
 
     // Parse Type Declaration
     void ParseTypeDeclaration();

@@ -44,3 +44,8 @@ return_statement => {return}
                    _==_ <term> <relation_tail> |
                    _!=_ <term> <relation_tail> |
                    *empty*
+<term> => <factor> <term_tail>
+<term_tail> => _*_ <factor> <term_tail> |
+               _/_ <factor> <term_tail |
+               *empty*
+

@@ -179,6 +179,10 @@ void Parser::ParseExpressionTail() {
   }
 }
 
+void Parser::ParseFactor() {
+  // TODO
+}
+
 void Parser::ParseIdentifier() {
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_ID) {
@@ -576,8 +580,25 @@ void Parser::ParseStatement() {
   }
 }
 
+// a left recursive rule made right recursive. See docs for writeout
 void Parser::ParseTerm() {
-  // TODO
+  ParseFactor();
+
+  ParseTermTail();
+}
+
+// Right recursive version of ParseTerm
+void Parser::ParseTermTail() {
+  // peek because there can be an empty evaluation
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_DIV || lexeme.token == T_MULT) {
+    // consume the token
+    lexeme = scanner_.GetNextLexeme();
+
+    ParseFactor();
+
+    ParseTermTail();
+  }
 }
 
 void Parser::ParseTypeDeclaration() {
