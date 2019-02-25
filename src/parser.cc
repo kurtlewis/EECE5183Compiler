@@ -383,7 +383,12 @@ void Parser::ParseName() {
 }
 
 void Parser::ParseNumber() {
-  // TODO
+  // consume number token
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_INT_LITERAL && lexeme.token != T_FLOAT_LITERAL) {
+    EmitParsingError("Expected numeric literal", lexeme);
+    return;
+  }
 }
 
 void Parser::ParseParameter() {
@@ -518,8 +523,7 @@ void Parser::ParseProgramBody() {
   Lexeme lexeme = scanner_.PeekNextLexeme();
   while (lexeme.token != T_BEGIN) {
     // parse declaration
-    // TODO: declaration parse
-    // retType ret = ParseDeclaration();
+    ParseDeclaration();
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       EmitExpectedTokenError(";", lexeme);
@@ -539,8 +543,7 @@ void Parser::ParseProgramBody() {
   lexeme = scanner_.PeekNextLexeme();
   while (lexeme.token != T_END) {
     // parse statements
-    // TODO: statement parse
-    // retType ret = ParseStatement();
+    ParseStatement();
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       EmitExpectedTokenError(";", lexeme);
