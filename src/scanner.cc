@@ -56,9 +56,6 @@ Lexeme Scanner::PeekNextLexeme() {
 kjlc::Lexeme Scanner::ScanNextLexeme() {
   // create return struct
   struct kjlc::Lexeme lexeme;
-  // mark the line and column the token starts on
-  lexeme.line = this->line_;
-  lexeme.column = this->column_;
 
   // pull the char
   char ch = ScanNextChar();
@@ -71,6 +68,11 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
   while (IsWhiteSpace(ch) && !this->file_complete_) {
     ch = ScanNextChar();
   }
+
+ 
+  // mark the line and column the token starts on now that we have its start
+  lexeme.line = this->line_;
+  lexeme.column = this->column_;
 
   //
   // handle possible comments

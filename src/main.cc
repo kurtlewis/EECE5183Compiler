@@ -45,6 +45,7 @@ int main(int argc, char* argv[]) {
   } else {
     // run the whole compiler
     kjlc::Parser parser(argv[1]);
+    parser.ParseProgram();
 
   }
   return 0;
