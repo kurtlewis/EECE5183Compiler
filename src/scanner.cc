@@ -72,7 +72,8 @@ kjlc::Lexeme Scanner::ScanNextLexeme() {
  
   // mark the line and column the token starts on now that we have its start
   lexeme.line = this->line_;
-  lexeme.column = this->column_;
+  // subtract 1 because the start is the column we just read
+  lexeme.column = this->column_ - 1;
 
   //
   // handle possible comments
@@ -320,7 +321,7 @@ char Scanner::PeekNextChar() {
 }
 
 bool Scanner::IsWhiteSpace(char ch) {
-  return (ch == '\n' || ch == ' ' || ch == '\t');
+  return (ch == '\n' || ch == ' ' || ch == '\t' || ch == '\r');
 }
 
 bool Scanner::IsValidWordChar(char ch, bool apply_first_char_rules) {

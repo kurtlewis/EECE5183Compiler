@@ -145,7 +145,7 @@ void Parser::ParseDestination() {
 
     // ending bracket is required if it was opened
     lexeme = scanner_.GetNextLexeme();
-    if (lexeme.token == T_BRACK_RIGHT) {
+    if (lexeme.token != T_BRACK_RIGHT) {
       EmitExpectedTokenError("]", lexeme);
       return;
     }
@@ -350,6 +350,7 @@ void Parser::ParseLoopStatement() {
 
   ParseExpression();
 
+  lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_RIGHT) {
     EmitExpectedTokenError(")", lexeme);
     return;
@@ -361,7 +362,7 @@ void Parser::ParseLoopStatement() {
     ParseStatement();
 
     // statements must be followed by semi-colon
-    scanner_.GetNextLexeme();
+    lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       EmitExpectedTokenError(";", lexeme);
       return;
