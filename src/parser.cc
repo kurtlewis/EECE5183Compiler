@@ -195,9 +195,7 @@ void Parser::ParseFactor() {
       return;
     }
   } else if (lexeme.token == T_ID) {
-    // TODO
-    // could be a ParseProcedureCall()
-    // or a ParseName();
+    ParseReference();
   } else if (lexeme.token == T_MINUS) {
     // consume T_MINUS
     lexeme = scanner_.GetNextLexeme();
@@ -206,7 +204,7 @@ void Parser::ParseFactor() {
     if (lexeme.token == T_INT_LITERAL || lexeme.token == T_FLOAT_LITERAL) {
       ParseNumber();
     } else if (lexeme.token == T_ID) {
-      ParseName();
+      ParseReference();
     } else {
       EmitParsingError("Expected numeric literal or identifier reference",
                       lexeme);
@@ -363,25 +361,6 @@ void Parser::ParseLoopStatement() {
   }
 }
 
-void Parser::ParseName() {
-  ParseIdentifier();
-
-  // possible [ <expression> ]
-  Lexeme lexeme = scanner_.PeekNextLexeme();
-  if (lexeme.token == T_BRACK_LEFT) {
-    // consume "["
-    lexeme = scanner_.GetNextLexeme();
-
-    ParseExpression();
-
-    lexeme = scanner_.GetNextLexeme();
-    if (lexeme.token != T_BRACK_RIGHT) {
-      EmitExpectedTokenError("]", lexeme);
-      return;
-    }
-  }
-}
-
 void Parser::ParseNumber() {
   // consume number token
   Lexeme lexeme = scanner_.GetNextLexeme();
@@ -457,24 +436,6 @@ void Parser::ParseProcedureBody() {
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PROCEDURE) {
     EmitExpectedTokenError("procedure", lexeme);
-    return;
-  }
-}
-
-void Parser::ParseProcedureCall() {
-  ParseIdentifier();
-
-  Lexeme lexeme = scanner_.GetNextLexeme();
-  if (lexeme.token != T_PAREN_LEFT) {
-    EmitExpectedTokenError("(", lexeme);
-    return;
-  }
-
-  ParseArgumentList();
-
-  lexeme = scanner_.GetNextLexeme();
-  if (lexeme.token != T_PAREN_RIGHT) {
-    EmitExpectedTokenError(")", lexeme);
     return;
   }
 }
@@ -590,6 +551,55 @@ void Parser::ParseProgramHeader() {
 
   // successful parse
   return;
+}
+
+// this rule replaces ParseName and ParseProcedureCall
+void Parser::ParseReference() {
+  // could be a procedure call or name
+  // both start with identifiers
+  ParseIdentifier();
+
+  // this is guaranteed to correctly identify it as a name or procedure call
+  // because parens are needed for procedure calls
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_PAREN_LEFT) {
+    // It is a procedure call
+    // consume left paren
+    lexeme = scanner_.GetNextLexeme();
+
+    // optionally ParseArgumentList
+    // need to peek next token and see if it's in the (quite large) first set
+    // for argument_list. See docs for full first set
+    lexeme = scanner_.PeekNextLexeme();
+    if (lexeme.token == T_NOT || lexeme.token == T_PAREN_LEFT ||
+        lexeme.token == T_MINUS || lexeme.token == T_INT_LITERAL ||
+        lexeme.token == T_FLOAT_LITERAL || lexeme.token == T_ID ||
+        lexeme.token == T_STRING_LITERAL || lexeme.token == T_TRUE ||
+        lexeme.token == T_FALSE) {
+      // it is an argument!
+      ParseArgumentList();
+    }
+
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token != T_PAREN_RIGHT) {
+      EmitExpectedTokenError(")", lexeme);
+      return;
+    }
+  } else if (lexeme.token == T_BRACK_LEFT) {
+    // it's a name reference
+    // consume left bracket
+    lexeme = scanner_.GetNextLexeme();
+
+    ParseExpression();
+
+    lexeme = scanner_.GetNextLexeme();
+    if (lexeme.token != T_BRACK_RIGHT) {
+      EmitExpectedTokenError("]", lexeme);
+      return;
+    }
+  } else {
+    // it's a name, but without the [ <expression> ]
+  }
 }
 
 // this is a left recursive rule made right recursive

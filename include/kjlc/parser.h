@@ -78,9 +78,6 @@ class Parser {
     // Handle parsing loop statement
     void ParseLoopStatement();
 
-    // Handle parsing name
-    void ParseName();
-
     // Handle parsing number
     void ParseNumber();
 
@@ -93,9 +90,6 @@ class Parser {
     // Handle parsing a procedure body
     void ParseProcedureBody();
 
-    // Handle parsing a procedure call
-    void ParseProcedureCall();
-    
     // Handle parsing a procedure declaration
     void ParseProcedureDeclaration();
 
@@ -107,6 +101,9 @@ class Parser {
 
     // Parse the Program Header Rule
     void ParseProgramHeader();
+    
+    // Handle parsing references. Combination of <procedure_call> and <name>
+    void ParseReference();
 
     // Handle parsing relation rule
     void ParseRelation();

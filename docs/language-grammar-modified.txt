@@ -32,7 +32,13 @@ destination => {<identifier>}
 if_statement => {if}
 loop_statement => {for}
 return_statement => {return}
+expression => {not, <arithOp>}
+arithOp => {<relation>}
+relation => {<term>}
+term => {<factor>}
+factor => {(, <identifier>, -, <number>, <string>, true, false}
 name => {<identifier>}
+argument_list => {<expression>}
 number => {<number>}
 string => {<string>}
 
@@ -59,4 +65,18 @@ string => {<string>}
 <term_tail> => _*_ <factor> <term_tail> |
                _/_ <factor> <term_tail |
                *empty*
+
+
+===== Left Factoring =====
+* Rewriting grammar rules to make the grammar LL(1) *
+<procedure_call> and <name> are both only called from <factor>. They both have
+a first set of <identifier> which makes the grammar in it's original form,
+not LL(1).
+
+The solution here is to do a new rule which handles both of them. I'm going to
+call it <reference>. I will be removing ParseName and ParseProcedureCall
+and replacing them with ParseReference
+
+<reference> => <identifier> _(_ [ <argument_list> ] _)_ |
+               <identifier> [ _[_ <expression _]_ ]
 
