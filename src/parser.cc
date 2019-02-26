@@ -43,11 +43,13 @@ void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
 void Parser::ParseArgumentList() {
   ParseExpression();
 
-  // more arguments are optional
+  // more arguments are optional and indicated by a comma
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_COMMA) {
     // consume comma
     lexeme = scanner_.GetNextLexeme();
+
+    // parse the next arguments recursively
     ParseArgumentList();
   }
 }
@@ -56,7 +58,7 @@ void Parser::ParseAssignmentStatement() {
   ParseDestination();
 
   Lexeme lexeme = scanner_.GetNextLexeme();
-  if (lexeme.token == T_COL_EQ) {
+  if (lexeme.token != T_COL_EQ) {
     EmitExpectedTokenError(":=", lexeme);
     return;
   }
@@ -91,7 +93,7 @@ void Parser::ParseBound() {
   // peek for '-'
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_MINUS) {
-    // read the dash off the input 
+    // consume the dash 
     lexeme = scanner_.GetNextLexeme();
   }
 
@@ -104,7 +106,7 @@ void Parser::ParseDeclaration() {
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_GLOBAL) {
     // there's a global keyword
-    // scan it for real
+    // consume the token 
     lexeme = scanner_.GetNextLexeme();
     // TODO: Probably do things with this in the symbol table
     
@@ -126,6 +128,7 @@ void Parser::ParseDeclaration() {
     EmitParsingError("Could not parse declaration - expected a variable, "
                      "type, or procedure",
                      lexeme);
+    return;
   }
 }
 
@@ -140,7 +143,7 @@ void Parser::ParseDestination() {
 
     ParseExpression();
 
-    // ending bracket is required
+    // ending bracket is required if it was opened
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token == T_BRACK_RIGHT) {
       EmitExpectedTokenError("]", lexeme);
@@ -189,21 +192,26 @@ void Parser::ParseFactor() {
     
     ParseExpression();
 
+    // closing paren is required
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_PAREN_RIGHT) {
       EmitExpectedTokenError(")", lexeme);
       return;
     }
   } else if (lexeme.token == T_ID) {
+    // could be a procedure call or name reference
     ParseReference();
   } else if (lexeme.token == T_MINUS) {
     // consume T_MINUS
     lexeme = scanner_.GetNextLexeme();
+
     // Parse Name or Number depending on next token
     lexeme = scanner_.PeekNextLexeme();
     if (lexeme.token == T_INT_LITERAL || lexeme.token == T_FLOAT_LITERAL) {
+      // number
       ParseNumber();
     } else if (lexeme.token == T_ID) {
+      // name reference
       ParseReference();
     } else {
       EmitParsingError("Expected numeric literal or identifier reference",
@@ -264,15 +272,20 @@ void Parser::ParseIfStatement() {
   }
 
   // only read statements until we peek a T_ELSE or T_END
-  // it is required that there is at least one statement
+  // it is required that there is at least one statement so don't peek
+  // ahead of time. This way an error will be thrown if there are no statements
   while (lexeme.token != T_ELSE && lexeme.token != T_END) {
     // Handle parsing the statement
     ParseStatement();
+    
+    // all statements are followed by semi colon
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       EmitExpectedTokenError(";", lexeme);
       return;
     }
+    
+    // Peek to know if its another statement or an else or end
     lexeme = scanner_.PeekNextLexeme();
   }
 
@@ -280,17 +293,23 @@ void Parser::ParseIfStatement() {
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token == T_ELSE) {
     // handle else statement
+    // again, at least one statement is required so don't peek ahead of time
+    // because it would let the user get away with no statements
     while (lexeme.token != T_END) {
       // handle parsing the statements
-      // ReturnType ret = ParseStatement();
+      ParseStatement();
+
+      // semi colon is required
       lexeme = scanner_.GetNextLexeme();
       if (lexeme.token != T_SEMI_COLON) {
         EmitExpectedTokenError(";", lexeme);
         return;
       }
+      // peek to see if its another statement or end of else
       lexeme = scanner_.PeekNextLexeme();
     }
-    // read the peeeked lexeme
+    // consume the token athat was only peeked so that end can procede
+    // as if else wasn't there
     lexeme = scanner_.GetNextLexeme();
   }
 
@@ -323,7 +342,7 @@ void Parser::ParseLoopStatement() {
 
   ParseAssignmentStatement();
 
-  lexeme  = scanner_.GetNextLexeme();
+  lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_SEMI_COLON) {
     EmitExpectedTokenError(";", lexeme);
     return;
@@ -336,10 +355,12 @@ void Parser::ParseLoopStatement() {
     return;
   }
 
+  // no statements are required, so peek before loop to allow for no statements
   lexeme = scanner_.PeekNextLexeme();
   while (lexeme.token != T_END) {
     ParseStatement();
 
+    // statements must be followed by semi-colon
     scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       EmitExpectedTokenError(";", lexeme);
@@ -348,6 +369,7 @@ void Parser::ParseLoopStatement() {
     lexeme = scanner_.PeekNextLexeme();
   }
 
+  // consume the end for real
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_END) {
     EmitExpectedTokenError("end", lexeme);
@@ -380,8 +402,9 @@ void Parser::ParseParameterList() {
   // check to see if there are multiple parameters - indicated by ','
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_COMMA) {
-    // read the lexeme for real
+    // consume the comma 
     lexeme = scanner_.GetNextLexeme();
+
     // recursive call to read more parameters
     ParseParameterList();
   }
@@ -393,7 +416,8 @@ void Parser::ParseProcedureBody() {
   while (lexeme.token != T_BEGIN) {
     // There are declarations
     ParseDeclaration();
-    // Parse ';'
+    
+    // Parse following ';'
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       EmitExpectedTokenError(";", lexeme);
@@ -411,6 +435,7 @@ void Parser::ParseProcedureBody() {
   }
 
   // Parse statements until 'end' is found
+  // no statements are allowed, so peek before loop
   lexeme = scanner_.PeekNextLexeme();
   while (lexeme.token != T_END) {
     // there are statement(s) to read
@@ -452,10 +477,18 @@ void Parser::ParseProcedureHeader() {
     EmitExpectedTokenError("procedure", lexeme);
     return;
   } 
+
   // read the identifier
   ParseIdentifier();
 
-  // type mark - todo
+  // colon required
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_COLON) {
+    EmitExpectedTokenError(":", lexeme);
+    return;
+  }
+
+  // type mark
   ParseTypeMark();
 
   // read left paren
@@ -465,7 +498,7 @@ void Parser::ParseProcedureHeader() {
     return;
   }
 
-  // peek to see if there is an optional parameter list
+  // peek to see if there is an optional parameter list using it's FIRST set
   lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_VARIABLE) {
     // read parameter list
@@ -481,15 +514,19 @@ void Parser::ParseProcedureHeader() {
 
 void Parser::ParseProgramBody() {
   // Parse leading declarations
+  // none are required so peek first
   Lexeme lexeme = scanner_.PeekNextLexeme();
   while (lexeme.token != T_BEGIN) {
     // parse declaration
     ParseDeclaration();
+
+    // must be followed by semi-colon
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       EmitExpectedTokenError(";", lexeme);
       return;
     }
+    // peek to see if declarations continue
     lexeme = scanner_.PeekNextLexeme();
   }
 
@@ -501,15 +538,19 @@ void Parser::ParseProgramBody() {
   }
 
   // parse statements
+  // none required so peek first
   lexeme = scanner_.PeekNextLexeme();
   while (lexeme.token != T_END) {
     // parse statements
     ParseStatement();
+
+    // must be followed by semi-colon
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_SEMI_COLON) {
       EmitExpectedTokenError(";", lexeme);
       return;
     }
+    // peek to see if statements continue
     lexeme = scanner_.PeekNextLexeme();
   }
 
@@ -569,7 +610,7 @@ void Parser::ParseReference() {
 
     // optionally ParseArgumentList
     // need to peek next token and see if it's in the (quite large) first set
-    // for argument_list. See docs for full first set
+    // for argument_list. See docs for derivation of first set 
     lexeme = scanner_.PeekNextLexeme();
     if (lexeme.token == T_NOT || lexeme.token == T_PAREN_LEFT ||
         lexeme.token == T_MINUS || lexeme.token == T_INT_LITERAL ||
@@ -733,8 +774,10 @@ void Parser::ParseTypeMark() {
       // always at least one identifier
       ParseIdentifier();
 
+      // can be multiple identifiers, indicated by comma before next identifier
       lexeme = scanner_.PeekNextLexeme();
       while (lexeme.token == T_COMMA) {
+        // check comma - this is redundant
         lexeme = scanner_.GetNextLexeme();
         if (lexeme.token != T_COMMA) {
           EmitExpectedTokenError(",", lexeme);
@@ -744,6 +787,8 @@ void Parser::ParseTypeMark() {
         // there's going to be another identifier
         ParseIdentifier();
 
+        // peek for next token to see if more identifiers
+        lexeme = scanner_.PeekNextLexeme();
       }
 
       lexeme = scanner_.GetNextLexeme();
@@ -770,14 +815,19 @@ void Parser::ParseVariableDeclaration() {
 
   ParseIdentifier();
 
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_COLON) {
+    EmitExpectedTokenError(":", lexeme);
+  }
+
   ParseTypeMark();
 
   // peek to look for optional bound
   lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_BRACK_LEFT) {
     // there are bounds
+    // consume left bracket
     lexeme = scanner_.GetNextLexeme();
-    // we already know it's a left bracket
 
     ParseBound();
 

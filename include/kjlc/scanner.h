@@ -36,6 +36,7 @@ enum Token {
   T_BAR, // "|"
   T_BRACK_LEFT, // "["
   T_BRACK_RIGHT, // "]"
+  T_COLON, // ":"
   T_COMMA, // ","
   T_CURLY_LEFT, // "{"
   T_CURLY_RIGHT, // "}"
