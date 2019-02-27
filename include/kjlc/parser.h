@@ -28,12 +28,20 @@ class Parser {
     Scanner scanner_;
     // True if error state
     bool error_state_;
+    // true if parse should end
+    bool end_parse_;
 
     // Generic Error Handling function
     void EmitParsingError(std::string message, Lexeme lexeme);
 
     // Error for missing token
     void EmitExpectedTokenError(std::string expected_token, Lexeme lexeme);
+
+    // consumes tokens until the next one is in the tokens list
+    // does not consume the token that is in the tokens list
+    // should only be called in an error_state_ but will handle not being in one
+    // always considers T_PERIOD for end of file
+    void ResyncOnTokens(Token tokens[], int tokens_length);
 
     //
     // Parse rules functions

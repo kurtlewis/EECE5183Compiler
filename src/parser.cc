@@ -13,7 +13,8 @@
 namespace kjlc {
 
 // Default Constructor
-Parser::Parser(std::string filename) : scanner_(filename), error_state_(false) {
+Parser::Parser(std::string filename)
+    : scanner_(filename), error_state_(false), end_parse_(false) {
 
 }
 
@@ -28,16 +29,54 @@ void Parser::ParseProgram() {
 }
 
 void Parser::EmitParsingError(std::string message, Lexeme lexeme) {
+  // don't output if still in an error_state_
+  if (error_state_) {
+    return;
+  }
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
   std::cout << " - " << message << std::endl;
   error_state_ = true;
 }
 
 void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
+  // don't output if still in an error_state_
+  if (error_state_) {
+    return;
+  }
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
   std::cout << " - " << "Expected token '" << expected_token << "'";
   std::cout << std::endl;
   error_state_ = true;
+}
+
+
+// consumes tokens until the next token is in the tokens list or a T_PERIOD
+void Parser::ResyncOnTokens(Token tokens[], int tokens_length) {
+  // by nature of getting here, error_state_ should be true
+  // set it anyways since it's used as an exit condition
+  error_state_ = true;
+  Lexeme lexeme;
+  while (error_state_) {
+    lexeme = scanner_.PeekNextLexeme();
+    for (int idx = 0; idx < tokens_length; idx++) {
+      if (lexeme.token == tokens[idx]) {
+        error_state_ = false;
+        break;
+      }
+    }
+    if (lexeme.token == T_PERIOD) {
+      // stop consuming,
+      error_state_ = false;
+      // period denotes either the end of file or a marker that indicates the
+      // end of file. Regardless, our parse is over even if there are more
+      // tokens
+      end_parse_ = true;
+    } else {
+      // consume the lexeme
+      lexeme = scanner_.GetNextLexeme();
+    }
+  }
+
 }
 
 void Parser::ParseArgumentList() {
@@ -277,12 +316,31 @@ void Parser::ParseIfStatement() {
   while (lexeme.token != T_ELSE && lexeme.token != T_END) {
     // Handle parsing the statement
     ParseStatement();
-    
-    // all statements are followed by semi colon
-    lexeme = scanner_.GetNextLexeme();
-    if (lexeme.token != T_SEMI_COLON) {
-      EmitExpectedTokenError(";", lexeme);
-      return;
+
+    if (error_state_) {
+      // there was an error down the tree
+      Token tokens[] = {T_SEMI_COLON, T_ELSE, T_END};
+      ResyncOnTokens(tokens, 3);
+
+      // check to see if parse should be ended
+      if (end_parse_) {
+        return;
+      }
+
+      // if recovering from an error, we don't consider the semi colon mandatory
+      // but, read it if it's the next token so the next statement can be read
+      // correctly
+      lexeme = scanner_.PeekNextLexeme();
+      if (lexeme.token == T_SEMI_COLON) {
+        lexeme = scanner_.GetNextLexeme();
+      }
+    } else {
+      // all statements are followed by semi colon
+      lexeme = scanner_.GetNextLexeme();
+      if (lexeme.token != T_SEMI_COLON) {
+        EmitExpectedTokenError(";", lexeme);
+        return;
+      }
     }
     
     // Peek to know if its another statement or an else or end
