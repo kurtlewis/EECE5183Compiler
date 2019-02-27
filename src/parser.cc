@@ -13,8 +13,11 @@
 namespace kjlc {
 
 // Default Constructor
-Parser::Parser(std::string filename)
-    : scanner_(filename), error_state_(false), end_parse_(false) {
+Parser::Parser(std::string filename, bool debug)
+    : scanner_(filename),
+      error_state_(false),
+      end_parse_(false),
+      debug_(debug) {
 
 }
 
@@ -26,6 +29,12 @@ Parser::~Parser() {
 void Parser::ParseProgram() {
   ParseProgramHeader();
   ParseProgramBody();
+}
+
+void Parser::DebugPrint(std::string parse_function) {
+  if (debug_) {
+    std::cout << parse_function << std::endl;
+  }
 }
 
 void Parser::EmitParsingError(std::string message, Lexeme lexeme) {
@@ -52,6 +61,7 @@ void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
 
 // consumes tokens until the next token is in the tokens list or a T_PERIOD
 void Parser::ResyncOnTokens(Token tokens[], int tokens_length) {
+  DebugPrint("ResyncOnTokens");
   // by nature of getting here, error_state_ should be true
   // set it anyways since it's used as an exit condition
   error_state_ = true;
@@ -80,6 +90,8 @@ void Parser::ResyncOnTokens(Token tokens[], int tokens_length) {
 }
 
 void Parser::ParseArgumentList() {
+  DebugPrint("ArgumentList");
+
   ParseExpression();
 
   // more arguments are optional and indicated by a comma
@@ -94,6 +106,8 @@ void Parser::ParseArgumentList() {
 }
 
 void Parser::ParseAssignmentStatement() {
+  DebugPrint("AssignmentStatement");
+
   ParseDestination();
 
   Lexeme lexeme = scanner_.GetNextLexeme();
@@ -108,6 +122,8 @@ void Parser::ParseAssignmentStatement() {
 // this is a left recursive rule that has been modified to be right recursive
 // see docs/language-grammar-modified.txt for more information
 void Parser::ParseArithOp() {
+  DebugPrint("ArithOp");
+
   ParseRelation();
 
   ParseArithOpTail();
@@ -116,6 +132,8 @@ void Parser::ParseArithOp() {
 // because this is a left recursive rule made right recursive, it is necessary
 // to support empty evaluations
 void Parser::ParseArithOpTail() {
+  DebugPrint("ArithOpTail");
+
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_PLUS || lexeme.token == T_MINUS) {
     // consume the "+" or "-"
@@ -129,6 +147,8 @@ void Parser::ParseArithOpTail() {
 }
 
 void Parser::ParseBound() {
+  DebugPrint("Bound");
+
   // peek for '-'
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_MINUS) {
@@ -140,6 +160,8 @@ void Parser::ParseBound() {
 }
 
 void Parser::ParseDeclaration() {
+  DebugPrint("Declaration");
+
   // peek because the first terminal could be a number of things, some of
   // which involve reaching down rule evaluations
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -172,6 +194,8 @@ void Parser::ParseDeclaration() {
 }
 
 void Parser::ParseDestination() {
+  DebugPrint("Destination");
+
   ParseIdentifier();
 
   // peek to see if there are brackets
@@ -194,6 +218,8 @@ void Parser::ParseDestination() {
 // this is a left recursive rule made right recursive
 // see `docs/language-gramamr-modified` for notes on the rules
 void Parser::ParseExpression() {
+  DebugPrint("Expression");
+
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_NOT) {
     // consume "not"
@@ -207,6 +233,8 @@ void Parser::ParseExpression() {
 }
 
 void Parser::ParseExpressionTail() {
+  DebugPrint("ExpressionTail");
+
   // there is an lambda(empty) evaluation of this rule, so start with a peek
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_AND || lexeme.token == T_BAR) {
@@ -222,6 +250,8 @@ void Parser::ParseExpressionTail() {
 }
 
 void Parser::ParseFactor() {
+  DebugPrint("Factor");
+
   // Need to use first sets to determine evaluation, so peek
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_PAREN_LEFT) {
@@ -274,6 +304,8 @@ void Parser::ParseFactor() {
 }
 
 void Parser::ParseIdentifier() {
+  DebugPrint("Identifier");
+
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_ID) {
     EmitParsingError("Expected Identifier", lexeme);
@@ -283,6 +315,8 @@ void Parser::ParseIdentifier() {
 }
 
 void Parser::ParseIfStatement() {
+  DebugPrint("IfStatement");
+
   Lexeme lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_IF) {
     EmitExpectedTokenError("if", lexeme);
@@ -386,6 +420,8 @@ void Parser::ParseIfStatement() {
 }
 
 void Parser::ParseLoopStatement() {
+  DebugPrint("LoopStatement");
+
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_FOR) {
     EmitExpectedTokenError("for", lexeme);
@@ -443,6 +479,8 @@ void Parser::ParseLoopStatement() {
 }
 
 void Parser::ParseNumber() {
+  DebugPrint("Number");
+
   // consume number token
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_INT_LITERAL && lexeme.token != T_FLOAT_LITERAL) {
@@ -470,6 +508,8 @@ void Parser::ParseParameterList() {
 }
 
 void Parser::ParseProcedureBody() {
+  DebugPrint("ProcedureBody");
+
   // Peek the first lexeme to determine if there are any declarations
   Lexeme lexeme = scanner_.PeekNextLexeme(); 
   while (lexeme.token != T_BEGIN) {
@@ -525,11 +565,15 @@ void Parser::ParseProcedureBody() {
 }
 
 void Parser::ParseProcedureDeclaration() {
+  DebugPrint("ProcedureDeclaration");
+
   ParseProcedureHeader();
   ParseProcedureBody();
 }
 
 void Parser::ParseProcedureHeader() {
+  DebugPrint("ProcedureHeader");
+
   // parse procedure keyword
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PROCEDURE) {
@@ -572,6 +616,8 @@ void Parser::ParseProcedureHeader() {
 }
 
 void Parser::ParseProgramBody() {
+  DebugPrint("ProgramBody");
+
   // Parse leading declarations
   // none are required so peek first
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -632,6 +678,8 @@ void Parser::ParseProgramBody() {
 }
 
 void Parser::ParseProgramHeader() {
+  DebugPrint("ProgramHeader");
+
   // read 'program'
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PROGRAM) {
@@ -655,6 +703,8 @@ void Parser::ParseProgramHeader() {
 
 // this rule replaces ParseName and ParseProcedureCall
 void Parser::ParseReference() {
+  DebugPrint("Reference");
+  
   // could be a procedure call or name
   // both start with identifiers
   ParseIdentifier();
@@ -705,6 +755,8 @@ void Parser::ParseReference() {
 // this is a left recursive rule made right recursive
 // see docs for full write-out of rule
 void Parser::ParseRelation() {
+  DebugPrint("Relation");
+
   ParseTerm();
 
   ParseRelationTail();
@@ -712,6 +764,8 @@ void Parser::ParseRelation() {
 
 // Right recursive portion of the rule
 void Parser::ParseRelationTail() {
+  DebugPrint("RelationTail");
+
   // Need to allow for empty evaluation so peek
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_LT || lexeme.token == T_GT_EQ ||
@@ -728,6 +782,8 @@ void Parser::ParseRelationTail() {
 }
 
 void Parser::ParseReturnStatement() {
+  DebugPrint("Return");
+  
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_RETURN) {
     EmitExpectedTokenError("return", lexeme);
@@ -738,6 +794,8 @@ void Parser::ParseReturnStatement() {
 }
 
 void Parser::ParseStatement() {
+  DebugPrint("Statement");
+
   // Parse statement has four possible evaluations so peek and take the one
   // that we can predict using the respective first sets of the possible
   // rule evaluations
@@ -757,6 +815,8 @@ void Parser::ParseStatement() {
 }
 
 void Parser::ParseString() {
+  DebugPrint("String");
+
   // consume the string token
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_STRING_LITERAL) {
@@ -766,6 +826,8 @@ void Parser::ParseString() {
 
 // a left recursive rule made right recursive. See docs for writeout
 void Parser::ParseTerm() {
+  DebugPrint("Term");
+
   ParseFactor();
 
   ParseTermTail();
@@ -773,6 +835,8 @@ void Parser::ParseTerm() {
 
 // Right recursive version of ParseTerm
 void Parser::ParseTermTail() {
+  DebugPrint("TermTail");
+
   // peek because there can be an empty evaluation
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_DIV || lexeme.token == T_MULT) {
@@ -786,6 +850,8 @@ void Parser::ParseTermTail() {
 }
 
 void Parser::ParseTypeDeclaration() {
+  DebugPrint("TypeDeclaration");
+
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_TYPE) {
     EmitExpectedTokenError("type", lexeme);
@@ -806,6 +872,8 @@ void Parser::ParseTypeDeclaration() {
 }
 
 void Parser::ParseTypeMark() {
+  DebugPrint("TypeMark");
+
   // Need to peek, because it could be an identifier so we can't consume the
   // token
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -866,6 +934,8 @@ void Parser::ParseTypeMark() {
 }
 
 void Parser::ParseVariableDeclaration() {
+  DebugPrint("VariableDeclaration");
+
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_VARIABLE) {
     EmitExpectedTokenError("variable", lexeme);

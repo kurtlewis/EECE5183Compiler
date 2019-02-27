@@ -19,10 +19,14 @@ int main(int argc, char* argv[]) {
   }
   // set optional flags to false
   bool scanner_only = false;
+  bool parser_debug = false;
   // look through any other arguments for flags and set them
   for (int idx = 2; idx < argc; idx++) {
     if (std::string(argv[idx]).compare("--scanner-only") == 0) {
       scanner_only = true;
+    }
+    if (std::string(argv[idx]).compare("--parser-debug") == 0) {
+      parser_debug = true;
     }
   }
 
@@ -44,7 +48,7 @@ int main(int argc, char* argv[]) {
     }
   } else {
     // run the whole compiler
-    kjlc::Parser parser(argv[1]);
+    kjlc::Parser parser(argv[1], parser_debug);
     parser.ParseProgram();
 
   }

@@ -15,7 +15,7 @@ class Parser {
   public:
     // Constructor sets things up for parsing.
     // takes a string of the file for parsing.
-    Parser(std::string filename);
+    Parser(std::string filename, bool debug);
 
     // Deconstructor cleans up any allocated memory.
     ~Parser();
@@ -30,6 +30,12 @@ class Parser {
     bool error_state_;
     // true if parse should end
     bool end_parse_;
+    // flag for debug state
+    bool debug_;
+
+    // Prints out debugging information when requested
+    // parse_function: name of parse rule being expanded
+    void DebugPrint(std::string parse_function);
 
     // Generic Error Handling function
     void EmitParsingError(std::string message, Lexeme lexeme);
