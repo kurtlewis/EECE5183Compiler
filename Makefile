@@ -18,9 +18,9 @@ ODIR=./out
 OUT_NAME=kjlc
 
 # header files that are depended upon
-DEPS = $(addprefix $(IDIR)/, $(addprefix kjlc/, scanner.h parser.h))
+DEPS = $(addprefix $(IDIR)/, $(addprefix kjlc/, scanner.h parser.h symbol_table.h))
 # Object files for creating final executable
-OBJS = $(addprefix $(ODIR)/, main.o scanner.o parser.o)
+OBJS = $(addprefix $(ODIR)/, main.o scanner.o parser.o symbol_table.o)
 
 # Create the compiler
 $(ODIR)/$(OUT_NAME): $(OBJS)
