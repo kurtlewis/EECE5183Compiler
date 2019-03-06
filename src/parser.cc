@@ -89,6 +89,61 @@ void Parser::ResyncOnTokens(Token tokens[], int tokens_length) {
 
 }
 
+void Parser::LoopDeclarations(Token end_tokens[], int tokens_length) {
+  // Peek the first lexeme to determine if there are any declarations
+  Lexeme lexeme = scanner_.PeekNextLexeme(); 
+  // boolean to indicate no more declarations
+  bool stop = false;
+  for (int idx = 0; idx < tokens_length; idx++) {
+    if (lexeme.token == end_tokens[idx]) {
+      stop = true;
+      break;
+    }
+  }
+  while (!stop) {
+    // There are declarations
+    ParseDeclaration();
+
+    if (error_state_) {
+      // there was an error down the tree
+      // add a semi-colon to the declarations
+      Token tokens[tokens_length + 1];
+      for (int idx = 0; idx < tokens_length; idx++) {
+        tokens[idx] = end_tokens[idx];
+      }
+      tokens[tokens_length] = T_SEMI_COLON;
+      ResyncOnTokens(tokens, tokens_length + 1);
+
+      // check to see if parse should be ended
+      if (end_parse_) {
+        return;
+      }
+
+      // if recovering from an error, we don't consider the semi colon mandatory
+      // but, read it if it's the next token so the next declaration can be read
+      // correctly
+      lexeme = scanner_.PeekNextLexeme();
+      if (lexeme.token == T_SEMI_COLON) {
+        lexeme = scanner_.GetNextLexeme();
+      }
+    } else {
+      // all declarations are followed by semi colon
+      lexeme = scanner_.GetNextLexeme();
+      if (lexeme.token != T_SEMI_COLON) {
+        EmitExpectedTokenError(";", lexeme);
+        return;
+      }
+    }
+    // peek to see if there are more declarations
+    lexeme = scanner_.PeekNextLexeme();
+  }
+
+}
+
+void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
+
+}
+
 void Parser::ParseArgumentList() {
   DebugPrint("ArgumentList");
 
@@ -547,44 +602,13 @@ void Parser::ParseParameterList() {
 
 void Parser::ParseProcedureBody() {
   DebugPrint("ProcedureBody");
-
-  // Peek the first lexeme to determine if there are any declarations
-  Lexeme lexeme = scanner_.PeekNextLexeme(); 
-  while (lexeme.token != T_BEGIN) {
-    // There are declarations
-    ParseDeclaration();
-
-    if (error_state_) {
-      // there was an error down the tree
-      Token tokens[] = {T_SEMI_COLON, T_BEGIN};
-      ResyncOnTokens(tokens, 2);
-
-      // check to see if parse should be ended
-      if (end_parse_) {
-        return;
-      }
-
-      // if recovering from an error, we don't consider the semi colon mandatory
-      // but, read it if it's the next token so the next declaration can be read
-      // correctly
-      lexeme = scanner_.PeekNextLexeme();
-      if (lexeme.token == T_SEMI_COLON) {
-        lexeme = scanner_.GetNextLexeme();
-      }
-    } else {
-      // all declarations are followed by semi colon
-      lexeme = scanner_.GetNextLexeme();
-      if (lexeme.token != T_SEMI_COLON) {
-        EmitExpectedTokenError(";", lexeme);
-        return;
-      }
-    }
-    // peek to see if there are more declarations
-    lexeme = scanner_.PeekNextLexeme();
-  }
+  
+  Token end_tokens[] = {T_BEGIN};
+  int tokens_length = 1;
+  LoopDeclarations(end_tokens, tokens_length);
   
   // Parse the 'begin'
-  lexeme = scanner_.GetNextLexeme();
+  Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_BEGIN) {
     EmitExpectedTokenError("begin", lexeme);
     return;

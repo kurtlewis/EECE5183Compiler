@@ -49,6 +49,12 @@ class Parser {
     // always considers T_PERIOD for end of file
     void ResyncOnTokens(Token tokens[], int tokens_length);
 
+    // Loop Parsing declarations until one of the end tokens is peeked
+    void LoopDeclarations(Token end_tokens[], int tokens_length);
+
+    // Loop parsing statements until one of the end tokens is peeked
+    void LoopStatements(Token end_tokens[], int tokens_length);
+
     //
     // Parse rules functions
     //
