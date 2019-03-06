@@ -22,8 +22,12 @@ enum Type {
 };
 
 struct Symbol {
+  Symbol() : valid(true) {}
   std::string id;
   Type type;
+  // denotes if this is a valid symbol
+  // example invalid symbol: lookup failed
+  bool valid;
 };
 
 class SymbolTable {
@@ -39,9 +43,10 @@ class SymbolTable {
 
     Symbol FindSymbolByIdentifier(std::string id);
 
+
   private:
     // a stack of scope for local scope
-    std::vector<std::map<std::string, Symbol> > local_scope_map_;
+    std::vector<std::map<std::string, Symbol> > local_scope_stack_;
     // a single map of global scope identifiers
     std::map<std::string, Symbol> global_scope_map_;
 
