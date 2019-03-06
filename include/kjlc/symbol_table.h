@@ -18,12 +18,22 @@ enum Type {
   TYPE_ENUM,
   TYPE_FLOAT,
   TYPE_INT,
-  TYPE_STRING
+  TYPE_STRING,
+};
+
+enum Declaration {
+  DECLARATION_PROCEDURE,
+  DECLARATION_VARIABLE,
+  DEClARATION_TYPE
 };
 
 struct Symbol {
   Symbol() : valid(true) {}
+  // identifier for the symbol
   std::string id;
+  // the actual declaraiton is of this variant
+  Declaration declaration;
+  // the type of the declaration
   Type type;
   // denotes if this is a valid symbol
   // example invalid symbol: lookup failed
