@@ -719,44 +719,12 @@ void Parser::ParseProcedureHeader() {
 void Parser::ParseProgramBody() {
   DebugPrint("ProgramBody");
 
-  // Parse leading declarations
-  // none are required so peek first
-  Lexeme lexeme = scanner_.PeekNextLexeme();
-  while (lexeme.token != T_BEGIN) {
-    // parse declaration
-    ParseDeclaration();
-
-    if (error_state_) {
-      // there was an error down the tree
-      Token tokens[] = {T_SEMI_COLON, T_BEGIN};
-      ResyncOnTokens(tokens, 2);
-
-      // check to see if parse should be ended
-      if (end_parse_) {
-        return;
-      }
-
-      // if recovering from an error, we don't consider the semi colon mandatory
-      // but, read it if it's the next token so the next declaration can be read
-      // correctly
-      lexeme = scanner_.PeekNextLexeme();
-      if (lexeme.token == T_SEMI_COLON) {
-        lexeme = scanner_.GetNextLexeme();
-      }
-    } else {
-      // all declarations are followed by semi colon
-      lexeme = scanner_.GetNextLexeme();
-      if (lexeme.token != T_SEMI_COLON) {
-        EmitExpectedTokenError(";", lexeme);
-        return;
-      }
-    }
-    // peek to see if declarations continue
-    lexeme = scanner_.PeekNextLexeme();
-  }
+  Token end_tokens[] = {T_BEGIN};
+  int end_tokens_length = 1;
+  LoopDeclarations(end_tokens, end_tokens_length);
 
   // Parse 'begin'
-  lexeme = scanner_.GetNextLexeme();
+  Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_BEGIN) {
     EmitExpectedTokenError(";", lexeme);
     return;
