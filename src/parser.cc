@@ -136,6 +136,12 @@ void Parser::LoopDeclarations(Token end_tokens[], int tokens_length) {
     }
     // peek to see if there are more declarations
     lexeme = scanner_.PeekNextLexeme();
+    for (int idx = 0; idx < tokens_length; idx++) {
+      if (lexeme.token == end_tokens[idx]) {
+        stop = true;
+        break;
+      }
+    }
   }
 
 }
@@ -188,6 +194,12 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
       }
     }
     lexeme = scanner_.PeekNextLexeme();
+    for (int idx = 0; idx < tokens_length; idx++) {
+      if (lexeme.token == end_tokens[idx]) {
+        stop = true;
+        break;
+      }
+    }
   }
 }
 
