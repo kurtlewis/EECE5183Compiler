@@ -94,19 +94,24 @@ void Parser::LoopDeclarations(Token end_tokens[], int tokens_length) {
   Lexeme lexeme = scanner_.PeekNextLexeme(); 
   // boolean to indicate no more declarations
   bool stop = false;
+
+  // check to see if there are any declarations at all
   for (int idx = 0; idx < tokens_length; idx++) {
     if (lexeme.token == end_tokens[idx]) {
       stop = true;
       break;
     }
   }
+
+  // loop parsing declarations until an end token is found
   while (!stop) {
     // There are declarations
     ParseDeclaration();
 
     if (error_state_) {
       // there was an error down the tree
-      // add a semi-colon to the declarations
+
+      // add a semi-colon to the declarations for ResyncOnTokens
       Token tokens[tokens_length + 1];
       for (int idx = 0; idx < tokens_length; idx++) {
         tokens[idx] = end_tokens[idx];
@@ -134,7 +139,8 @@ void Parser::LoopDeclarations(Token end_tokens[], int tokens_length) {
         return;
       }
     }
-    // peek to see if there are more declarations
+
+    // peek to see if there are more declarations or if it is an end token
     lexeme = scanner_.PeekNextLexeme();
     for (int idx = 0; idx < tokens_length; idx++) {
       if (lexeme.token == end_tokens[idx]) {
@@ -151,6 +157,7 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
   // statements
   Lexeme lexeme = scanner_.PeekNextLexeme();
   bool stop = false;
+
   // check to see if there are any declarations at all
   for (int idx = 0; idx < tokens_length; idx++) {
     if (lexeme.token == end_tokens[idx]) {
@@ -158,6 +165,8 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
       break;
     }
   }
+
+  // parse statements until we find the end token
   while (!stop) {
     // there are statements
     ParseStatement();
@@ -165,7 +174,7 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
     if (error_state_) {
       // there was an error down the tree
 
-      // add a semi-colon to the end tokens list
+      // add a semi-colon to the end tokens list for call to ResyncOnTokens
       Token tokens[tokens_length + 1];
       for (int idx = 0; idx < tokens_length; idx++) {
         tokens[idx] = end_tokens[idx];
@@ -186,13 +195,16 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
         lexeme = scanner_.GetNextLexeme();
       }
     } else {
-      // all statements are followed by semi colon
+      // all statements are followed by semi colon unless there's an error
       lexeme = scanner_.GetNextLexeme();
       if (lexeme.token != T_SEMI_COLON) {
         EmitExpectedTokenError(";", lexeme);
         return;
       }
     }
+    
+    // check to see if there is another declaration coming or if it is an
+    // end token
     lexeme = scanner_.PeekNextLexeme();
     for (int idx = 0; idx < tokens_length; idx++) {
       if (lexeme.token == end_tokens[idx]) {
@@ -573,6 +585,7 @@ void Parser::ParseParameterList() {
 void Parser::ParseProcedureBody() {
   DebugPrint("ProcedureBody");
   
+  // Loop declarations until begin is found
   Token end_tokens[] = {T_BEGIN};
   int tokens_length = 1;
   LoopDeclarations(end_tokens, tokens_length);
@@ -658,6 +671,7 @@ void Parser::ParseProcedureHeader() {
 void Parser::ParseProgramBody() {
   DebugPrint("ProgramBody");
 
+  // Loop declarations until begin is found
   Token end_tokens[] = {T_BEGIN};
   int end_tokens_length = 1;
   LoopDeclarations(end_tokens, end_tokens_length);

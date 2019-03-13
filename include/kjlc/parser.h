@@ -50,9 +50,13 @@ class Parser {
     void ResyncOnTokens(Token tokens[], int tokens_length);
 
     // Loop Parsing declarations until one of the end tokens is peeked
+    // built for code deduplication, everywhere that has (parse_declaration)*
+    // is the exact same with possibly different end tokens
     void LoopDeclarations(Token end_tokens[], int tokens_length);
 
     // Loop parsing statements until one of the end tokens is peeked
+    // built for code deduplication, everywhere that has (parse_statement)*
+    // is the exact same, with possibly different end tokens
     void LoopStatements(Token end_tokens[], int tokens_length);
 
     //
