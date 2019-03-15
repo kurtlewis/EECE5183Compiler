@@ -1,2 +1,5 @@
 # all build artifacts
 out/*
+
+# all swap files for vim
+*.swp
