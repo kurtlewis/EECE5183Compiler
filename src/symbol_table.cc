@@ -26,10 +26,20 @@ void SymbolTable::DecreaseScope() {
   // check that the scope can be pushed back
   if (local_scope_stack_.size() > 0) {
     // delete the top scope
+    // only declaring maps on the stack so no need to do memory management
     local_scope_stack_.pop_back();
   } else {
     std::cout << "Error popping off scope stack";
   }
+}
+
+void SymbolTable::InsertSymbolToGlobalScope(Symbol symbol) {
+  global_scope_map_[symbol.id] = symbol;
+}
+
+void SymbolTable::InsertSymbolToLocalScope(Symbol symbol) {
+  local_scope_stack_.back()[symbol.id] = symbol;
+
 }
 
 Symbol SymbolTable::FindSymbolByIdentifier(std::string id) {

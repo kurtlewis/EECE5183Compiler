@@ -28,13 +28,18 @@ enum Declaration {
 };
 
 struct Symbol {
+  // default initializer list for variables that need set
   Symbol() : valid(true) {}
+
   // identifier for the symbol
   std::string id;
+
   // the actual declaraiton is of this variant
   Declaration declaration;
+
   // the type of the declaration
   Type type;
+
   // denotes if this is a valid symbol
   // example invalid symbol: lookup failed
   bool valid;
@@ -47,15 +52,29 @@ class SymbolTable {
 
     ~SymbolTable();
 
+    //-------------------------------------------
+    // Scope Control Methods
+    //-------------------------------------------
+    // Pops the topmost scope off the stack, discarding the generated scope
+    // at this level
+    void DecreaseScope();
+
+    // Pushes a new scope to the sstack, storing the current scope until
+    // decrease scope has been called
     void IncreaseScope();
 
-    void DecreaseScope();
+
+    void InsertSymbolToGlobalScope(Symbol symbol);
+
+    void InsertSymbolToLocalScope(Symbol symbol);
 
     Symbol FindSymbolByIdentifier(std::string id);
 
 
   private:
     // a stack of scope for local scope
+    // declaring maps on the stack instead of on the heap saves memory
+    // management overhead and should be fine
     std::vector<std::map<std::string, Symbol> > local_scope_stack_;
     // a single map of global scope identifiers
     std::map<std::string, Symbol> global_scope_map_;
