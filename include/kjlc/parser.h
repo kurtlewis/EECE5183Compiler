@@ -8,6 +8,7 @@
 #define EECE5138COMPILER_KJLC_PARSER_H_
 
 #include "scanner.h"
+#include "symbol_table.h"
 
 namespace kjlc {
 
@@ -115,10 +116,14 @@ class Parser {
     void ParseProcedureBody();
 
     // Handle parsing a procedure declaration
-    void ParseProcedureDeclaration();
+    // @params:
+    //   Symbol &procedure_symbol - Symbol for procedure being declared
+    void ParseProcedureDeclaration(Symbol &procedure_symbol);
 
     // Handle parsing procedure header
-    void ParseProcedureHeader();
+    // @params:
+    //   Symbol &procedure_symbol - Symbol for procedure being declared
+    void ParseProcedureHeader(Symbol &procedure_symbol);
 
     // Parse the Program body rule
     void ParseProgramBody();
@@ -151,13 +156,21 @@ class Parser {
     void ParseTermTail();
 
     // Parse Type Declaration
-    void ParseTypeDeclaration();
+    // @params:
+    //   Symbol &type_symbol - Symbol for type being declared
+    void ParseTypeDeclaration(Symbol &type_symbol);
 
     // Parse Type Mark
     void ParseTypeMark();
 
-    // Parse Variable Declaration
+    // Parse Variable declaration
+    // Overload for calling without a symbol already created
     void ParseVariableDeclaration();
+
+    // Parse Variable Declaration
+    // @params
+    // Symbol &variable_symbol - symbol for the variable being declared
+    void ParseVariableDeclaration(Symbol &variable_symbol);
 
 };
 

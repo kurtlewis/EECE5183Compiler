@@ -29,16 +29,19 @@ enum Declaration {
 
 struct Symbol {
   // default initializer list for variables that need set
-  Symbol() : valid(true) {}
+  Symbol() : global(false), valid(true) {}
 
   // identifier for the symbol
   std::string id;
 
-  // the actual declaraiton is of this variant
+  // the actual declaration is of this variant
   Declaration declaration;
 
   // the type of the declaration
   Type type;
+
+  // if the symbol is in the global scope
+  bool global;
 
   // denotes if this is a valid symbol
   // example invalid symbol: lookup failed

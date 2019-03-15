@@ -287,6 +287,8 @@ void Parser::ParseBound() {
 
 void Parser::ParseDeclaration() {
   DebugPrint("Declaration");
+  // Declarations are going to declare a symbol so create it
+  Symbol symbol;
 
   // peek because the first terminal could be a number of things, some of
   // which involve reaching down rule evaluations
@@ -295,7 +297,9 @@ void Parser::ParseDeclaration() {
     // there's a global keyword
     // consume the token 
     lexeme = scanner_.GetNextLexeme();
-    // TODO: Probably do things with this in the symbol table
+    
+    // mark created symbol as global
+    symbol.global = true;
     
     // now prepare lexeme for guessing the next rule
     lexeme = scanner_.PeekNextLexeme();
@@ -304,13 +308,13 @@ void Parser::ParseDeclaration() {
   // Rule can evaluate to three different rules, so check their FIRST sets
   if (lexeme.token == T_PROCEDURE) {
     // Procedure Declaration rule
-    ParseProcedureDeclaration();
+    ParseProcedureDeclaration(symbol);
   } else if (lexeme.token == T_VARIABLE) {
     // Variable declaration rule
-    ParseVariableDeclaration();
+    ParseVariableDeclaration(symbol);
   } else if (lexeme.token == T_TYPE) {
     // Type declaration rule
-    ParseTypeDeclaration();
+    ParseTypeDeclaration(symbol);
   } else {
     EmitParsingError("Could not parse declaration - expected a variable, "
                      "type, or procedure",
@@ -617,14 +621,15 @@ void Parser::ParseProcedureBody() {
   }
 }
 
-void Parser::ParseProcedureDeclaration() {
+void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
   DebugPrint("ProcedureDeclaration");
 
-  ParseProcedureHeader();
+  procedure_symbol.declaration = DECLARATION_PROCEDURE;
+  ParseProcedureHeader(procedure_symbol);
   ParseProcedureBody();
 }
 
-void Parser::ParseProcedureHeader() {
+void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
   DebugPrint("ProcedureHeader");
 
   // parse procedure keyword
@@ -878,7 +883,7 @@ void Parser::ParseTermTail() {
   }
 }
 
-void Parser::ParseTypeDeclaration() {
+void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
   DebugPrint("TypeDeclaration");
 
   Lexeme lexeme = scanner_.GetNextLexeme();
@@ -963,6 +968,11 @@ void Parser::ParseTypeMark() {
 }
 
 void Parser::ParseVariableDeclaration() {
+  Symbol symbol;
+  ParseVariableDeclaration(symbol);
+}
+
+void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
   DebugPrint("VariableDeclaration");
 
   Lexeme lexeme = scanner_.GetNextLexeme();
