@@ -95,7 +95,8 @@ class Parser {
     void ParseFactor();
 
     // Handle Parsing Identifier rule
-    void ParseIdentifier();
+    // @return - string representation of the identifier
+    std::string ParseIdentifier();
 
     // Handle parsing if statement
     void ParseIfStatement();
@@ -161,7 +162,9 @@ class Parser {
     void ParseTypeDeclaration(Symbol &type_symbol);
 
     // Parse Type Mark
-    void ParseTypeMark();
+    // @params:
+    //   Symbol &symbol - the symbol to update about type information
+    void ParseTypeMark(Symbol &symbol);
 
     // Parse Variable declaration
     // Overload for calling without a symbol already created

@@ -433,15 +433,18 @@ void Parser::ParseFactor() {
   }
 }
 
-void Parser::ParseIdentifier() {
+std::string Parser::ParseIdentifier() {
   DebugPrint("Identifier");
 
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_ID) {
     EmitParsingError("Expected Identifier", lexeme);
-    return;
+    return std::string();
   }
-  // TODO: probably some symbol table stuff
+
+  // return the string value of the identifier, which will be what the
+  // identifier is
+  return lexeme.str_value;
 }
 
 void Parser::ParseIfStatement() {
@@ -640,7 +643,7 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
   } 
 
   // read the identifier
-  ParseIdentifier();
+  procedure_symbol.id = ParseIdentifier();
 
   // colon required
   lexeme = scanner_.GetNextLexeme();
@@ -650,7 +653,7 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
   }
 
   // type mark
-  ParseTypeMark();
+  ParseTypeMark(procedure_symbol);
 
   // read left paren
   lexeme = scanner_.GetNextLexeme();
@@ -902,10 +905,10 @@ void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
   }
 
   // Parse type mark
-  ParseTypeMark();
+  ParseTypeMark(type_symbol);
 }
 
-void Parser::ParseTypeMark() {
+void Parser::ParseTypeMark(Symbol &symbol) {
   DebugPrint("TypeMark");
 
   // Need to peek, because it could be an identifier so we can't consume the
@@ -918,14 +921,21 @@ void Parser::ParseTypeMark() {
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token == T_BOOL) {
       // boolean
+      symbol.type = TYPE_BOOL;
     } else if (lexeme.token == T_FLOAT) {
       // float
+      symbol.type = TYPE_FLOAT;
     } else if (lexeme.token == T_INT) {
       // int
+      symbol.type = TYPE_INT;
     } else if (lexeme.token == T_STRING) {
       // string
+      symbol.type = TYPE_STRING;
     } else if (lexeme.token == T_ENUM) {
-      // enum - additional rules
+      // enum
+      symbol.type = TYPE_ENUM;
+      
+      // there are additional rules
       lexeme = scanner_.GetNextLexeme();
       if (lexeme.token != T_CURLY_LEFT) {
         EmitExpectedTokenError("{", lexeme);
@@ -988,7 +998,7 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
     EmitExpectedTokenError(":", lexeme);
   }
 
-  ParseTypeMark();
+  ParseTypeMark(variable_symbol);
 
   // peek to look for optional bound
   lexeme = scanner_.PeekNextLexeme();
