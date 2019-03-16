@@ -900,6 +900,9 @@ void Parser::ParseTermTail() {
 void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
   DebugPrint("TypeDeclaration");
 
+  // mark the symbol as a type declaration
+  type_symbol.declaration = DECLARATION_TYPE;
+
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_TYPE) {
     EmitExpectedTokenError("type", lexeme);
@@ -907,7 +910,7 @@ void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
   }
 
   // Read the identifier
-  ParseIdentifier();
+  type_symbol.id = ParseIdentifier();
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_IS) {
@@ -917,6 +920,9 @@ void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
 
   // Parse type mark
   ParseTypeMark(type_symbol);
+
+  // commit the symbol to the symbol table
+  symbol_table_.InsertSymbol(type_symbol);
 }
 
 void Parser::ParseTypeMark(Symbol &symbol) {
@@ -996,13 +1002,16 @@ void Parser::ParseVariableDeclaration() {
 void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
   DebugPrint("VariableDeclaration");
 
+  // mark the symbol as a variable declaration
+  variable_symbol.declaration = DECLARATION_VARIABLE;
+
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_VARIABLE) {
     EmitExpectedTokenError("variable", lexeme);
     return;
   }
 
-  ParseIdentifier();
+  variable_symbol.id = ParseIdentifier();
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_COLON) {
@@ -1018,6 +1027,7 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
     // consume left bracket
     lexeme = scanner_.GetNextLexeme();
 
+    // TODO: symbol will require bound information
     ParseBound();
 
     // read right bracket
@@ -1027,6 +1037,9 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
       return;
     }
   }
+
+  // commit the symbol to the symbol table
+  symbol_table_.InsertSymbol(variable_symbol);
 }
 
 } // namespace kjlc
