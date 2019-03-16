@@ -27,6 +27,8 @@ class Parser {
   private:
     // Scanner being used to drive the parse
     Scanner scanner_;
+    // Symbol table
+    SymbolTable symbol_table_;
     // True if error state
     bool error_state_;
     // true if parse should end

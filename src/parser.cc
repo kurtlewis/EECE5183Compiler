@@ -15,6 +15,7 @@ namespace kjlc {
 // Default Constructor
 Parser::Parser(std::string filename, bool debug)
     : scanner_(filename),
+      symbol_table_(),
       error_state_(false),
       end_parse_(false),
       debug_(debug) {
@@ -27,8 +28,14 @@ Parser::~Parser() {
 }
 
 void Parser::ParseProgram() {
+  // immediately increase the scope on the symbol table for a program level
+  // scope
+  symbol_table_.IncreaseScope();
+
   ParseProgramHeader();
   ParseProgramBody();
+
+  // no need to decrease scope because the program is over
 }
 
 void Parser::DebugPrint(std::string parse_function) {
@@ -666,6 +673,7 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
   lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_VARIABLE) {
     // read parameter list
+    // TODO: Parameter list will probably be relevant to my symbol table
     ParseParameterList();
   }
 
@@ -674,6 +682,9 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
     EmitExpectedTokenError(")", lexeme);
     return;
   }
+  
+  // commit the generated symbol to the symbol table
+  symbol_table_.InsertSymbol(procedure_symbol);
 }
 
 void Parser::ParseProgramBody() {

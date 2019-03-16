@@ -67,9 +67,7 @@ class SymbolTable {
     void IncreaseScope();
 
 
-    void InsertSymbolToGlobalScope(Symbol symbol);
-
-    void InsertSymbolToLocalScope(Symbol symbol);
+    void InsertSymbol(Symbol symbol);
 
     Symbol FindSymbolByIdentifier(std::string id);
 
