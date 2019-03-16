@@ -33,7 +33,7 @@ void SymbolTable::DecreaseScope() {
   }
 }
 
-void SymbolTable::InsertSymbol(Symbol symbol) {
+void SymbolTable::InsertSymbol(Symbol &symbol) {
   if (symbol.global) {
     // it's a global scope symbol, so it goes in the global symbol table
     global_scope_map_[symbol.id] = symbol;

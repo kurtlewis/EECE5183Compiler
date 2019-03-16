@@ -24,7 +24,7 @@ enum Type {
 enum Declaration {
   DECLARATION_PROCEDURE,
   DECLARATION_VARIABLE,
-  DEClARATION_TYPE
+  DECLARATION_TYPE
 };
 
 struct Symbol {
@@ -67,7 +67,7 @@ class SymbolTable {
     void IncreaseScope();
 
 
-    void InsertSymbol(Symbol symbol);
+    void InsertSymbol(Symbol &symbol);
 
     Symbol FindSymbolByIdentifier(std::string id);
 
