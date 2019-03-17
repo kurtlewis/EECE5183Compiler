@@ -43,6 +43,10 @@ struct Symbol {
   // if the symbol is in the global scope
   bool global;
 
+  // if the symbol is an array
+  bool array;
+  int bound;
+
   // denotes if this is a valid symbol
   // example invalid symbol: lookup failed
   bool valid;

@@ -279,17 +279,19 @@ void Parser::ParseArithOpTail() {
   }
 }
 
-void Parser::ParseBound() {
+void Parser::ParseBound(Symbol &symbol) {
   DebugPrint("Bound");
 
+  bool negative = false;
   // peek for '-'
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_MINUS) {
     // consume the dash 
     lexeme = scanner_.GetNextLexeme();
+    negative = true;
   }
 
-  ParseNumber();
+  symbol.bound = ParseNumberInteger();
 }
 
 void Parser::ParseDeclaration() {
@@ -1051,8 +1053,10 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
     // consume left bracket
     lexeme = scanner_.GetNextLexeme();
 
-    // TODO: symbol will require bound information
-    ParseBound();
+    // it is an array, so mark the symbol as such
+    variable_symbol.array = true;
+
+    ParseBound(variable_symbol);
 
     // read right bracket
     lexeme = scanner_.GetNextLexeme();

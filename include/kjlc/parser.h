@@ -79,7 +79,10 @@ class Parser {
     void ParseAssignmentStatement();
 
     // Handle parsing bound
-    void ParseBound();
+    // @params:
+    //   symbol - symbol to insert bound information into as the array is
+    //            defined
+    void ParseBound(Symbol &symbol);
 
     // Handle parsing declarationr ule
     void ParseDeclaration();
