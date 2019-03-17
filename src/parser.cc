@@ -578,6 +578,30 @@ void Parser::ParseNumber() {
   }
 }
 
+float Parser::ParseNumberFloat() {
+  DebugPrint("NumberFloat");
+
+  // consume number token, but expect it to be a float
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_FLOAT_LITERAL) {
+    EmitParsingError("Expected float literal", lexeme);
+    return 0.0;
+  }
+  return lexeme.float_value;
+}
+
+int Parser::ParseNumberInteger() {
+  DebugPrint("NumberInteger");
+
+  // consume number token, but expect it to be an integer
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_INT_LITERAL) {
+    EmitParsingError("Expected integer literal", lexeme);
+    return 0;
+  }
+  return lexeme.int_value;
+}
+
 void Parser::ParseParameter() {
   ParseVariableDeclaration(); 
 }
