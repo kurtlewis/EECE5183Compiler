@@ -123,10 +123,14 @@ class Parser {
     int ParseNumberInteger();
 
     // Handle parsing a parameter
-    void ParseParameter();
+    // @params:
+    //    Symbol &procedure_symbol - procedure symbol to place parameters in
+    void ParseParameter(Symbol &procedure_symbol);
 
     // Handle parsing parameter list
-    void ParseParameterList();
+    // @params:
+    //    Symbol &procedure_symbol - procedure symbol to place parameters in
+    void ParseParameterList(Symbol &procedure_symbol);
 
     // Handle parsing a procedure body
     void ParseProcedureBody();

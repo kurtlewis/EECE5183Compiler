@@ -604,12 +604,14 @@ int Parser::ParseNumberInteger() {
   return lexeme.int_value;
 }
 
-void Parser::ParseParameter() {
-  ParseVariableDeclaration(); 
+void Parser::ParseParameter(Symbol &procedure_symbol) {
+  Symbol symbol;
+  ParseVariableDeclaration(symbol); 
+  procedure_symbol.params.push_back(symbol);
 }
 
-void Parser::ParseParameterList() {
-  ParseParameter();
+void Parser::ParseParameterList(Symbol &procedure_symbol) {
+  ParseParameter(procedure_symbol);
 
   // check to see if there are multiple parameters - indicated by ','
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -618,7 +620,7 @@ void Parser::ParseParameterList() {
     lexeme = scanner_.GetNextLexeme();
 
     // recursive call to read more parameters
-    ParseParameterList();
+    ParseParameterList(procedure_symbol);
   }
 }
 
@@ -699,8 +701,7 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
   lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_VARIABLE) {
     // read parameter list
-    // TODO: Parameter list will probably be relevant to my symbol table
-    ParseParameterList();
+    ParseParameterList(procedure_symbol);
   }
 
   lexeme = scanner_.GetNextLexeme();
@@ -708,8 +709,8 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
     EmitExpectedTokenError(")", lexeme);
     return;
   }
-  
-  // commit the generated symbol to the symbol table
+
+  // commit the symbol to the symbol table
   symbol_table_.InsertSymbol(procedure_symbol);
 }
 

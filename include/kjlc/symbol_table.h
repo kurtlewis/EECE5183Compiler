@@ -29,7 +29,7 @@ enum Declaration {
 
 struct Symbol {
   // default initializer list for variables that need set
-  Symbol() : global(false), valid(true) {}
+  Symbol() : global(false), params(), valid(true) {}
 
   // identifier for the symbol
   std::string id;
@@ -46,6 +46,12 @@ struct Symbol {
   // if the symbol is an array
   bool array;
   int bound;
+
+  // if a procedure, it could have argument
+  // NOTE - this is NOT a vector of references which means
+  // if I make changes it need re-inserted
+  // if this proves to be rough, look into std::reference_wrapper
+  std::vector<Symbol> params;
 
   // denotes if this is a valid symbol
   // example invalid symbol: lookup failed
