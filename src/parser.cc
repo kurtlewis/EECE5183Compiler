@@ -238,6 +238,7 @@ void Parser::ParseArgumentList() {
   }
 }
 
+// TODO:TypeCheck
 void Parser::ParseAssignmentStatement() {
   DebugPrint("AssignmentStatement");
 
@@ -252,6 +253,7 @@ void Parser::ParseAssignmentStatement() {
   ParseExpression();
 }
 
+// TODO:TypeCheck
 // this is a left recursive rule that has been modified to be right recursive
 // see docs/language-grammar-modified.txt for more information
 void Parser::ParseArithOp() {
@@ -262,6 +264,7 @@ void Parser::ParseArithOp() {
   ParseArithOpTail();
 }
 
+// TODO:TypeCheck
 // because this is a left recursive rule made right recursive, it is necessary
 // to support empty evaluations
 void Parser::ParseArithOpTail() {
@@ -335,6 +338,7 @@ void Parser::ParseDeclaration() {
   }
 }
 
+// TODO:TypeCheck
 void Parser::ParseDestination() {
   DebugPrint("Destination");
 
@@ -357,6 +361,7 @@ void Parser::ParseDestination() {
   }
 }
 
+// TODO:TypeCheck
 // this is a left recursive rule made right recursive
 // see `docs/language-gramamr-modified` for notes on the rules
 void Parser::ParseExpression() {
@@ -374,6 +379,7 @@ void Parser::ParseExpression() {
   ParseExpressionTail();
 }
 
+// TODO:TypeCheck
 void Parser::ParseExpressionTail() {
   DebugPrint("ExpressionTail");
 
@@ -391,6 +397,7 @@ void Parser::ParseExpressionTail() {
   }
 }
 
+// TODO:TypeCheck
 void Parser::ParseFactor() {
   DebugPrint("Factor");
 
@@ -459,6 +466,7 @@ std::string Parser::ParseIdentifier() {
   return lexeme.str_value;
 }
 
+// TODO:TypeCheck
 void Parser::ParseIfStatement() {
   DebugPrint("IfStatement");
 
@@ -522,6 +530,7 @@ void Parser::ParseIfStatement() {
   }
 }
 
+// TODO:TypeCheck
 void Parser::ParseLoopStatement() {
   DebugPrint("LoopStatement");
 
@@ -794,6 +803,7 @@ void Parser::ParseProgramHeader() {
   return;
 }
 
+// TODO:TypeCheck
 // this rule replaces ParseName and ParseProcedureCall
 void Parser::ParseReference() {
   DebugPrint("Reference");
@@ -845,6 +855,7 @@ void Parser::ParseReference() {
   }
 }
 
+// TODO:TypeCheck
 // this is a left recursive rule made right recursive
 // see docs for full write-out of rule
 void Parser::ParseRelation() {
@@ -855,6 +866,7 @@ void Parser::ParseRelation() {
   ParseRelationTail();
 }
 
+// TODO:TypeCheck
 // Right recursive portion of the rule
 void Parser::ParseRelationTail() {
   DebugPrint("RelationTail");
@@ -874,6 +886,7 @@ void Parser::ParseRelationTail() {
   }
 }
 
+// TODO:TypeCheck
 void Parser::ParseReturnStatement() {
   DebugPrint("Return");
   
@@ -886,6 +899,7 @@ void Parser::ParseReturnStatement() {
   ParseExpression();
 }
 
+// TODO:TypeCheck
 void Parser::ParseStatement() {
   DebugPrint("Statement");
 
@@ -917,6 +931,7 @@ void Parser::ParseString() {
   }
 }
 
+// TODO:TypeCheck
 // a left recursive rule made right recursive. See docs for writeout
 void Parser::ParseTerm() {
   DebugPrint("Term");
@@ -926,6 +941,7 @@ void Parser::ParseTerm() {
   ParseTermTail();
 }
 
+// TODO:TypeCheck
 // Right recursive version of ParseTerm
 void Parser::ParseTermTail() {
   DebugPrint("TermTail");
