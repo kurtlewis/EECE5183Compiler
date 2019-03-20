@@ -61,7 +61,7 @@ struct Symbol {
 class SymbolTable {
   public:
     // Constructor initializes symbol table
-    SymbolTable();
+    SymbolTable(bool debug);
 
     ~SymbolTable();
 
@@ -89,6 +89,11 @@ class SymbolTable {
     std::vector<std::map<std::string, Symbol> > local_scope_stack_;
     // a single map of global scope identifiers
     std::map<std::string, Symbol> global_scope_map_;
+
+    // flag for printing debug information
+    bool debug_;
+
+    void PrintSymbolDebug(Symbol &symbol);
 
 };
 

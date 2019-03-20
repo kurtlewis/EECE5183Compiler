@@ -16,7 +16,7 @@ class Parser {
   public:
     // Constructor sets things up for parsing.
     // takes a string of the file for parsing.
-    Parser(std::string filename, bool debug);
+    Parser(std::string filename, bool parser_debug, bool symbol_debug);
 
     // Deconstructor cleans up any allocated memory.
     ~Parser();

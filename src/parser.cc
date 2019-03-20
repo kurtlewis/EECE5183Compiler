@@ -13,12 +13,12 @@
 namespace kjlc {
 
 // Default Constructor
-Parser::Parser(std::string filename, bool debug)
+Parser::Parser(std::string filename, bool parser_debug, bool symbol_debug)
     : scanner_(filename),
-      symbol_table_(),
+      symbol_table_(symbol_debug),
       error_state_(false),
       end_parse_(false),
-      debug_(debug) {
+      debug_(parser_debug) {
 
 }
 

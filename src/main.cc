@@ -22,8 +22,9 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   // set optional flags to false
-  bool scanner_only = false;
   bool parser_debug = false;
+  bool scanner_only = false;
+  bool symbol_debug = false;
   // look through any other arguments for flags and set them
   for (int idx = 1; idx < argc; idx++) {
     if (std::string(argv[idx]).compare("--help") == 0 ||
@@ -31,11 +32,14 @@ int main(int argc, char* argv[]) {
       PrintHelp();
       return 0;
     }
+    if (std::string(argv[idx]).compare("--parser-debug") == 0) {
+      parser_debug = true;
+    }
     if (std::string(argv[idx]).compare("--scanner-only") == 0) {
       scanner_only = true;
     }
-    if (std::string(argv[idx]).compare("--parser-debug") == 0) {
-      parser_debug = true;
+    if (std::string(argv[idx]).compare("--symbol-debug") == 0) {
+      symbol_debug = true;
     }
   }
 
@@ -57,7 +61,7 @@ int main(int argc, char* argv[]) {
     }
   } else {
     // run the whole compiler
-    kjlc::Parser parser(argv[1], parser_debug);
+    kjlc::Parser parser(argv[1], parser_debug, symbol_debug);
     parser.ParseProgram();
 
   }
@@ -77,4 +81,6 @@ void PrintHelp() {
   std::cout << "  --scanner-only    Only runs scanner functionality and prints";
   std::cout << " debugging" << std::endl;
   std::cout << "                    information." << std::endl;
+  std::cout << "  --symbol-debug    Prints symbol table debug information.";
+  std::cout << std::endl;
 }
