@@ -662,9 +662,26 @@ void Parser::ParseProcedureBody() {
 void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
   DebugPrint("ProcedureDeclaration");
 
+  // Increase the scope as we enter a new procedure
+  symbol_table_.IncreaseScope();
+
+  // mark the current symbol as a procedure
   procedure_symbol.declaration = DECLARATION_PROCEDURE;
+
+  // Parse the procedure header and continue to build the symbol
   ParseProcedureHeader(procedure_symbol);
+  
+  // commit the symbol to the symbol table so that the body can reference itself
+  symbol_table_.InsertSymbol(procedure_symbol);
+
+  // parse the body of the procedure
   ParseProcedureBody();
+
+  // exiting the procedure, decrease the scope
+  symbol_table_.DecreaseScope();
+
+  // now insert the symbol into the scope of the declarer so it can be called
+  symbol_table_.InsertSymbol(procedure_symbol);
 }
 
 void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
@@ -710,8 +727,6 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
     return;
   }
 
-  // commit the symbol to the symbol table
-  symbol_table_.InsertSymbol(procedure_symbol);
 }
 
 void Parser::ParseProgramBody() {
