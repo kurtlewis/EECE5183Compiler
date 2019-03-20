@@ -8,6 +8,10 @@
 
 #include "kjlc/parser.h"
 #include "kjlc/scanner.h"
+
+// forward declare of print help
+void PrintHelp();
+
 /**
  * Main function of program
  */
@@ -21,7 +25,12 @@ int main(int argc, char* argv[]) {
   bool scanner_only = false;
   bool parser_debug = false;
   // look through any other arguments for flags and set them
-  for (int idx = 2; idx < argc; idx++) {
+  for (int idx = 1; idx < argc; idx++) {
+    if (std::string(argv[idx]).compare("--help") == 0 ||
+        std::string(argv[idx]).compare("--h") == 0) {
+      PrintHelp();
+      return 0;
+    }
     if (std::string(argv[idx]).compare("--scanner-only") == 0) {
       scanner_only = true;
     }
@@ -53,4 +62,19 @@ int main(int argc, char* argv[]) {
 
   }
   return 0;
+}
+
+// Prints help information on arguments
+void PrintHelp() {
+  std::cout << "KJLC: Kurt Lewis' Compiler for EECE5183." << std::endl;
+  std::cout << std::endl;
+  std::cout << "Usage: kjlc [options] [<file>]" << std::endl;
+  std::cout << std::endl;
+  std::cout << "Options:" << std::endl;
+  std::cout << "  --help            Prints this information." << std::endl;
+  std::cout << "  --parser-debug    Enables printing debug information.";
+  std::cout << std::endl;
+  std::cout << "  --scanner-only    Only runs scanner functionality and prints";
+  std::cout << " debugging" << std::endl;
+  std::cout << "                    information." << std::endl;
 }
