@@ -15,6 +15,7 @@ namespace kjlc {
 // Default Constructor
 Parser::Parser(std::string filename, bool debug)
     : scanner_(filename),
+      symbol_table_(),
       error_state_(false),
       end_parse_(false),
       debug_(debug) {
@@ -27,8 +28,14 @@ Parser::~Parser() {
 }
 
 void Parser::ParseProgram() {
+  // immediately increase the scope on the symbol table for a program level
+  // scope
+  symbol_table_.IncreaseScope();
+
   ParseProgramHeader();
   ParseProgramBody();
+
+  // no need to decrease scope because the program is over
 }
 
 void Parser::DebugPrint(std::string parse_function) {
@@ -272,21 +279,25 @@ void Parser::ParseArithOpTail() {
   }
 }
 
-void Parser::ParseBound() {
+void Parser::ParseBound(Symbol &symbol) {
   DebugPrint("Bound");
 
+  bool negative = false;
   // peek for '-'
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_MINUS) {
     // consume the dash 
     lexeme = scanner_.GetNextLexeme();
+    negative = true;
   }
 
-  ParseNumber();
+  symbol.bound = ParseNumberInteger();
 }
 
 void Parser::ParseDeclaration() {
   DebugPrint("Declaration");
+  // Declarations are going to declare a symbol so create it
+  Symbol symbol;
 
   // peek because the first terminal could be a number of things, some of
   // which involve reaching down rule evaluations
@@ -295,7 +306,9 @@ void Parser::ParseDeclaration() {
     // there's a global keyword
     // consume the token 
     lexeme = scanner_.GetNextLexeme();
-    // TODO: Probably do things with this in the symbol table
+    
+    // mark created symbol as global
+    symbol.global = true;
     
     // now prepare lexeme for guessing the next rule
     lexeme = scanner_.PeekNextLexeme();
@@ -304,13 +317,13 @@ void Parser::ParseDeclaration() {
   // Rule can evaluate to three different rules, so check their FIRST sets
   if (lexeme.token == T_PROCEDURE) {
     // Procedure Declaration rule
-    ParseProcedureDeclaration();
+    ParseProcedureDeclaration(symbol);
   } else if (lexeme.token == T_VARIABLE) {
     // Variable declaration rule
-    ParseVariableDeclaration();
+    ParseVariableDeclaration(symbol);
   } else if (lexeme.token == T_TYPE) {
     // Type declaration rule
-    ParseTypeDeclaration();
+    ParseTypeDeclaration(symbol);
   } else {
     EmitParsingError("Could not parse declaration - expected a variable, "
                      "type, or procedure",
@@ -429,15 +442,18 @@ void Parser::ParseFactor() {
   }
 }
 
-void Parser::ParseIdentifier() {
+std::string Parser::ParseIdentifier() {
   DebugPrint("Identifier");
 
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_ID) {
     EmitParsingError("Expected Identifier", lexeme);
-    return;
+    return std::string();
   }
-  // TODO: probably some symbol table stuff
+
+  // return the string value of the identifier, which will be what the
+  // identifier is
+  return lexeme.str_value;
 }
 
 void Parser::ParseIfStatement() {
@@ -564,12 +580,38 @@ void Parser::ParseNumber() {
   }
 }
 
-void Parser::ParseParameter() {
-  ParseVariableDeclaration(); 
+float Parser::ParseNumberFloat() {
+  DebugPrint("NumberFloat");
+
+  // consume number token, but expect it to be a float
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_FLOAT_LITERAL) {
+    EmitParsingError("Expected float literal", lexeme);
+    return 0.0;
+  }
+  return lexeme.float_value;
 }
 
-void Parser::ParseParameterList() {
-  ParseParameter();
+int Parser::ParseNumberInteger() {
+  DebugPrint("NumberInteger");
+
+  // consume number token, but expect it to be an integer
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_INT_LITERAL) {
+    EmitParsingError("Expected integer literal", lexeme);
+    return 0;
+  }
+  return lexeme.int_value;
+}
+
+void Parser::ParseParameter(Symbol &procedure_symbol) {
+  Symbol symbol;
+  ParseVariableDeclaration(symbol); 
+  procedure_symbol.params.push_back(symbol);
+}
+
+void Parser::ParseParameterList(Symbol &procedure_symbol) {
+  ParseParameter(procedure_symbol);
 
   // check to see if there are multiple parameters - indicated by ','
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -578,7 +620,7 @@ void Parser::ParseParameterList() {
     lexeme = scanner_.GetNextLexeme();
 
     // recursive call to read more parameters
-    ParseParameterList();
+    ParseParameterList(procedure_symbol);
   }
 }
 
@@ -617,14 +659,32 @@ void Parser::ParseProcedureBody() {
   }
 }
 
-void Parser::ParseProcedureDeclaration() {
+void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
   DebugPrint("ProcedureDeclaration");
 
-  ParseProcedureHeader();
+  // Increase the scope as we enter a new procedure
+  symbol_table_.IncreaseScope();
+
+  // mark the current symbol as a procedure
+  procedure_symbol.declaration = DECLARATION_PROCEDURE;
+
+  // Parse the procedure header and continue to build the symbol
+  ParseProcedureHeader(procedure_symbol);
+  
+  // commit the symbol to the symbol table so that the body can reference itself
+  symbol_table_.InsertSymbol(procedure_symbol);
+
+  // parse the body of the procedure
   ParseProcedureBody();
+
+  // exiting the procedure, decrease the scope
+  symbol_table_.DecreaseScope();
+
+  // now insert the symbol into the scope of the declarer so it can be called
+  symbol_table_.InsertSymbol(procedure_symbol);
 }
 
-void Parser::ParseProcedureHeader() {
+void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
   DebugPrint("ProcedureHeader");
 
   // parse procedure keyword
@@ -635,7 +695,7 @@ void Parser::ParseProcedureHeader() {
   } 
 
   // read the identifier
-  ParseIdentifier();
+  procedure_symbol.id = ParseIdentifier();
 
   // colon required
   lexeme = scanner_.GetNextLexeme();
@@ -645,7 +705,7 @@ void Parser::ParseProcedureHeader() {
   }
 
   // type mark
-  ParseTypeMark();
+  ParseTypeMark(procedure_symbol);
 
   // read left paren
   lexeme = scanner_.GetNextLexeme();
@@ -658,7 +718,7 @@ void Parser::ParseProcedureHeader() {
   lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_VARIABLE) {
     // read parameter list
-    ParseParameterList();
+    ParseParameterList(procedure_symbol);
   }
 
   lexeme = scanner_.GetNextLexeme();
@@ -666,6 +726,7 @@ void Parser::ParseProcedureHeader() {
     EmitExpectedTokenError(")", lexeme);
     return;
   }
+
 }
 
 void Parser::ParseProgramBody() {
@@ -878,8 +939,11 @@ void Parser::ParseTermTail() {
   }
 }
 
-void Parser::ParseTypeDeclaration() {
+void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
   DebugPrint("TypeDeclaration");
+
+  // mark the symbol as a type declaration
+  type_symbol.declaration = DECLARATION_TYPE;
 
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_TYPE) {
@@ -888,7 +952,7 @@ void Parser::ParseTypeDeclaration() {
   }
 
   // Read the identifier
-  ParseIdentifier();
+  type_symbol.id = ParseIdentifier();
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_IS) {
@@ -897,10 +961,13 @@ void Parser::ParseTypeDeclaration() {
   }
 
   // Parse type mark
-  ParseTypeMark();
+  ParseTypeMark(type_symbol);
+
+  // commit the symbol to the symbol table
+  symbol_table_.InsertSymbol(type_symbol);
 }
 
-void Parser::ParseTypeMark() {
+void Parser::ParseTypeMark(Symbol &symbol) {
   DebugPrint("TypeMark");
 
   // Need to peek, because it could be an identifier so we can't consume the
@@ -913,14 +980,21 @@ void Parser::ParseTypeMark() {
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token == T_BOOL) {
       // boolean
+      symbol.type = TYPE_BOOL;
     } else if (lexeme.token == T_FLOAT) {
       // float
+      symbol.type = TYPE_FLOAT;
     } else if (lexeme.token == T_INT) {
       // int
+      symbol.type = TYPE_INT;
     } else if (lexeme.token == T_STRING) {
       // string
+      symbol.type = TYPE_STRING;
     } else if (lexeme.token == T_ENUM) {
-      // enum - additional rules
+      // enum
+      symbol.type = TYPE_ENUM;
+      
+      // there are additional rules
       lexeme = scanner_.GetNextLexeme();
       if (lexeme.token != T_CURLY_LEFT) {
         EmitExpectedTokenError("{", lexeme);
@@ -963,7 +1037,15 @@ void Parser::ParseTypeMark() {
 }
 
 void Parser::ParseVariableDeclaration() {
+  Symbol symbol;
+  ParseVariableDeclaration(symbol);
+}
+
+void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
   DebugPrint("VariableDeclaration");
+
+  // mark the symbol as a variable declaration
+  variable_symbol.declaration = DECLARATION_VARIABLE;
 
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_VARIABLE) {
@@ -971,14 +1053,14 @@ void Parser::ParseVariableDeclaration() {
     return;
   }
 
-  ParseIdentifier();
+  variable_symbol.id = ParseIdentifier();
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_COLON) {
     EmitExpectedTokenError(":", lexeme);
   }
 
-  ParseTypeMark();
+  ParseTypeMark(variable_symbol);
 
   // peek to look for optional bound
   lexeme = scanner_.PeekNextLexeme();
@@ -987,7 +1069,10 @@ void Parser::ParseVariableDeclaration() {
     // consume left bracket
     lexeme = scanner_.GetNextLexeme();
 
-    ParseBound();
+    // it is an array, so mark the symbol as such
+    variable_symbol.array = true;
+
+    ParseBound(variable_symbol);
 
     // read right bracket
     lexeme = scanner_.GetNextLexeme();
@@ -996,6 +1081,9 @@ void Parser::ParseVariableDeclaration() {
       return;
     }
   }
+
+  // commit the symbol to the symbol table
+  symbol_table_.InsertSymbol(variable_symbol);
 }
 
 } // namespace kjlc

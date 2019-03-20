@@ -8,6 +8,7 @@
 #define EECE5138COMPILER_KJLC_PARSER_H_
 
 #include "scanner.h"
+#include "symbol_table.h"
 
 namespace kjlc {
 
@@ -26,6 +27,8 @@ class Parser {
   private:
     // Scanner being used to drive the parse
     Scanner scanner_;
+    // Symbol table
+    SymbolTable symbol_table_;
     // True if error state
     bool error_state_;
     // true if parse should end
@@ -76,7 +79,10 @@ class Parser {
     void ParseAssignmentStatement();
 
     // Handle parsing bound
-    void ParseBound();
+    // @params:
+    //   symbol - symbol to insert bound information into as the array is
+    //            defined
+    void ParseBound(Symbol &symbol);
 
     // Handle parsing declarationr ule
     void ParseDeclaration();
@@ -94,7 +100,8 @@ class Parser {
     void ParseFactor();
 
     // Handle Parsing Identifier rule
-    void ParseIdentifier();
+    // @return - string representation of the identifier
+    std::string ParseIdentifier();
 
     // Handle parsing if statement
     void ParseIfStatement();
@@ -103,22 +110,40 @@ class Parser {
     void ParseLoopStatement();
 
     // Handle parsing number
+    // does not return a value for the parsed number
+    // see ParseNumberInteger or ParseNumberFloat if a value is needed
     void ParseNumber();
+    
+    // Parses a numeric literal, but insists it must be a float value
+    // returns the float literal
+    float ParseNumberFloat();
+
+    // Parses a numeric literal, but insists it must be an int value
+    // returns the int literal
+    int ParseNumberInteger();
 
     // Handle parsing a parameter
-    void ParseParameter();
+    // @params:
+    //    Symbol &procedure_symbol - procedure symbol to place parameters in
+    void ParseParameter(Symbol &procedure_symbol);
 
     // Handle parsing parameter list
-    void ParseParameterList();
+    // @params:
+    //    Symbol &procedure_symbol - procedure symbol to place parameters in
+    void ParseParameterList(Symbol &procedure_symbol);
 
     // Handle parsing a procedure body
     void ParseProcedureBody();
 
     // Handle parsing a procedure declaration
-    void ParseProcedureDeclaration();
+    // @params:
+    //   Symbol &procedure_symbol - Symbol for procedure being declared
+    void ParseProcedureDeclaration(Symbol &procedure_symbol);
 
     // Handle parsing procedure header
-    void ParseProcedureHeader();
+    // @params:
+    //   Symbol &procedure_symbol - Symbol for procedure being declared
+    void ParseProcedureHeader(Symbol &procedure_symbol);
 
     // Parse the Program body rule
     void ParseProgramBody();
@@ -151,13 +176,23 @@ class Parser {
     void ParseTermTail();
 
     // Parse Type Declaration
-    void ParseTypeDeclaration();
+    // @params:
+    //   Symbol &type_symbol - Symbol for type being declared
+    void ParseTypeDeclaration(Symbol &type_symbol);
 
     // Parse Type Mark
-    void ParseTypeMark();
+    // @params:
+    //   Symbol &symbol - the symbol to update about type information
+    void ParseTypeMark(Symbol &symbol);
+
+    // Parse Variable declaration
+    // Overload for calling without a symbol already created
+    void ParseVariableDeclaration();
 
     // Parse Variable Declaration
-    void ParseVariableDeclaration();
+    // @params
+    // Symbol &variable_symbol - symbol for the variable being declared
+    void ParseVariableDeclaration(Symbol &variable_symbol);
 
 };
 

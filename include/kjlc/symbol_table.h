@@ -24,21 +24,34 @@ enum Type {
 enum Declaration {
   DECLARATION_PROCEDURE,
   DECLARATION_VARIABLE,
-  DEClARATION_TYPE
+  DECLARATION_TYPE
 };
 
 struct Symbol {
   // default initializer list for variables that need set
-  Symbol() : valid(true) {}
+  Symbol() : global(false), params(), valid(true) {}
 
   // identifier for the symbol
   std::string id;
 
-  // the actual declaraiton is of this variant
+  // the actual declaration is of this variant
   Declaration declaration;
 
   // the type of the declaration
   Type type;
+
+  // if the symbol is in the global scope
+  bool global;
+
+  // if the symbol is an array
+  bool array;
+  int bound;
+
+  // if a procedure, it could have argument
+  // NOTE - this is NOT a vector of references which means
+  // if I make changes it need re-inserted
+  // if this proves to be rough, look into std::reference_wrapper
+  std::vector<Symbol> params;
 
   // denotes if this is a valid symbol
   // example invalid symbol: lookup failed
@@ -64,9 +77,7 @@ class SymbolTable {
     void IncreaseScope();
 
 
-    void InsertSymbolToGlobalScope(Symbol symbol);
-
-    void InsertSymbolToLocalScope(Symbol symbol);
+    void InsertSymbol(Symbol &symbol);
 
     Symbol FindSymbolByIdentifier(std::string id);
 

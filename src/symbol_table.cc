@@ -33,13 +33,14 @@ void SymbolTable::DecreaseScope() {
   }
 }
 
-void SymbolTable::InsertSymbolToGlobalScope(Symbol symbol) {
-  global_scope_map_[symbol.id] = symbol;
-}
-
-void SymbolTable::InsertSymbolToLocalScope(Symbol symbol) {
-  local_scope_stack_.back()[symbol.id] = symbol;
-
+void SymbolTable::InsertSymbol(Symbol &symbol) {
+  if (symbol.global) {
+    // it's a global scope symbol, so it goes in the global symbol table
+    global_scope_map_[symbol.id] = symbol;
+  } else {
+    // not global, so put it in the local symbol table
+    local_scope_stack_.back()[symbol.id] = symbol;
+  }
 }
 
 Symbol SymbolTable::FindSymbolByIdentifier(std::string id) {
