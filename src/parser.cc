@@ -292,6 +292,9 @@ void Parser::ParseBound(Symbol &symbol) {
   }
 
   symbol.bound = ParseNumberInteger();
+  if (negative) {
+    symbol.bound = symbol.bound * -1;
+  }
 }
 
 void Parser::ParseDeclaration() {
