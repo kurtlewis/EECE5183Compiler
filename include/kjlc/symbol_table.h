@@ -29,7 +29,12 @@ enum Declaration {
 
 struct Symbol {
   // default initializer list for variables that need set
-  Symbol() : global(false), params(), valid(true) {}
+  Symbol() : id(""),
+             global(false),
+             array(false),
+             bound(0),
+             params(),
+             valid(true) {}
 
   // identifier for the symbol
   std::string id;
