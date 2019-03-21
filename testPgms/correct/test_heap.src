@@ -1,0 +1,15 @@
+program test_program is
+    global variable tmp : integer;
+    procedure print_string : integer(variable level : integer)
+        variable s : string;
+    begin
+        tmp := putString("Enter a string:");
+        s := getString();
+        if (level < 3) then
+            tmp := print_string(level + 1);
+        end if;
+        tmp := putString(s);
+    end procedure;
+begin
+    tmp := print_string(0);
+end program.
