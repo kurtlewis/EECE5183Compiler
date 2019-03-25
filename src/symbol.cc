@@ -6,7 +6,9 @@
 
 #include "kjlc/symbol.h"
 
+#include <ctime>
 #include <iostream>
+#include <stdlib.h>
 
 namespace kjlc {
 
@@ -22,6 +24,13 @@ Symbol::Symbol()
 
 Symbol::~Symbol() {
 
+}
+
+Symbol Symbol::GenerateAnonymousSymbol() {
+  Symbol symbol;
+  std::srand(std::time(nullptr));
+  symbol.SetId("_" + std::to_string(std::rand()));
+  return symbol;
 }
 
 void Symbol::PrintSymbolDebug() {

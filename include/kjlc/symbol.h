@@ -33,6 +33,10 @@ class Symbol {
     // Deconstructor
     ~Symbol();
 
+    // static - generates an anonymous symbol with an identifier
+    // that cannot be found in the program
+    static Symbol GenerateAnonymousSymbol();
+
     // Print out information on a given symbol
     void PrintSymbolDebug();
 
