@@ -365,7 +365,7 @@ void Parser::ParseDestination() {
 // TODO:TypeCheck
 // this is a left recursive rule made right recursive
 // see `docs/language-gramamr-modified` for notes on the rules
-void Parser::ParseExpression() {
+Symbol Parser::ParseExpression() {
   DebugPrint("Expression");
 
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -378,6 +378,9 @@ void Parser::ParseExpression() {
   ParseArithOp();
 
   ParseExpressionTail();
+
+  // TODO:TypeCheck dont keep this
+  return Symbol::GenerateAnonymousSymbol();
 }
 
 // TODO:TypeCheck
@@ -398,9 +401,12 @@ void Parser::ParseExpressionTail() {
   }
 }
 
-// TODO:TypeCheck
-void Parser::ParseFactor() {
+Symbol Parser::ParseFactor() {
   DebugPrint("Factor");
+  
+  // Initially create an anonymous symbol for return - will be replaced if
+  // it's not an anonymous symbol later
+  Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
   // Need to use first sets to determine evaluation, so peek
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -409,17 +415,18 @@ void Parser::ParseFactor() {
     // consume paren
     lexeme = scanner_.GetNextLexeme();
     
-    ParseExpression();
+    symbol = ParseExpression();
 
     // closing paren is required
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_PAREN_RIGHT) {
       EmitExpectedTokenError(")", lexeme);
-      return;
+      symbol.SetIsValid(false);
+      return symbol;
     }
   } else if (lexeme.token == T_ID) {
     // could be a procedure call or name reference
-    ParseReference();
+    symbol = ParseReference();
   } else if (lexeme.token == T_MINUS) {
     // consume T_MINUS
     lexeme = scanner_.GetNextLexeme();
@@ -428,29 +435,48 @@ void Parser::ParseFactor() {
     lexeme = scanner_.PeekNextLexeme();
     if (lexeme.token == T_INT_LITERAL || lexeme.token == T_FLOAT_LITERAL) {
       // number
+      // Check to see if it's an int or a float to update the symbol
+      if (lexeme.token == T_INT_LITERAL) {
+        symbol.SetType(TYPE_INT);
+      } else if (lexeme.token == T_FLOAT_LITERAL) {
+        symbol.SetType(TYPE_FLOAT);
+      }
       ParseNumber();
     } else if (lexeme.token == T_ID) {
       // name reference
-      ParseReference();
+      symbol = ParseReference();
     } else {
       EmitParsingError("Expected numeric literal or identifier reference",
                       lexeme);
-      return;
+      symbol.SetIsValid(false);
+      return symbol;
     }
   } else if (lexeme.token == T_INT_LITERAL || lexeme.token == T_FLOAT_LITERAL) {
+    // number
+    // Check to see if it's an int or a float to update the symbol
+    if (lexeme.token == T_INT_LITERAL) {
+      symbol.SetType(TYPE_INT);
+    } else if (lexeme.token == T_FLOAT_LITERAL) {
+      symbol.SetType(TYPE_FLOAT);
+    }
     ParseNumber();
   } else if (lexeme.token == T_STRING_LITERAL) {
+    symbol.SetType(TYPE_STRING);
     ParseString();
   } else if (lexeme.token == T_TRUE) {
     // consume true
+    symbol.SetType(TYPE_BOOL);
     lexeme = scanner_.GetNextLexeme();
   } else if (lexeme.token == T_FALSE) {
     // consume false
+    symbol.SetType(TYPE_BOOL);
     lexeme = scanner_.GetNextLexeme();
   } else {
     EmitParsingError("Exected valid factor", lexeme);
-    return;
+    symbol.SetIsValid(false);
+    return symbol;
   }
+  return symbol;
 }
 
 std::string Parser::ParseIdentifier() {
@@ -807,8 +833,12 @@ void Parser::ParseProgramHeader() {
 
 // TODO:TypeCheck
 // this rule replaces ParseName and ParseProcedureCall
-void Parser::ParseReference() {
+Symbol Parser::ParseReference() {
   DebugPrint("Reference");
+
+  // generate an anonymous symbol for return, will be replaced later by real
+  // symbol later if applicable
+  Symbol symbol = Symbol::GenerateAnonymousSymbol();
   
   // could be a procedure call or name
   // both start with identifiers
@@ -838,7 +868,8 @@ void Parser::ParseReference() {
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_PAREN_RIGHT) {
       EmitExpectedTokenError(")", lexeme);
-      return;
+      symbol.SetIsValid(false);
+      return symbol;
     }
   } else if (lexeme.token == T_BRACK_LEFT) {
     // it's a name reference
@@ -850,11 +881,14 @@ void Parser::ParseReference() {
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_BRACK_RIGHT) {
       EmitExpectedTokenError("]", lexeme);
-      return;
+      symbol.SetIsValid(false);
+      return symbol;
     }
   } else {
     // it's a name, but without the [ <expression> ]
   }
+
+  return symbol;
 }
 
 // TODO:TypeCheck

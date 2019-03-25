@@ -92,13 +92,13 @@ class Parser {
     void ParseDestination();
     
     // Handle Parsing expression
-    void ParseExpression();
+    Symbol ParseExpression();
 
     // Handle right recursive part of ParseExpression
     void ParseExpressionTail();
 
     // Handle parsing factor rule
-    void ParseFactor();
+    Symbol ParseFactor();
 
     // Handle Parsing Identifier rule
     // @return - string representation of the identifier
@@ -153,7 +153,7 @@ class Parser {
     void ParseProgramHeader();
     
     // Handle parsing references. Combination of <procedure_call> and <name>
-    void ParseReference();
+    Symbol ParseReference();
 
     // Handle parsing relation rule
     void ParseRelation();
