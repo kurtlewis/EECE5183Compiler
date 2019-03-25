@@ -47,15 +47,15 @@ void SymbolTable::DecreaseScope() {
 void SymbolTable::InsertSymbol(Symbol &symbol) {
   if (debug_) {
     std::cout << "Inserting the following symbol:" << std::endl;
-    PrintSymbolDebug(symbol);
+    symbol.PrintSymbolDebug();
   }
 
-  if (symbol.global) {
+  if (symbol.IsGlobal()) {
     // it's a global scope symbol, so it goes in the global symbol table
-    global_scope_map_[symbol.id] = symbol;
+    global_scope_map_[symbol.GetId()] = symbol;
   } else {
     // not global, so put it in the local symbol table
-    local_scope_stack_.back()[symbol.id] = symbol;
+    local_scope_stack_.back()[symbol.GetId()] = symbol;
   }
 }
 
@@ -73,19 +73,7 @@ Symbol SymbolTable::FindSymbolByIdentifier(std::string id) {
     return result->second;
   }
   Symbol symbol;
-  symbol.valid = false;
+  symbol.SetIsValid(false);;
   return symbol;
-}
-
-void SymbolTable::PrintSymbolDebug(Symbol &symbol) {
-  std::cout << "Symbol: " << symbol.id << std::endl;
-  std::cout << "  Declaration enum: " << symbol.declaration << std::endl;
-  std::cout << "  Type enum: " << symbol.type << std::endl;
-  std::cout << "  Global: " << symbol.global << std::endl;
-  std::cout << "  Array: " << symbol.array << std::endl;
-  std::cout << "  Bound: " << symbol.bound << std::endl;
-  std::cout << "  Param count: " << symbol.params.size() << std::endl;
-  std::cout << "  Valid: " << symbol.valid << std::endl;
-  std::cout << std::endl;
 }
 } // namespace kjlc

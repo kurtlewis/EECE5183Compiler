@@ -4,10 +4,11 @@
  *************************
  * Header file for the Parser Class
  **/
-#ifndef EECE5138COMPILER_KJLC_PARSER_H_
-#define EECE5138COMPILER_KJLC_PARSER_H_
+#ifndef EECE5183COMPILER_KJLC_PARSER_H_
+#define EECE5183COMPILER_KJLC_PARSER_H_
 
 #include "scanner.h"
+#include "symbol.h"
 #include "symbol_table.h"
 
 namespace kjlc {
@@ -197,4 +198,4 @@ class Parser {
 };
 
 } // namespace kjlc
-#endif // EECE5138COMPILER_KJLC_SCANNER_H_
+#endif // EECE5183COMPILER_KJLC_SCANNER_H_

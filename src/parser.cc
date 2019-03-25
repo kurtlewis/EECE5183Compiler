@@ -294,10 +294,11 @@ void Parser::ParseBound(Symbol &symbol) {
     negative = true;
   }
 
-  symbol.bound = ParseNumberInteger();
+  int bound = ParseNumberInteger();
   if (negative) {
-    symbol.bound = symbol.bound * -1;
+    bound = bound * -1;
   }
+  symbol.SetArrayBound(bound);
 }
 
 void Parser::ParseDeclaration() {
@@ -314,7 +315,7 @@ void Parser::ParseDeclaration() {
     lexeme = scanner_.GetNextLexeme();
     
     // mark created symbol as global
-    symbol.global = true;
+    symbol.SetIsGlobal(true);
     
     // now prepare lexeme for guessing the next rule
     lexeme = scanner_.PeekNextLexeme();
@@ -619,7 +620,7 @@ int Parser::ParseNumberInteger() {
 void Parser::ParseParameter(Symbol &procedure_symbol) {
   Symbol symbol;
   ParseVariableDeclaration(symbol); 
-  procedure_symbol.params.push_back(symbol);
+  procedure_symbol.GetParams().push_back(symbol);
 }
 
 void Parser::ParseParameterList(Symbol &procedure_symbol) {
@@ -678,7 +679,7 @@ void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
   symbol_table_.IncreaseScope();
 
   // mark the current symbol as a procedure
-  procedure_symbol.declaration = DECLARATION_PROCEDURE;
+  procedure_symbol.SetDeclaration(DECLARATION_PROCEDURE);
 
   // Parse the procedure header and continue to build the symbol
   ParseProcedureHeader(procedure_symbol);
@@ -707,7 +708,8 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
   } 
 
   // read the identifier
-  procedure_symbol.id = ParseIdentifier();
+  std::string id = ParseIdentifier();
+  procedure_symbol.SetId(id);
 
   // colon required
   lexeme = scanner_.GetNextLexeme();
@@ -962,7 +964,7 @@ void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
   DebugPrint("TypeDeclaration");
 
   // mark the symbol as a type declaration
-  type_symbol.declaration = DECLARATION_TYPE;
+  type_symbol.SetDeclaration(DECLARATION_TYPE);
 
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_TYPE) {
@@ -971,7 +973,8 @@ void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
   }
 
   // Read the identifier
-  type_symbol.id = ParseIdentifier();
+  std::string id = ParseIdentifier();
+  type_symbol.SetId(id);
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_IS) {
@@ -999,19 +1002,19 @@ void Parser::ParseTypeMark(Symbol &symbol) {
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token == T_BOOL) {
       // boolean
-      symbol.type = TYPE_BOOL;
+      symbol.SetType(TYPE_BOOL);
     } else if (lexeme.token == T_FLOAT) {
       // float
-      symbol.type = TYPE_FLOAT;
+      symbol.SetType(TYPE_FLOAT);
     } else if (lexeme.token == T_INT) {
       // int
-      symbol.type = TYPE_INT;
+      symbol.SetType(TYPE_INT);
     } else if (lexeme.token == T_STRING) {
       // string
-      symbol.type = TYPE_STRING;
+      symbol.SetType(TYPE_STRING);
     } else if (lexeme.token == T_ENUM) {
       // enum
-      symbol.type = TYPE_ENUM;
+      symbol.SetType(TYPE_ENUM);
       
       // there are additional rules
       lexeme = scanner_.GetNextLexeme();
@@ -1064,7 +1067,7 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
   DebugPrint("VariableDeclaration");
 
   // mark the symbol as a variable declaration
-  variable_symbol.declaration = DECLARATION_VARIABLE;
+  variable_symbol.SetDeclaration(DECLARATION_VARIABLE);
 
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_VARIABLE) {
@@ -1072,7 +1075,8 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
     return;
   }
 
-  variable_symbol.id = ParseIdentifier();
+  std::string id = ParseIdentifier();
+  variable_symbol.SetId(id);
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_COLON) {
@@ -1089,7 +1093,7 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
     lexeme = scanner_.GetNextLexeme();
 
     // it is an array, so mark the symbol as such
-    variable_symbol.array = true;
+    variable_symbol.SetIsArray(true);
 
     ParseBound(variable_symbol);
 
