@@ -45,6 +45,57 @@ void Symbol::PrintSymbolDebug() {
   std::cout << std::endl;
 }
 
+bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
+  // only return true in the switch statement if the types are compatible
+  // don't return false, let the error printer at the end of the function
+  // return false
+  switch (type_) {
+    case TYPE_BOOL:
+      break;
+    case TYPE_ENUM:
+      break;
+    case TYPE_FLOAT: // fall through to TYPE_INT
+    case TYPE_INT:
+      if (symbol.GetType() == TYPE_INT || symbol.GetType() == TYPE_FLOAT) {
+        return true;
+      }
+      break;
+    case TYPE_STRING:
+      break;
+  }
+  // code only reaches here by being incompatible
+  std::cout << "Incompatible types for arithmetic operation between: ";
+  std::cout << std::endl;
+  std::cout << "Type 1: " << Symbol::GetTypeString(type_) << std::endl;
+  std::cout << "Type 2: " << Symbol::GetTypeString(symbol.GetType());
+  std::cout << std::endl;
+  std::cout << "Arithmetic operations are only valid between ints and floats.";
+  std::cout << std::endl;
+  return false;
+}
+
+std::string Symbol::GetTypeString(Type type) {
+  switch (type) {
+    case TYPE_BOOL:
+      return "boolean";
+      break;
+    case TYPE_ENUM:
+      return "enum";
+      break;
+    case TYPE_FLOAT:
+      return "float";
+      break;
+    case TYPE_INT:
+      return "integer";
+      break;
+    case TYPE_STRING:
+      return "string";
+      break;
+    default:
+      return "unkown type";
+  }
+}
+
 //
 // Mutators
 //

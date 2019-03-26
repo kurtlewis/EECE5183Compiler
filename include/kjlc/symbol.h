@@ -37,8 +37,14 @@ class Symbol {
     // that cannot be found in the program
     static Symbol GenerateAnonymousSymbol();
 
+    // Get type in string format
+    static std::string GetTypeString(Type type);
+
     // Print out information on a given symbol
     void PrintSymbolDebug();
+
+    // Compare types for arithmetic operation
+    bool CheckTypesForArithmeticOp(Symbol symbol);
 
     // Mutators
     std::string GetId();
@@ -93,6 +99,8 @@ class Symbol {
     // denotes if this is a valid symbol
     // example invalid symbol: lookup failed
     bool valid_;
+
+
 };
 
 

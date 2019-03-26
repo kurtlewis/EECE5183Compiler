@@ -63,6 +63,18 @@ class Parser {
     // is the exact same, with possibly different end tokens
     void LoopStatements(Token end_tokens[], int tokens_length);
 
+
+    //
+    // Type Check Functions for Right Recursive rules
+    //
+
+    // Checks the factor and term to make sure they are type compatible
+    // for use in ParseTerm and ParseTermTail
+    // params:
+    //   factor - output of ParseFactor
+    //   term_tail - output of ParseTermTail, can be invalid
+    Symbol CheckTermParseTypes(Symbol factor, Symbol term_tail);
+
     //
     // Parse rules functions
     //
@@ -171,10 +183,10 @@ class Parser {
     void ParseString();
 
     // Handle parsing term
-    void ParseTerm();
+    Symbol ParseTerm();
     
     // handle parsing right recursive term
-    void ParseTermTail();
+    Symbol ParseTermTail();
 
     // Parse Type Declaration
     // @params:

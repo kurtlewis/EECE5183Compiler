@@ -222,6 +222,42 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
   }
 }
 
+Symbol Parser::CheckTermParseTypes(Symbol factor, Symbol term_tail) {
+  // is term_tail a valid Symbol?
+  if (term_tail.IsValid()) {
+    // Generate an anonymous symbol to return
+    Symbol symbol = Symbol::GenerateAnonymousSymbol();
+
+    // do a type check between the results
+    bool compatible = factor.CheckTypesForArithmeticOp(term_tail);
+    
+    if (!compatible) {
+      // TODO:TypeCheck - need a system for outputting current line information
+      // even when it isn't available
+      // maybe a class level, last read line? could be held in scanner
+      symbol.SetIsValid(false);
+      return symbol;
+    }
+
+    // if one of the symbols was a float, that's the return type, otherwise int
+    // safe assumption to make because the <term> grammar is for arithmetic
+    // operations, and they are only defined for ints and floats
+    // if there was a non int/float, it would be cause by term_tail being false
+    if (factor.GetType() == TYPE_FLOAT || term_tail.GetType() == TYPE_FLOAT) {
+      symbol.SetType(TYPE_FLOAT);
+    } else {
+      symbol.SetType(TYPE_INT);
+    }
+
+    // return an anonymous symbol of the operation return type
+    return symbol;
+  } else {
+    // term was not a valid symbol, so just return the factor symbol
+    // allow it to be whatever type it is
+    return factor;
+  }
+}
+
 void Parser::ParseArgumentList() {
   DebugPrint("ArgumentList");
 
@@ -967,19 +1003,20 @@ void Parser::ParseString() {
   }
 }
 
-// TODO:TypeCheck
 // a left recursive rule made right recursive. See docs for writeout
-void Parser::ParseTerm() {
+Symbol Parser::ParseTerm() {
   DebugPrint("Term");
 
-  ParseFactor();
+  Symbol factor = ParseFactor();
 
-  ParseTermTail();
+  Symbol term_tail = ParseTermTail();
+
+  return CheckTermParseTypes(factor, term_tail);
+
 }
 
-// TODO:TypeCheck
 // Right recursive version of ParseTerm
-void Parser::ParseTermTail() {
+Symbol Parser::ParseTermTail() {
   DebugPrint("TermTail");
 
   // peek because there can be an empty evaluation
@@ -988,10 +1025,17 @@ void Parser::ParseTermTail() {
     // consume the token
     lexeme = scanner_.GetNextLexeme();
 
-    ParseFactor();
+    Symbol factor = ParseFactor();
 
-    ParseTermTail();
+    Symbol term_tail =  ParseTermTail();
+
+    return CheckTermParseTypes(factor, term_tail);
   }
+
+  // Empty evaluation of the rule, return an invalid symbol
+  Symbol symbol = Symbol::GenerateAnonymousSymbol();
+  symbol.SetIsValid(false);
+  return symbol;
 }
 
 void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
