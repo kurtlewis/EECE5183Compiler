@@ -46,6 +46,9 @@ class Symbol {
     // Compare types for arithmetic operation
     bool CheckTypesForArithmeticOp(Symbol symbol);
 
+    // Compare types for a relational operation
+    bool CheckTypesForRelationalOp(Symbol symbol);
+
     // Mutators
     std::string GetId();
     void SetId(std::string id);

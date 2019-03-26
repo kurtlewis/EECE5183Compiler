@@ -222,6 +222,34 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
   }
 }
 
+Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail) {
+  // is the relation_tail a valid symbol?
+  if (relation_tail.IsValid()) {
+    // Generate an anonymous symbol to return
+    Symbol symbol = Symbol::GenerateAnonymousSymbol();
+
+    bool compatible = term.CheckTypesForRelationalOp(relation_tail);
+
+    if (!compatible) {
+      // TODO:TypeCheck - need a system for outputting current line information
+      // even when it isn't available
+      // maybe a class level, last read line? could be held in scanner
+      symbol.SetIsValid(false);
+      return symbol;
+    }
+
+    // relational operations always return a boolean
+    symbol.SetType(TYPE_BOOL);
+
+    return symbol;
+
+  } else {
+    // relation tail was invalid, so just return the term
+    // it can be whatever type it wants to be :)
+    return term;
+  }
+}
+
 Symbol Parser::CheckTermParseTypes(Symbol factor, Symbol term_tail) {
   // is term_tail a valid Symbol?
   if (term_tail.IsValid()) {
@@ -927,20 +955,20 @@ Symbol Parser::ParseReference() {
   return symbol;
 }
 
-// TODO:TypeCheck
 // this is a left recursive rule made right recursive
 // see docs for full write-out of rule
-void Parser::ParseRelation() {
+Symbol Parser::ParseRelation() {
   DebugPrint("Relation");
 
-  ParseTerm();
+  Symbol term = ParseTerm();
 
-  ParseRelationTail();
+  Symbol relation_tail = ParseRelationTail();
+
+  return CheckRelationParseTypes(term, relation_tail);
 }
 
-// TODO:TypeCheck
 // Right recursive portion of the rule
-void Parser::ParseRelationTail() {
+Symbol Parser::ParseRelationTail() {
   DebugPrint("RelationTail");
 
   // Need to allow for empty evaluation so peek
@@ -951,11 +979,18 @@ void Parser::ParseRelationTail() {
     // consume the token
     lexeme = scanner_.GetNextLexeme();
 
-    ParseTerm();
+    Symbol term = ParseTerm();
 
     // Recursive call
-    ParseRelationTail();
+    Symbol relation_tail = ParseRelationTail();
+
+    return CheckRelationParseTypes(term, relation_tail);
   }
+  
+  // empty evaluation of rule, return invalid anonymous symbol
+  Symbol symbol = Symbol::GenerateAnonymousSymbol();
+  symbol.SetIsValid(false);
+  return symbol;
 }
 
 // TODO:TypeCheck

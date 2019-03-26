@@ -68,6 +68,13 @@ class Parser {
     // Type Check Functions for Right Recursive rules
     //
 
+    // Checks the term and relation_tail to make sure they are type compatible
+    // for use in ParseRelation and ParseRelationTail
+    // params:
+    //   term - output of ParseTerm
+    //   relation_tail - output of ParseRelationTail, can be invalid
+    Symbol CheckRelationParseTypes(Symbol term, Symbol relation_tail);
+
     // Checks the factor and term to make sure they are type compatible
     // for use in ParseTerm and ParseTermTail
     // params:
@@ -168,10 +175,10 @@ class Parser {
     Symbol ParseReference();
 
     // Handle parsing relation rule
-    void ParseRelation();
+    Symbol ParseRelation();
 
     // Handle parsing right recursive Relation rule
-    void ParseRelationTail();
+    Symbol ParseRelationTail();
 
     // Handle parsing return statements
     void ParseReturnStatement();

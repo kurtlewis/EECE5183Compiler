@@ -74,6 +74,50 @@ bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
   return false;
 }
 
+
+bool Symbol::CheckTypesForRelationalOp(Symbol symbol) {
+  // only return true in the switch statement if the types are compatible
+  // don't return false, let the error printer at the end of the function
+  // return false
+  switch (type_) {
+    case TYPE_BOOL:
+      if (symbol.GetType() == TYPE_BOOL || symbol.GetType() == TYPE_INT) {
+        return true;
+      }
+      break;
+    case TYPE_ENUM:
+      break;
+    case TYPE_FLOAT:
+      // TODO:TypeCheck - verify that floats and ints are interoperable
+      if (symbol.GetType() == TYPE_FLOAT || symbol.GetType() == TYPE_INT) {
+        return true;
+      }
+      break;
+    case TYPE_INT:
+      // TODO:TypeCheck - verify that floats and ints are interoperable
+      if (symbol.GetType() == TYPE_BOOL || symbol.GetType() == TYPE_FLOAT ||
+          symbol.GetType() == TYPE_INT) {
+        return true;
+      }
+      break;
+    case TYPE_STRING:
+      // TODO:TypeCheck
+      // the problem here is that equality/inequality is defined only for
+      // equality/inequality tests and that information is really hard to get
+      if (symbol.GetType() == TYPE_STRING) {
+        return true;
+      }
+      break;
+  }
+  std::cout << "Incompatible types for relational operation between: ";
+  std::cout << std::endl;
+  std::cout << "Type 1: " << Symbol::GetTypeString(type_) << std::endl;
+  std::cout << "Type 2: " << Symbol::GetTypeString(symbol.GetType());
+  std::cout << std::endl;
+  
+  return false;
+}
+
 std::string Symbol::GetTypeString(Type type) {
   switch (type) {
     case TYPE_BOOL:
