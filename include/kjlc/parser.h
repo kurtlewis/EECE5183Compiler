@@ -73,7 +73,9 @@ class Parser {
     // params:
     //   term - output of ParseTerm
     //   relation_tail - output of ParseRelationTail, can be invalid
-    Symbol CheckRelationParseTypes(Symbol term, Symbol relation_tail);
+    //   equality_test - true if the operation will be EQ or NEQ
+    Symbol CheckRelationParseTypes(Symbol term, Symbol relation_tail,
+                                   bool equality_test);
 
     // Checks the factor and term to make sure they are type compatible
     // for use in ParseTerm and ParseTermTail

@@ -47,7 +47,10 @@ class Symbol {
     bool CheckTypesForArithmeticOp(Symbol symbol);
 
     // Compare types for a relational operation
-    bool CheckTypesForRelationalOp(Symbol symbol);
+    // params:
+    //   symbol - symbol to check for compatability with
+    //   equality_test - true if the relational op is a EQ or NEQ
+    bool CheckTypesForRelationalOp(Symbol symbol, bool equality_test);
 
     // Mutators
     std::string GetId();

@@ -222,13 +222,15 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
   }
 }
 
-Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail) {
+Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
+                                       bool equality_test) {
   // is the relation_tail a valid symbol?
   if (relation_tail.IsValid()) {
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
-    bool compatible = term.CheckTypesForRelationalOp(relation_tail);
+    bool compatible = term.CheckTypesForRelationalOp(relation_tail,
+                                                     equality_test);
 
     if (!compatible) {
       // TODO:TypeCheck - need a system for outputting current line information
@@ -962,9 +964,17 @@ Symbol Parser::ParseRelation() {
 
   Symbol term = ParseTerm();
 
+  // peek the next token to see if there is going to be an equality test
+  // needed for type checking, this is reaching down into ParseRelationTail
+  bool equality_test = false;
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+  if (lexeme.token == T_EQ || lexeme.token == T_NEQ) {
+    equality_test = true;
+  }
+
   Symbol relation_tail = ParseRelationTail();
 
-  return CheckRelationParseTypes(term, relation_tail);
+  return CheckRelationParseTypes(term, relation_tail, equality_test);
 }
 
 // Right recursive portion of the rule
@@ -979,12 +989,22 @@ Symbol Parser::ParseRelationTail() {
     // consume the token
     lexeme = scanner_.GetNextLexeme();
 
+
     Symbol term = ParseTerm();
+
+    // check to see if the next token is an equality test
+    // needed for type checking
+    // this is technically reaching down into the next ParseRelationTail
+    lexeme = scanner_.PeekNextLexeme();
+    bool equality_test = false;
+    if (lexeme.token == T_EQ || lexeme.token == T_NEQ) {
+      equality_test = true;
+    }
 
     // Recursive call
     Symbol relation_tail = ParseRelationTail();
 
-    return CheckRelationParseTypes(term, relation_tail);
+    return CheckRelationParseTypes(term, relation_tail, equality_test);
   }
   
   // empty evaluation of rule, return invalid anonymous symbol

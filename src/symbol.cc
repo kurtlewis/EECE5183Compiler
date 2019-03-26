@@ -75,7 +75,7 @@ bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
 }
 
 
-bool Symbol::CheckTypesForRelationalOp(Symbol symbol) {
+bool Symbol::CheckTypesForRelationalOp(Symbol symbol, bool equality_test) {
   // only return true in the switch statement if the types are compatible
   // don't return false, let the error printer at the end of the function
   // return false
@@ -101,10 +101,7 @@ bool Symbol::CheckTypesForRelationalOp(Symbol symbol) {
       }
       break;
     case TYPE_STRING:
-      // TODO:TypeCheck
-      // the problem here is that equality/inequality is defined only for
-      // equality/inequality tests and that information is really hard to get
-      if (symbol.GetType() == TYPE_STRING) {
+      if (equality_test && symbol.GetType() == TYPE_STRING) {
         return true;
       }
       break;
