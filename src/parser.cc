@@ -44,6 +44,16 @@ void Parser::DebugPrint(std::string parse_function) {
   }
 }
 
+void Parser::EmitParsingError(Lexeme lexeme) {
+  // don't output if still in an error_state_
+  if (error_state_) {
+    return;
+  }
+  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column << std::endl;
+  error_state_ = true;
+}
+
+
 void Parser::EmitParsingError(std::string message, Lexeme lexeme) {
   // don't output if still in an error_state_
   if (error_state_) {
@@ -223,7 +233,7 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
 }
 
 Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
-                                       bool equality_test) {
+                                       Lexeme location, bool equality_test) {
   // is the relation_tail a valid symbol?
   if (relation_tail.IsValid()) {
     // Generate an anonymous symbol to return
@@ -233,9 +243,7 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
                                                      equality_test);
 
     if (!compatible) {
-      // TODO:TypeCheck - need a system for outputting current line information
-      // even when it isn't available
-      // maybe a class level, last read line? could be held in scanner
+      EmitParsingError(location);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -252,7 +260,8 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
   }
 }
 
-Symbol Parser::CheckTermParseTypes(Symbol factor, Symbol term_tail) {
+Symbol Parser::CheckTermParseTypes(Symbol factor, Symbol term_tail,
+                                   Lexeme location) {
   // is term_tail a valid Symbol?
   if (term_tail.IsValid()) {
     // Generate an anonymous symbol to return
@@ -262,9 +271,7 @@ Symbol Parser::CheckTermParseTypes(Symbol factor, Symbol term_tail) {
     bool compatible = factor.CheckTypesForArithmeticOp(term_tail);
     
     if (!compatible) {
-      // TODO:TypeCheck - need a system for outputting current line information
-      // even when it isn't available
-      // maybe a class level, last read line? could be held in scanner
+      EmitParsingError(location);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -966,6 +973,7 @@ Symbol Parser::ParseRelation() {
 
   // peek the next token to see if there is going to be an equality test
   // needed for type checking, this is reaching down into ParseRelationTail
+  // lexeme also used for location in possible error reporting
   bool equality_test = false;
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_EQ || lexeme.token == T_NEQ) {
@@ -974,7 +982,7 @@ Symbol Parser::ParseRelation() {
 
   Symbol relation_tail = ParseRelationTail();
 
-  return CheckRelationParseTypes(term, relation_tail, equality_test);
+  return CheckRelationParseTypes(term, relation_tail, lexeme, equality_test);
 }
 
 // Right recursive portion of the rule
@@ -995,6 +1003,7 @@ Symbol Parser::ParseRelationTail() {
     // check to see if the next token is an equality test
     // needed for type checking
     // this is technically reaching down into the next ParseRelationTail
+    // lexeme also used for location in possible error reporting
     lexeme = scanner_.PeekNextLexeme();
     bool equality_test = false;
     if (lexeme.token == T_EQ || lexeme.token == T_NEQ) {
@@ -1004,7 +1013,7 @@ Symbol Parser::ParseRelationTail() {
     // Recursive call
     Symbol relation_tail = ParseRelationTail();
 
-    return CheckRelationParseTypes(term, relation_tail, equality_test);
+    return CheckRelationParseTypes(term, relation_tail, lexeme, equality_test);
   }
   
   // empty evaluation of rule, return invalid anonymous symbol
@@ -1064,9 +1073,12 @@ Symbol Parser::ParseTerm() {
 
   Symbol factor = ParseFactor();
 
+  // peek the location of the operator for possible error reporting
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+
   Symbol term_tail = ParseTermTail();
 
-  return CheckTermParseTypes(factor, term_tail);
+  return CheckTermParseTypes(factor, term_tail, lexeme);
 
 }
 
@@ -1082,9 +1094,12 @@ Symbol Parser::ParseTermTail() {
 
     Symbol factor = ParseFactor();
 
+    // peek the location of the operator for possible error reporting
+    Lexeme lexeme = scanner_.PeekNextLexeme();
+
     Symbol term_tail =  ParseTermTail();
 
-    return CheckTermParseTypes(factor, term_tail);
+    return CheckTermParseTypes(factor, term_tail, lexeme);
   }
 
   // Empty evaluation of the rule, return an invalid symbol

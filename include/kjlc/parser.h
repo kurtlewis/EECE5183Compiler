@@ -41,6 +41,12 @@ class Parser {
     // parse_function: name of parse rule being expanded
     void DebugPrint(std::string parse_function);
 
+    // TODO: I probably need to rethink the implications of having my
+    // error output functions set the program to an error state
+
+    // Error hanlding message that only prints the location of a lexeme
+    void EmitParsingError(Lexeme lexeme);
+
     // Generic Error Handling function
     void EmitParsingError(std::string message, Lexeme lexeme);
 
@@ -75,14 +81,15 @@ class Parser {
     //   relation_tail - output of ParseRelationTail, can be invalid
     //   equality_test - true if the operation will be EQ or NEQ
     Symbol CheckRelationParseTypes(Symbol term, Symbol relation_tail,
-                                   bool equality_test);
+                                   Lexeme location, bool equality_test);
 
     // Checks the factor and term to make sure they are type compatible
     // for use in ParseTerm and ParseTermTail
     // params:
     //   factor - output of ParseFactor
     //   term_tail - output of ParseTermTail, can be invalid
-    Symbol CheckTermParseTypes(Symbol factor, Symbol term_tail);
+    Symbol CheckTermParseTypes(Symbol factor, Symbol term_tail,
+                               Lexeme location);
 
     //
     // Parse rules functions
