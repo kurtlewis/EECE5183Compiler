@@ -527,6 +527,7 @@ Symbol Parser::ParseDestination() {
     Symbol bound = ParseExpression();
     
     // Type checking
+    // TODO:TypeCheck reduce code duplication for array index type checking
 
     // create invalid symbol for returning in case of errors
     Symbol invalid = Symbol::GenerateAnonymousSymbol();
@@ -534,7 +535,7 @@ Symbol Parser::ParseDestination() {
 
     // an index must be an integer
     if (bound.GetType() != TYPE_INT) {
-      EmitError("Array bounds must evaluate to integers.", lexeme);
+      EmitError("Array index must evaluate to integers.", lexeme);
       // return invalid symbol
       return invalid;
     }
@@ -546,7 +547,7 @@ Symbol Parser::ParseDestination() {
       return invalid;
     }
     // TODO:TypeCheck do I need to make a specific symbol for the single 
-    // lcoation this is going to if it's an item in an array? I don't know at
+    // location this is going to if it's an item in an array? I don't know at
     // this point
 
     // ending bracket is required if it was opened
@@ -1054,14 +1055,27 @@ Symbol Parser::ParseReference() {
   // generate an anonymous symbol for return, will be replaced later by real
   // symbol later if applicable
   Symbol symbol = Symbol::GenerateAnonymousSymbol();
+
+  // peek the lexeme for identifier to potentially use it for error reporting
+  Lexeme lexeme = scanner_.PeekNextLexeme();
   
   // could be a procedure call or name
   // both start with identifiers
-  ParseIdentifier();
+  std::string id = ParseIdentifier();
+
+  // find the symbol
+  symbol = symbol_table_.FindSymbolByIdentifier(id);
+
+  // check that a valid identifier was found
+  if (!symbol.IsValid()) {
+    EmitError("Could not find symbol: " + id, lexeme);
+    // symbol is already invalid, return it
+    return symbol;
+  }
 
   // this is guaranteed to correctly identify it as a name or procedure call
   // because parens are needed for procedure calls
-  Lexeme lexeme = scanner_.PeekNextLexeme();
+  lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_PAREN_LEFT) {
     // It is a procedure call
     // consume left paren
@@ -1091,7 +1105,31 @@ Symbol Parser::ParseReference() {
     // consume left bracket
     lexeme = scanner_.GetNextLexeme();
 
-    ParseExpression();
+    Symbol bound = ParseExpression();
+    
+    // Type checking
+    // TODO:TypeCheck - reduce redundant code for parsing indices
+
+    // create invalid symbol for returning in case of errors
+    Symbol invalid = Symbol::GenerateAnonymousSymbol();
+    invalid.SetIsValid(false);
+
+    // an index must be an integer
+    if (bound.GetType() != TYPE_INT) {
+      EmitError("Array index must evaluate to integers.", lexeme);
+      // return invalid symbol
+      return invalid;
+    }
+
+    // if there's an index, the indexed symbol must be an array
+    if (!symbol.IsArray()) {
+      EmitError("Can only index array types.", lexeme);
+      // return invalid symbol
+      return invalid;
+    }
+    // TODO:TypeCheck do I need to make a specific symbol for the single 
+    // location this is going to if it's an item in an array? I don't know at
+    // this point
 
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_BRACK_RIGHT) {
