@@ -139,7 +139,7 @@ class Parser {
     void ParseDeclaration();
 
     // Hanlde parsing destination
-    void ParseDestination();
+    Symbol ParseDestination();
     
     // Handle Parsing expression
     Symbol ParseExpression();

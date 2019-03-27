@@ -379,11 +379,10 @@ void Parser::ParseArgumentList() {
   }
 }
 
-// TODO:TypeCheck
 void Parser::ParseAssignmentStatement() {
   DebugPrint("AssignmentStatement");
 
-  ParseDestination();
+  Symbol destination = ParseDestination();
 
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_COL_EQ) {
@@ -391,7 +390,14 @@ void Parser::ParseAssignmentStatement() {
     return;
   }
 
-  ParseExpression();
+  Symbol expression = ParseExpression();
+
+  // destination and expression evaluation must be of the same type
+  if (destination.GetType() != expression.GetType()) {
+    // they do not match
+    // lexeme refers to equals sign, which is ideal
+    EmitParsingError("Destination and expression types do not match.", lexeme);
+  }
 }
 
 // this is a left recursive rule that has been modified to be right recursive
@@ -493,11 +499,12 @@ void Parser::ParseDeclaration() {
   }
 }
 
-// TODO:TypeCheck
-void Parser::ParseDestination() {
+Symbol Parser::ParseDestination() {
   DebugPrint("Destination");
 
-  ParseIdentifier();
+  std::string id = ParseIdentifier();
+  
+  Symbol symbol = symbol_table_.FindSymbolByIdentifier(id);
 
   // peek to see if there are brackets
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -505,15 +512,40 @@ void Parser::ParseDestination() {
     // consume token
     lexeme = scanner_.GetNextLexeme();
 
-    ParseExpression();
+    Symbol bound = ParseExpression();
+    
+    // Type checking
+
+    // create invalid symbol for returning in case of errors
+    Symbol invalid = Symbol::GenerateAnonymousSymbol();
+    invalid.SetIsValid(false);
+
+    // an index must be an integer
+    if (bound.GetType() != TYPE_INT) {
+      EmitParsingError("Array bounds must evaluate to integers.", lexeme);
+      // return invalid symbol
+      return invalid;
+    }
+
+    // if there's an index, the indexed symbol must be an array
+    if (!symbol.IsArray()) {
+      EmitParsingError("Can only index array types.", lexeme);
+      // return invalid symbol
+      return invalid;
+    }
+    // TODO:TypeCheck do I need to make a specific symbol for the single 
+    // lcoation this is going to if it's an item in an array? I don't know at
+    // this point
 
     // ending bracket is required if it was opened
     lexeme = scanner_.GetNextLexeme();
     if (lexeme.token != T_BRACK_RIGHT) {
       EmitExpectedTokenError("]", lexeme);
-      return;
+      return invalid;
     }
   }
+
+  return symbol;
 }
 
 // this is a left recursive rule made right recursive
