@@ -44,6 +44,17 @@ void Parser::DebugPrint(std::string parse_function) {
   }
 }
 
+void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
+  // don't output if still in an error_state_
+  if (error_state_) {
+    return;
+  }
+  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
+  std::cout << " - " << "Expected token '" << expected_token << "'";
+  std::cout << std::endl;
+  error_state_ = true;
+}
+
 void Parser::EmitParsingError(Lexeme lexeme) {
   // don't output if still in an error_state_
   if (error_state_) {
@@ -52,7 +63,6 @@ void Parser::EmitParsingError(Lexeme lexeme) {
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column << std::endl;
   error_state_ = true;
 }
-
 
 void Parser::EmitParsingError(std::string message, Lexeme lexeme) {
   // don't output if still in an error_state_
@@ -64,14 +74,17 @@ void Parser::EmitParsingError(std::string message, Lexeme lexeme) {
   error_state_ = true;
 }
 
-void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
+void Parser::EmitTypeCheckingError(std::string operation, std::string type1,
+                           std::string type2, Lexeme lexeme) {
   // don't output if still in an error_state_
   if (error_state_) {
     return;
   }
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
-  std::cout << " - " << "Expected token '" << expected_token << "'";
+  std::cout << "Incompatible types for " << operation << " operation between:";
   std::cout << std::endl;
+  std::cout << "Type 1: " << type1 << std::endl;
+  std::cout << "Type 2: " << type2 << std::endl;
   error_state_ = true;
 }
 
@@ -244,7 +257,9 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     bool compatible = arith_op.CheckTypesForBinaryOp(expression_tail);
 
     if (!compatible) {
-      EmitParsingError(location);
+      EmitTypeCheckingError("binary", Symbol::GetTypeString(arith_op.GetType()),
+                            Symbol::GetTypeString(expression_tail.GetType()),
+                            location);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -269,8 +284,8 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     // if there's a not operation, we need to check the single operand
     if (not_operation && !arith_op.CheckTypeForBinaryOp()) {
       // can't NOT operate on arith_op
-      EmitParsingError(location);
-      
+      EmitTypeCheckingError("binary", Symbol::GetTypeString(arith_op.GetType()),
+                            "N/A", location);
       // Generate anonymous symbol and return it
       Symbol symbol = Symbol::GenerateAnonymousSymbol();
       symbol.SetIsValid(false);
@@ -292,7 +307,9 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
                                                      equality_test);
 
     if (!compatible) {
-      EmitParsingError(location);
+      EmitTypeCheckingError("relational", Symbol::GetTypeString(term.GetType()),
+                            Symbol::GetTypeString(relation_tail.GetType()),
+                            location);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -320,7 +337,9 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
     bool compatible = lead.CheckTypesForArithmeticOp(tail);
     
     if (!compatible) {
-      EmitParsingError(location);
+      EmitTypeCheckingError("Arithmetic", Symbol::GetTypeString(lead.GetType()),
+                            Symbol::GetTypeString(tail.GetType()),
+                            location);
       symbol.SetIsValid(false);
       return symbol;
     }

@@ -63,15 +63,7 @@ bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
     case TYPE_STRING:
       break;
   }
-  // TODO:TypeCheck - move all outputting to the parser
   // code only reaches here by being incompatible
-  std::cout << "Incompatible types for arithmetic operation between: ";
-  std::cout << std::endl;
-  std::cout << "Type 1: " << Symbol::GetTypeString(type_) << std::endl;
-  std::cout << "Type 2: " << Symbol::GetTypeString(symbol.GetType());
-  std::cout << std::endl;
-  std::cout << "Arithmetic operations are only valid between ints and floats.";
-  std::cout << std::endl;
   return false;
 }
 
@@ -80,9 +72,6 @@ bool Symbol::CheckTypeForBinaryOp() {
   if (type_ == TYPE_BOOL || type_ == TYPE_INT) {
     return true;
   } else {
-    // output error message
-    std::cout << "Incompatible type for binary operation: " << std::endl;
-    std::cout << "Type: " << Symbol::GetTypeString(type_) << std::endl;
     return false;
   }
 }
@@ -110,13 +99,7 @@ bool Symbol::CheckTypesForBinaryOp(Symbol symbol) {
       break;
   }
   // code only reaches here by being incompatible
-  std::cout << "Incompatible types for binary operation between: ";
-  std::cout << std::endl;
-  std::cout << "Type 1: " << Symbol::GetTypeString(type_) << std::endl;
-  std::cout << "Type 2: " << Symbol::GetTypeString(symbol.GetType());
-  std::cout << std::endl;
   return false;
-
 }
 
 
@@ -151,12 +134,7 @@ bool Symbol::CheckTypesForRelationalOp(Symbol symbol, bool equality_test) {
       }
       break;
   }
-  std::cout << "Incompatible types for relational operation between: ";
-  std::cout << std::endl;
-  std::cout << "Type 1: " << Symbol::GetTypeString(type_) << std::endl;
-  std::cout << "Type 2: " << Symbol::GetTypeString(symbol.GetType());
-  std::cout << std::endl;
-  
+  // code only reaches here by being type incompatible
   return false;
 }
 

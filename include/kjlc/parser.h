@@ -44,14 +44,23 @@ class Parser {
     // TODO: I probably need to rethink the implications of having my
     // error output functions set the program to an error state
 
+    //
+    // Error Handlers
+    //
+
+    // Error for missing token
+    void EmitExpectedTokenError(std::string expected_token, Lexeme lexeme);
+
     // Error hanlding message that only prints the location of a lexeme
     void EmitParsingError(Lexeme lexeme);
 
     // Generic Error Handling function
     void EmitParsingError(std::string message, Lexeme lexeme);
 
-    // Error for missing token
-    void EmitExpectedTokenError(std::string expected_token, Lexeme lexeme);
+    // Error Handler for incompatible types
+    void EmitTypeCheckingError(std::string operation, std::string type1,
+                               std::string type2, Lexeme lexeme);
+
 
     // consumes tokens until the next one is in the tokens list
     // does not consume the token that is in the tokens list
