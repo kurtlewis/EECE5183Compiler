@@ -55,7 +55,7 @@ void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
   error_state_ = true;
 }
 
-void Parser::EmitParsingError(Lexeme lexeme) {
+void Parser::EmitError(Lexeme lexeme) {
   // don't output if still in an error_state_
   if (error_state_) {
     return;
@@ -64,7 +64,7 @@ void Parser::EmitParsingError(Lexeme lexeme) {
   error_state_ = true;
 }
 
-void Parser::EmitParsingError(std::string message, Lexeme lexeme) {
+void Parser::EmitError(std::string message, Lexeme lexeme) {
   // don't output if still in an error_state_
   if (error_state_) {
     return;
@@ -273,7 +273,7 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
       symbol.SetType(TYPE_BOOL);
     } else {
       // other types aren't allowed
-      EmitParsingError("Invalid type in expression.", location);
+      EmitError("Invalid type in expression.", location);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -396,7 +396,7 @@ void Parser::ParseAssignmentStatement() {
   if (destination.GetType() != expression.GetType()) {
     // they do not match
     // lexeme refers to equals sign, which is ideal
-    EmitParsingError("Destination and expression types do not match.", lexeme);
+    EmitError("Destination and expression types do not match.", lexeme);
   }
 }
 
@@ -492,9 +492,8 @@ void Parser::ParseDeclaration() {
     // Type declaration rule
     ParseTypeDeclaration(symbol);
   } else {
-    EmitParsingError("Could not parse declaration - expected a variable, "
-                     "type, or procedure",
-                     lexeme);
+    EmitError("Could not parse declaration - expected a variable, "
+              "type, or procedure", lexeme);
     return;
   }
 }
@@ -522,14 +521,14 @@ Symbol Parser::ParseDestination() {
 
     // an index must be an integer
     if (bound.GetType() != TYPE_INT) {
-      EmitParsingError("Array bounds must evaluate to integers.", lexeme);
+      EmitError("Array bounds must evaluate to integers.", lexeme);
       // return invalid symbol
       return invalid;
     }
 
     // if there's an index, the indexed symbol must be an array
     if (!symbol.IsArray()) {
-      EmitParsingError("Can only index array types.", lexeme);
+      EmitError("Can only index array types.", lexeme);
       // return invalid symbol
       return invalid;
     }
@@ -645,8 +644,7 @@ Symbol Parser::ParseFactor() {
       // name reference
       symbol = ParseReference();
     } else {
-      EmitParsingError("Expected numeric literal or identifier reference",
-                      lexeme);
+      EmitError("Expected numeric literal or identifier reference", lexeme);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -671,7 +669,7 @@ Symbol Parser::ParseFactor() {
     symbol.SetType(TYPE_BOOL);
     lexeme = scanner_.GetNextLexeme();
   } else {
-    EmitParsingError("Exected valid factor", lexeme);
+    EmitError("Exected valid factor", lexeme);
     symbol.SetIsValid(false);
     return symbol;
   }
@@ -683,7 +681,7 @@ std::string Parser::ParseIdentifier() {
 
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_ID) {
-    EmitParsingError("Expected Identifier", lexeme);
+    EmitError("Expected Identifier", lexeme);
     return std::string();
   }
 
@@ -713,7 +711,7 @@ void Parser::ParseIfStatement() {
   // expression must evaluate to a boolean
   if (expression.GetType() != TYPE_BOOL) {
     // lexeme points to '(' which is okay
-    EmitParsingError("If statement conditional must evaluate to BOOL", lexeme);
+    EmitError("If statement conditional must evaluate to BOOL", lexeme);
   }
 
   lexeme = scanner_.GetNextLexeme();
@@ -818,7 +816,7 @@ void Parser::ParseNumber() {
   // consume number token
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_INT_LITERAL && lexeme.token != T_FLOAT_LITERAL) {
-    EmitParsingError("Expected numeric literal", lexeme);
+    EmitError("Expected numeric literal", lexeme);
     return;
   }
 }
@@ -829,7 +827,7 @@ float Parser::ParseNumberFloat() {
   // consume number token, but expect it to be a float
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_FLOAT_LITERAL) {
-    EmitParsingError("Expected float literal", lexeme);
+    EmitError("Expected float literal", lexeme);
     return 0.0;
   }
   return lexeme.float_value;
@@ -841,7 +839,7 @@ int Parser::ParseNumberInteger() {
   // consume number token, but expect it to be an integer
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_INT_LITERAL) {
-    EmitParsingError("Expected integer literal", lexeme);
+    EmitError("Expected integer literal", lexeme);
     return 0;
   }
   return lexeme.int_value;
@@ -1183,7 +1181,7 @@ void Parser::ParseStatement() {
   } else if (lexeme.token == T_RETURN) {
     ParseReturnStatement();
   } else {
-    EmitParsingError("Expected identifier, if, for, or return", lexeme);
+    EmitError("Expected identifier, if, for, or return", lexeme);
     return;
   }
 }
@@ -1194,7 +1192,7 @@ void Parser::ParseString() {
   // consume the string token
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_STRING_LITERAL) {
-    EmitParsingError("Expected string literal", lexeme);
+    EmitError("Expected string literal", lexeme);
   }
 }
 
@@ -1331,7 +1329,7 @@ void Parser::ParseTypeMark(Symbol &symbol) {
   } else if(lexeme.token == T_ID) {
     ParseIdentifier();
   } else {
-    EmitParsingError("Expected int, string, bool, enum, float, or identifier",
+    EmitError("Expected int, string, bool, enum, float, or identifier",
                      lexeme);
     return;
   }

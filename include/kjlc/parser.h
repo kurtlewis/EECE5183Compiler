@@ -52,10 +52,10 @@ class Parser {
     void EmitExpectedTokenError(std::string expected_token, Lexeme lexeme);
 
     // Error hanlding message that only prints the location of a lexeme
-    void EmitParsingError(Lexeme lexeme);
+    void EmitError(Lexeme lexeme);
 
     // Generic Error Handling function
-    void EmitParsingError(std::string message, Lexeme lexeme);
+    void EmitError(std::string message, Lexeme lexeme);
 
     // Error Handler for incompatible types
     void EmitTypeCheckingError(std::string operation, std::string type1,
