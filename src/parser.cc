@@ -692,7 +692,6 @@ std::string Parser::ParseIdentifier() {
   return lexeme.str_value;
 }
 
-// TODO:TypeCheck
 void Parser::ParseIfStatement() {
   DebugPrint("IfStatement");
 
@@ -709,7 +708,13 @@ void Parser::ParseIfStatement() {
   }
 
   // handle parsing the expression
-  ParseExpression();
+  Symbol expression = ParseExpression();
+
+  // expression must evaluate to a boolean
+  if (expression.GetType() != TYPE_BOOL) {
+    // lexeme points to '(' which is okay
+    EmitParsingError("If statement conditional must evaluate to BOOL", lexeme);
+  }
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_RIGHT) {
