@@ -2,7 +2,7 @@
 # Compiler
 CXX=g++
 # CPPFLAGS = 
-CXXFLAGS = -I $(IDIR)
+CXXFLAGS = -I $(IDIR) -std=c++11
 # Include directory
 IDIR=./include
 # Look for *.h files in IDIR
