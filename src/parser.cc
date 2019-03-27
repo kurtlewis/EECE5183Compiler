@@ -61,6 +61,7 @@ void Parser::EmitError(Lexeme lexeme) {
     return;
   }
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column << std::endl;
+  std::cout << std::endl;
   error_state_ = true;
 }
 
@@ -71,6 +72,7 @@ void Parser::EmitError(std::string message, Lexeme lexeme) {
   }
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
   std::cout << " - " << message << std::endl;
+  std::cout << std::endl;
   error_state_ = true;
 }
 
@@ -80,11 +82,12 @@ void Parser::EmitTypeCheckingError(std::string operation, std::string type1,
   if (error_state_) {
     return;
   }
-  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
+  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column << " - ";
   std::cout << "Incompatible types for " << operation << " operation between:";
   std::cout << std::endl;
   std::cout << "Type 1: " << type1 << std::endl;
   std::cout << "Type 2: " << type2 << std::endl;
+  std::cout << std::endl;
   error_state_ = true;
 }
 
