@@ -36,7 +36,7 @@ Symbol Symbol::GenerateAnonymousSymbol() {
 void Symbol::PrintSymbolDebug() {
   std::cout << "Symbol: " << id_ << std::endl;
   std::cout << "  Declaration enum: " << declaration_ << std::endl;
-  std::cout << "  Type enum: " << type_ << std::endl;
+  std::cout << "  Type: " << Symbol::GetTypeString(*this) << std::endl;
   std::cout << "  Global: " << global_ << std::endl;
   std::cout << "  Array: " << array_ << std::endl;
   std::cout << "  Bound: " << array_bound_ << std::endl;
@@ -138,8 +138,12 @@ bool Symbol::CheckTypesForRelationalOp(Symbol symbol, bool equality_test) {
   return false;
 }
 
-std::string Symbol::GetTypeString(Type type) {
-  switch (type) {
+std::string Symbol::GetTypeString(Symbol symbol) {
+  if (!symbol.IsValid()) {
+    return "Invalid symbol";
+  }
+
+  switch (symbol.GetType()) {
     case TYPE_BOOL:
       return "boolean";
       break;

@@ -260,8 +260,8 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     bool compatible = arith_op.CheckTypesForBinaryOp(expression_tail);
 
     if (!compatible) {
-      EmitTypeCheckingError("binary", Symbol::GetTypeString(arith_op.GetType()),
-                            Symbol::GetTypeString(expression_tail.GetType()),
+      EmitTypeCheckingError("binary", Symbol::GetTypeString(arith_op),
+                            Symbol::GetTypeString(expression_tail),
                             location);
       symbol.SetIsValid(false);
       return symbol;
@@ -287,7 +287,7 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     // if there's a not operation, we need to check the single operand
     if (not_operation && !arith_op.CheckTypeForBinaryOp()) {
       // can't NOT operate on arith_op
-      EmitTypeCheckingError("binary", Symbol::GetTypeString(arith_op.GetType()),
+      EmitTypeCheckingError("binary", Symbol::GetTypeString(arith_op),
                             "N/A", location);
       // Generate anonymous symbol and return it
       Symbol symbol = Symbol::GenerateAnonymousSymbol();
@@ -310,8 +310,8 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
                                                      equality_test);
 
     if (!compatible) {
-      EmitTypeCheckingError("relational", Symbol::GetTypeString(term.GetType()),
-                            Symbol::GetTypeString(relation_tail.GetType()),
+      EmitTypeCheckingError("relational", Symbol::GetTypeString(term),
+                            Symbol::GetTypeString(relation_tail),
                             location);
       symbol.SetIsValid(false);
       return symbol;
@@ -340,8 +340,8 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
     bool compatible = lead.CheckTypesForArithmeticOp(tail);
     
     if (!compatible) {
-      EmitTypeCheckingError("Arithmetic", Symbol::GetTypeString(lead.GetType()),
-                            Symbol::GetTypeString(tail.GetType()),
+      EmitTypeCheckingError("Arithmetic", Symbol::GetTypeString(lead),
+                            Symbol::GetTypeString(tail),
                             location);
       symbol.SetIsValid(false);
       return symbol;

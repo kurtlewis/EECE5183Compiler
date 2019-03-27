@@ -37,8 +37,8 @@ class Symbol {
     // that cannot be found in the program
     static Symbol GenerateAnonymousSymbol();
 
-    // Get type in string format
-    static std::string GetTypeString(Type type);
+    // Get type from a symbol in a string format
+    static std::string GetTypeString(Symbol symbol);
 
     // Print out information on a given symbol
     void PrintSymbolDebug();
