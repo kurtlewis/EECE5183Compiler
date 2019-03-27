@@ -74,6 +74,14 @@ class Parser {
     // Type Check Functions for Right Recursive rules
     //
 
+    // Checks the lead and tail symbols to make sure they are type compatible
+    // for use in ParseArithOp, ParseTerm, ParseArithOpTail, ParseTermTail
+    // params:
+    //   lead - output of ParseFactor or ParseRelation
+    //   tail - output of ParseTermTail or ParseArithOp, can be invalid
+    Symbol CheckArithmeticParseTypes(Symbol lead, Symbol tail,
+                               Lexeme location);
+
     // Checks the term and relation_tail to make sure they are type compatible
     // for use in ParseRelation and ParseRelationTail
     // params:
@@ -83,14 +91,6 @@ class Parser {
     Symbol CheckRelationParseTypes(Symbol term, Symbol relation_tail,
                                    Lexeme location, bool equality_test);
 
-    // Checks the factor and term to make sure they are type compatible
-    // for use in ParseTerm and ParseTermTail
-    // params:
-    //   factor - output of ParseFactor
-    //   term_tail - output of ParseTermTail, can be invalid
-    Symbol CheckTermParseTypes(Symbol factor, Symbol term_tail,
-                               Lexeme location);
-
     //
     // Parse rules functions
     //
@@ -99,10 +99,10 @@ class Parser {
     void ParseArgumentList();
 
     // handle parsing arithmetic operators
-    void ParseArithOp();
+    Symbol ParseArithOp();
 
     // handle parsing the right recursive ArithOp rule
-    void ParseArithOpTail();
+    Symbol ParseArithOpTail();
 
     // Handle parsing assignment statement
     void ParseAssignmentStatement();

@@ -260,15 +260,15 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
   }
 }
 
-Symbol Parser::CheckTermParseTypes(Symbol factor, Symbol term_tail,
+Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
                                    Lexeme location) {
-  // is term_tail a valid Symbol?
-  if (term_tail.IsValid()) {
+  // is tail a valid Symbol?
+  if (tail.IsValid()) {
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
     // do a type check between the results
-    bool compatible = factor.CheckTypesForArithmeticOp(term_tail);
+    bool compatible = lead.CheckTypesForArithmeticOp(tail);
     
     if (!compatible) {
       EmitParsingError(location);
@@ -280,7 +280,7 @@ Symbol Parser::CheckTermParseTypes(Symbol factor, Symbol term_tail,
     // safe assumption to make because the <term> grammar is for arithmetic
     // operations, and they are only defined for ints and floats
     // if there was a non int/float, it would be cause by term_tail being false
-    if (factor.GetType() == TYPE_FLOAT || term_tail.GetType() == TYPE_FLOAT) {
+    if (lead.GetType() == TYPE_FLOAT || tail.GetType() == TYPE_FLOAT) {
       symbol.SetType(TYPE_FLOAT);
     } else {
       symbol.SetType(TYPE_INT);
@@ -289,9 +289,9 @@ Symbol Parser::CheckTermParseTypes(Symbol factor, Symbol term_tail,
     // return an anonymous symbol of the operation return type
     return symbol;
   } else {
-    // term was not a valid symbol, so just return the factor symbol
+    // tail was not a valid symbol, so just return the lead symbol
     // allow it to be whatever type it is
-    return factor;
+    return lead;
   }
 }
 
@@ -326,21 +326,24 @@ void Parser::ParseAssignmentStatement() {
   ParseExpression();
 }
 
-// TODO:TypeCheck
 // this is a left recursive rule that has been modified to be right recursive
 // see docs/language-grammar-modified.txt for more information
-void Parser::ParseArithOp() {
+Symbol Parser::ParseArithOp() {
   DebugPrint("ArithOp");
 
-  ParseRelation();
+  Symbol relation = ParseRelation();
 
-  ParseArithOpTail();
+  // Peek location for use in possible error messages
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+
+  Symbol arith_op_tail = ParseArithOpTail();
+
+  return CheckArithmeticParseTypes(relation, arith_op_tail, lexeme);
 }
 
-// TODO:TypeCheck
 // because this is a left recursive rule made right recursive, it is necessary
 // to support empty evaluations
-void Parser::ParseArithOpTail() {
+Symbol Parser::ParseArithOpTail() {
   DebugPrint("ArithOpTail");
 
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -348,11 +351,21 @@ void Parser::ParseArithOpTail() {
     // consume the "+" or "-"
     lexeme = scanner_.GetNextLexeme();
 
-    ParseRelation();
+    Symbol relation = ParseRelation();
+
+    // peek the lexeme location for possible error messages
+    Lexeme lexeme = scanner_.PeekNextLexeme();
 
     // recursive call
-    ParseArithOpTail();
+    Symbol arith_op_tail = ParseArithOpTail();
+
+    return CheckArithmeticParseTypes(relation, arith_op_tail, lexeme);
   }
+
+  // Empty evaluation of the rule, return an invalid symbol
+  Symbol symbol = Symbol::GenerateAnonymousSymbol();
+  symbol.SetIsValid(false);
+  return symbol;
 }
 
 void Parser::ParseBound(Symbol &symbol) {
@@ -1078,7 +1091,7 @@ Symbol Parser::ParseTerm() {
 
   Symbol term_tail = ParseTermTail();
 
-  return CheckTermParseTypes(factor, term_tail, lexeme);
+  return CheckArithmeticParseTypes(factor, term_tail, lexeme);
 
 }
 
@@ -1099,7 +1112,7 @@ Symbol Parser::ParseTermTail() {
 
     Symbol term_tail =  ParseTermTail();
 
-    return CheckTermParseTypes(factor, term_tail, lexeme);
+    return CheckArithmeticParseTypes(factor, term_tail, lexeme);
   }
 
   // Empty evaluation of the rule, return an invalid symbol
