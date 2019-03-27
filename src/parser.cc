@@ -504,12 +504,22 @@ void Parser::ParseDeclaration() {
 Symbol Parser::ParseDestination() {
   DebugPrint("Destination");
 
+  // peek the lexeme for possible error reporting on the identifier
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+
   std::string id = ParseIdentifier();
   
   Symbol symbol = symbol_table_.FindSymbolByIdentifier(id);
 
+  if (!symbol.IsValid()) {
+    // symbol couldn't be looked up
+    EmitError("Could not find symbol: " + id, lexeme); 
+    // symbol is already invalid, can just report it
+    return symbol;
+  }
+
   // peek to see if there are brackets
-  Lexeme lexeme = scanner_.PeekNextLexeme();
+  lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_BRACK_LEFT) {
     // consume token
     lexeme = scanner_.GetNextLexeme();
