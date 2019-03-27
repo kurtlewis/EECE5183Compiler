@@ -45,6 +45,12 @@ class Symbol {
 
     // Compare types for arithmetic operation
     bool CheckTypesForArithmeticOp(Symbol symbol);
+    
+    // Check single type for a binary operation against just this symbol
+    bool CheckTypeForBinaryOp();
+
+    // Compare types for a binary operation
+    bool CheckTypesForBinaryOp(Symbol symbol);
 
     // Compare types for a relational operation
     // params:

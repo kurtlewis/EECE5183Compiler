@@ -79,14 +79,27 @@ class Parser {
     // params:
     //   lead - output of ParseFactor or ParseRelation
     //   tail - output of ParseTermTail or ParseArithOp, can be invalid
+    //   location - lexeme before the tail, used for error location printing
     Symbol CheckArithmeticParseTypes(Symbol lead, Symbol tail,
                                Lexeme location);
+
+    // Checks the lead and tail symbols for binary operation compatibility
+    // for use in ParseExpression and ParseExpressionTail
+    // params:
+    //   arith_op - output of ParseArithOp
+    //   expression_tail - output of ParseExpressionTail, can be invalid
+    //   location - lexeme before the tail, used for error location printing
+    //   not_operation - boolean representing if the result or arith_op has
+    //                   a not operation being applied to it
+    Symbol CheckExpressionParseTypes(Symbol arith_op, Symbol expression_tail,
+                                     Lexeme location, bool not_operation);
 
     // Checks the term and relation_tail to make sure they are type compatible
     // for use in ParseRelation and ParseRelationTail
     // params:
     //   term - output of ParseTerm
     //   relation_tail - output of ParseRelationTail, can be invalid
+    //   location - lexeme before the tail, used for error location printing
     //   equality_test - true if the operation will be EQ or NEQ
     Symbol CheckRelationParseTypes(Symbol term, Symbol relation_tail,
                                    Lexeme location, bool equality_test);
@@ -123,7 +136,7 @@ class Parser {
     Symbol ParseExpression();
 
     // Handle right recursive part of ParseExpression
-    void ParseExpressionTail();
+    Symbol ParseExpressionTail();
 
     // Handle parsing factor rule
     Symbol ParseFactor();

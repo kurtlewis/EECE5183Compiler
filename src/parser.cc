@@ -232,6 +232,55 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
   }
 }
 
+Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
+                                         Symbol expression_tail,
+                                         Lexeme location,
+                                         bool not_operation) {
+  // is the tail a valid symbol?
+  if (expression_tail.IsValid()) {
+    // Generate an anonymous symbol to return
+    Symbol symbol = Symbol::GenerateAnonymousSymbol();
+    
+    bool compatible = arith_op.CheckTypesForBinaryOp(expression_tail);
+
+    if (!compatible) {
+      EmitParsingError(location);
+      symbol.SetIsValid(false);
+      return symbol;
+    }
+
+    // TODO:TypeCheck double check my understanding of operation compatibility
+    // if input type was TYPE_INT, output is TYPE_INT, or if TYPE_BOOL, output
+    // is TYPE_BOOL
+    if (arith_op.GetType() == TYPE_INT) {
+      symbol.SetType(TYPE_INT);
+    } else if (arith_op.GetType() == TYPE_BOOL) {
+      symbol.SetType(TYPE_BOOL);
+    } else {
+      // other types aren't allowed
+      EmitParsingError("Invalid type in expression.", location);
+      symbol.SetIsValid(false);
+      return symbol;
+    }
+
+    return symbol;
+
+  } else {
+    // if there's a not operation, we need to check the single operand
+    if (not_operation && !arith_op.CheckTypeForBinaryOp()) {
+      // can't NOT operate on arith_op
+      EmitParsingError(location);
+      
+      // Generate anonymous symbol and return it
+      Symbol symbol = Symbol::GenerateAnonymousSymbol();
+      symbol.SetIsValid(false);
+      return symbol;
+    }
+    // the tail was not a valid symbol, return the arith_op lead as is
+    return arith_op;
+  }
+}
+
 Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
                                        Lexeme location, bool equality_test) {
   // is the relation_tail a valid symbol?
@@ -448,29 +497,32 @@ void Parser::ParseDestination() {
   }
 }
 
-// TODO:TypeCheck
 // this is a left recursive rule made right recursive
 // see `docs/language-gramamr-modified` for notes on the rules
 Symbol Parser::ParseExpression() {
   DebugPrint("Expression");
 
+  bool not_operation = false;
   Lexeme lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_NOT) {
     // consume "not"
     lexeme = scanner_.GetNextLexeme();
+    not_operation = true;
   }
 
   // parse arithOp
-  ParseArithOp();
+  Symbol arith_op = ParseArithOp();
 
-  ParseExpressionTail();
+  // peek location of next symbol for possible error reporting
+  lexeme = scanner_.PeekNextLexeme();
 
-  // TODO:TypeCheck dont keep this
-  return Symbol::GenerateAnonymousSymbol();
+  Symbol expression_tail = ParseExpressionTail();
+
+  return CheckExpressionParseTypes(arith_op, expression_tail, lexeme,
+                                   not_operation);
 }
 
-// TODO:TypeCheck
-void Parser::ParseExpressionTail() {
+Symbol Parser::ParseExpressionTail() {
   DebugPrint("ExpressionTail");
 
   // there is an lambda(empty) evaluation of this rule, so start with a peek
@@ -480,11 +532,21 @@ void Parser::ParseExpressionTail() {
     lexeme = scanner_.GetNextLexeme();
     
     // Next is arith op
-    ParseArithOp();
+    Symbol arith_op = ParseArithOp();
+
+    // peek location of next symbol for possible error reporting
+    lexeme = scanner_.PeekNextLexeme();
 
     // Right recursive call
-    ParseExpressionTail();
+    Symbol expression_tail = ParseExpressionTail();
+
+    return CheckExpressionParseTypes(arith_op, expression_tail, lexeme, false);
   }
+
+  // empty evaluation of this rule, return an invalid anonymous symbol
+  Symbol symbol = Symbol::GenerateAnonymousSymbol();
+  symbol.SetIsValid(false);
+  return symbol;
 }
 
 Symbol Parser::ParseFactor() {

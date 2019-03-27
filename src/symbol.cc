@@ -63,6 +63,7 @@ bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
     case TYPE_STRING:
       break;
   }
+  // TODO:TypeCheck - move all outputting to the parser
   // code only reaches here by being incompatible
   std::cout << "Incompatible types for arithmetic operation between: ";
   std::cout << std::endl;
@@ -72,6 +73,50 @@ bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
   std::cout << "Arithmetic operations are only valid between ints and floats.";
   std::cout << std::endl;
   return false;
+}
+
+bool Symbol::CheckTypeForBinaryOp() {
+  // Only TYPE_BOOL and TYPE_INT are compatible for binary operations
+  if (type_ == TYPE_BOOL || type_ == TYPE_INT) {
+    return true;
+  } else {
+    // output error message
+    std::cout << "Incompatible type for binary operation: " << std::endl;
+    std::cout << "Type: " << Symbol::GetTypeString(type_) << std::endl;
+    return false;
+  }
+}
+
+bool Symbol::CheckTypesForBinaryOp(Symbol symbol) {
+  // only return true in the switch statement if the types are compatible
+  // don't return false, let the error printer at the end of the function
+  // return false
+  switch (type_) {
+    case TYPE_BOOL:
+      if (symbol.GetType() == TYPE_BOOL) {
+        return true;
+      }
+      break;
+    case TYPE_ENUM:
+      break;
+    case TYPE_FLOAT:
+      break;
+    case TYPE_INT:
+      if (symbol.GetType() == TYPE_INT) {
+        return true;
+      }
+      break;
+    case TYPE_STRING:
+      break;
+  }
+  // code only reaches here by being incompatible
+  std::cout << "Incompatible types for binary operation between: ";
+  std::cout << std::endl;
+  std::cout << "Type 1: " << Symbol::GetTypeString(type_) << std::endl;
+  std::cout << "Type 2: " << Symbol::GetTypeString(symbol.GetType());
+  std::cout << std::endl;
+  return false;
+
 }
 
 
