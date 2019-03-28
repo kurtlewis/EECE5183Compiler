@@ -404,12 +404,35 @@ void Parser::ParseAssignmentStatement() {
 
   Symbol expression = ParseExpression();
 
-  // TODO:TypeCheck - there is interoperability defined in the spec here
-  // destination and expression evaluation must be of the same type
+  // destination and expression evaluation must generally be of the same type
+  // but ints and bools are interoperable
+  // ints and floats are interoperable
   if (destination.GetType() != expression.GetType()) {
     // they do not match
-    // lexeme refers to equals sign, which is ideal
-    EmitError("Destination and expression types do not match.", lexeme);
+    bool mismatch = true;
+    // check that the types are interoperable
+    if (destination.GetType() == TYPE_BOOL &&
+        expression.GetType() == TYPE_INT) {
+      mismatch = false;
+    }
+
+    if (destination.GetType() == TYPE_INT &&
+        (expression.GetType() == TYPE_BOOL ||
+         expression.GetType() == TYPE_FLOAT)) {
+      mismatch = false;
+    }
+
+    if (destination.GetType() == TYPE_FLOAT &&
+        expression.GetType() == TYPE_INT) {
+      mismatch = false;
+    }
+
+    // couldn't recover from mismatch via interoperability
+    if (mismatch) {
+      // lexeme refers to equals sign, which is ideal
+      EmitError("Destination and expression types do not match.", lexeme);
+      return;
+    }
   }
 }
 
