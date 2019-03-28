@@ -91,6 +91,16 @@ void Parser::EmitTypeCheckingError(std::string operation, std::string type1,
   error_state_ = true;
 }
 
+void Parser::EmitWarning(std::string message, Lexeme lexeme) {
+  // don't output warnings in an error_state_
+  if (error_state_) {
+    return;
+  }
+  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column << " - ";
+  std::cout << message << std::endl;
+  std::cout << std::endl;
+  // don't flip error states for warning
+}
 
 // consumes tokens until the next token is in the tokens list or a T_PERIOD
 void Parser::ResyncOnTokens(Token tokens[], int tokens_length) {
@@ -395,6 +405,7 @@ void Parser::ParseAssignmentStatement() {
 
   Symbol expression = ParseExpression();
 
+  // TODO:TypeCheck - there is interoperability defined in the spec here
   // destination and expression evaluation must be of the same type
   if (destination.GetType() != expression.GetType()) {
     // they do not match
@@ -723,9 +734,13 @@ void Parser::ParseIfStatement() {
   Symbol expression = ParseExpression();
 
   // expression must evaluate to a boolean
-  if (expression.GetType() != TYPE_BOOL) {
-    // lexeme points to '(' which is okay
-    EmitError("If statement conditional must evaluate to BOOL", lexeme);
+  // lexeme points to '(' which is okay
+  if (expression.GetType() == TYPE_INT) {
+    EmitWarning("If statement conditional evaluates to integer. "
+                "Will be cast to bool.", lexeme);
+  } else if (expression.GetType() != TYPE_BOOL) {
+    EmitError("If statement conditional must evaluate to bool or int.", lexeme);
+    return;
   }
 
   lexeme = scanner_.GetNextLexeme();
@@ -773,7 +788,6 @@ void Parser::ParseIfStatement() {
   }
 }
 
-// TODO:TypeCheck
 void Parser::ParseLoopStatement() {
   DebugPrint("LoopStatement");
 
@@ -797,7 +811,18 @@ void Parser::ParseLoopStatement() {
     return;
   }
 
-  ParseExpression();
+  Symbol expression = ParseExpression();
+
+  // expression must evaluate to a bool or int
+  // lexeme points to ';' which is okay
+  if (expression.GetType() == TYPE_INT) {
+    EmitWarning("Expression in loop evaluates to integer. "
+                "Will be cast to bool.",
+                lexeme);
+  } else if (expression.GetType() != TYPE_BOOL) {
+    EmitError("Expression on loop must evaluate to bool or int.", lexeme);
+    return;
+  }
 
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_PAREN_RIGHT) {

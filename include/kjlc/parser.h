@@ -61,6 +61,10 @@ class Parser {
     void EmitTypeCheckingError(std::string operation, std::string type1,
                                std::string type2, Lexeme lexeme);
 
+    // Warning Handler - doesn't print if in error_state_, but doesn't 
+    // set error_state_ to true
+    void EmitWarning(std::string message, Lexeme lexeme);
+
 
     // consumes tokens until the next one is in the tokens list
     // does not consume the token that is in the tokens list
