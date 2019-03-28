@@ -416,9 +416,11 @@ void Parser::ParseArgumentList(std::vector<Symbol>::iterator param_current,
   } else {
     // it's the end of the argument list
     if (param_current != param_end) {
-      // there are more argument that should be present
-      EmitError("Not enough arugments for function call", lexeme);
-      return;
+      if (std::next(param_current) != param_end) {
+        // there are more argument that should be present
+        EmitError("Not enough arugments for function call", lexeme);
+        return;
+      }
     }
   }
 }
@@ -1129,7 +1131,6 @@ void Parser::ParseProgramHeader() {
   return;
 }
 
-// TODO:TypeCheck
 // this rule replaces ParseName and ParseProcedureCall
 Symbol Parser::ParseReference() {
   DebugPrint("Reference");
