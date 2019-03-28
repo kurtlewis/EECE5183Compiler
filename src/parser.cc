@@ -83,7 +83,7 @@ void Parser::EmitTypeCheckingError(std::string operation, std::string type1,
     return;
   }
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column << " - ";
-  std::cout << "Incompatible types for " << operation << " operation between:";
+  std::cout << "Incompatible types for " << operation << ":";
   std::cout << std::endl;
   std::cout << "Type 1: " << type1 << std::endl;
   std::cout << "Type 2: " << type2 << std::endl;
@@ -270,7 +270,8 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     bool compatible = arith_op.CheckTypesForBinaryOp(expression_tail);
 
     if (!compatible) {
-      EmitTypeCheckingError("binary", Symbol::GetTypeString(arith_op),
+      EmitTypeCheckingError("binary operation",
+                            Symbol::GetTypeString(arith_op),
                             Symbol::GetTypeString(expression_tail),
                             location);
       symbol.SetIsValid(false);
@@ -296,7 +297,8 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     // if there's a not operation, we need to check the single operand
     if (not_operation && !arith_op.CheckTypeForBinaryOp()) {
       // can't NOT operate on arith_op
-      EmitTypeCheckingError("binary", Symbol::GetTypeString(arith_op),
+      EmitTypeCheckingError("binary operation",
+                            Symbol::GetTypeString(arith_op),
                             "N/A", location);
       // Generate anonymous symbol and return it
       Symbol symbol = Symbol::GenerateAnonymousSymbol();
@@ -319,7 +321,8 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
                                                      equality_test);
 
     if (!compatible) {
-      EmitTypeCheckingError("relational", Symbol::GetTypeString(term),
+      EmitTypeCheckingError("relational operation",
+                            Symbol::GetTypeString(term),
                             Symbol::GetTypeString(relation_tail),
                             location);
       symbol.SetIsValid(false);
@@ -349,7 +352,8 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
     bool compatible = lead.CheckTypesForArithmeticOp(tail);
     
     if (!compatible) {
-      EmitTypeCheckingError("Arithmetic", Symbol::GetTypeString(lead),
+      EmitTypeCheckingError("Arithmetic",
+                            Symbol::GetTypeString(lead),
                             Symbol::GetTypeString(tail),
                             location);
       symbol.SetIsValid(false);
@@ -375,19 +379,47 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
   }
 }
 
-void Parser::ParseArgumentList() {
+void Parser::ParseArgumentList(std::vector<Symbol>::iterator param_current,
+                               std::vector<Symbol>::iterator param_end) {
   DebugPrint("ArgumentList");
 
-  ParseExpression();
+  Symbol expression = ParseExpression();
+
+  // peek a lexeme for possible error reporting
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+
+  // check that the expression matches
+  if (param_current != param_end) {
+    if (param_current->GetType() != expression.GetType()) {
+      // argument types don't match
+      EmitTypeCheckingError("argument",
+                            Symbol::GetTypeString(*param_current),
+                            Symbol::GetTypeString(expression),
+                            lexeme);
+      return; 
+    }
+  } else {
+    // the param_current is the end, there should be no more arguments
+    EmitError("Argument miss match, too many arguments.", lexeme);
+    return;
+  }
+
 
   // more arguments are optional and indicated by a comma
-  Lexeme lexeme = scanner_.PeekNextLexeme();
+  lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_COMMA) {
     // consume comma
     lexeme = scanner_.GetNextLexeme();
 
     // parse the next arguments recursively
-    ParseArgumentList();
+    ParseArgumentList(std::next(param_current), param_end);
+  } else {
+    // it's the end of the argument list
+    if (param_current != param_end) {
+      // there are more argument that should be present
+      EmitError("Not enough arugments for function call", lexeme);
+      return;
+    }
   }
 }
 
@@ -1141,7 +1173,8 @@ Symbol Parser::ParseReference() {
         lexeme.token == T_STRING_LITERAL || lexeme.token == T_TRUE ||
         lexeme.token == T_FALSE) {
       // it is an argument!
-      ParseArgumentList();
+      // Parameter list needs checked 
+      ParseArgumentList(symbol.GetParams().begin(), symbol.GetParams().end());
     }
 
     lexeme = scanner_.GetNextLexeme();
@@ -1267,7 +1300,7 @@ void Parser::ParseReturnStatement() {
   Symbol procedure = symbol_table_.GetScopeProcedure();
 
   // check that a return is allowed, it will be if procedure is valid
-  if (procedure.IsValid()) {
+  if (!procedure.IsValid()) {
     EmitError("Return not valid in this scope.", lexeme);
     return;
   }
