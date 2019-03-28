@@ -116,13 +116,11 @@ bool Symbol::CheckTypesForRelationalOp(Symbol symbol, bool equality_test) {
     case TYPE_ENUM:
       break;
     case TYPE_FLOAT:
-      // TODO:TypeCheck - verify that floats and ints are interoperable
       if (symbol.GetType() == TYPE_FLOAT || symbol.GetType() == TYPE_INT) {
         return true;
       }
       break;
     case TYPE_INT:
-      // TODO:TypeCheck - verify that floats and ints are interoperable
       if (symbol.GetType() == TYPE_BOOL || symbol.GetType() == TYPE_FLOAT ||
           symbol.GetType() == TYPE_INT) {
         return true;

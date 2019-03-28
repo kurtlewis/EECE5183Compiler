@@ -277,7 +277,6 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
       return symbol;
     }
 
-    // TODO:TypeCheck double check my understanding of operation compatibility
     // if input type was TYPE_INT, output is TYPE_INT, or if TYPE_BOOL, output
     // is TYPE_BOOL
     if (arith_op.GetType() == TYPE_INT) {
