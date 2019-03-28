@@ -976,6 +976,9 @@ void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
   // commit the symbol to the symbol table so that the body can reference itself
   symbol_table_.InsertSymbol(procedure_symbol);
 
+  // mark this procedure as the scope procedure 
+  symbol_table_.SetScopeProcedure(procedure_symbol);
+
   // parse the body of the procedure
   ParseProcedureBody();
 
@@ -1249,7 +1252,6 @@ Symbol Parser::ParseRelationTail() {
   return symbol;
 }
 
-// TODO:TypeCheck
 void Parser::ParseReturnStatement() {
   DebugPrint("Return");
   
@@ -1259,7 +1261,22 @@ void Parser::ParseReturnStatement() {
     return;
   }
 
-  ParseExpression();
+  Symbol expression = ParseExpression();
+
+  // get the symbol for this scope - it will correspond to the return statement
+  Symbol procedure = symbol_table_.GetScopeProcedure();
+
+  // check that a return is allowed, it will be if procedure is valid
+  if (procedure.IsValid()) {
+    EmitError("Return not valid in this scope.", lexeme);
+    return;
+  }
+
+  // TODO:TypeCheck - this probably follows the same type rules as assignment?
+  if (expression.GetType() != procedure.GetType()) {
+    EmitError("Return type does not match expression type.", lexeme);
+    return;
+  }
 }
 
 // TODO:TypeCheck

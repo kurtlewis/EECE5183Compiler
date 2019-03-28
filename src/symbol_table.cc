@@ -59,6 +59,23 @@ void SymbolTable::InsertSymbol(Symbol &symbol) {
   }
 }
 
+void SymbolTable::SetScopeProcedure(Symbol procedure) {
+  local_scope_stack_.back()[SCOPE_PROCEDURE_KEY] = procedure;
+}
+
+Symbol SymbolTable::GetScopeProcedure() {
+  std::map<std::string, Symbol>::iterator result
+    = local_scope_stack_.back().find(SCOPE_PROCEDURE_KEY);
+    if (result != local_scope_stack_.back().end()) {
+      return result->second;
+    } else {
+      // return an invalid symbol
+      Symbol symbol = Symbol::GenerateAnonymousSymbol();
+      symbol.SetIsValid(false);
+      return symbol;
+    }
+}
+
 Symbol SymbolTable::FindSymbolByIdentifier(std::string id) {
   // todo - double check that the valid scopes at any given time are the
   // top local scope and the global scope. If it isn't the case I need to update
@@ -72,7 +89,7 @@ Symbol SymbolTable::FindSymbolByIdentifier(std::string id) {
   if (result != global_scope_map_.end()) {
     return result->second;
   }
-  Symbol symbol;
+  Symbol symbol = Symbol::GenerateAnonymousSymbol();
   symbol.SetIsValid(false);;
   return symbol;
 }
