@@ -1306,14 +1306,12 @@ void Parser::ParseReturnStatement() {
     return;
   }
 
-  // TODO:TypeCheck - this probably follows the same type rules as assignment?
   if (expression.GetType() != procedure.GetType()) {
     EmitError("Return type does not match expression type.", lexeme);
     return;
   }
 }
 
-// TODO:TypeCheck
 void Parser::ParseStatement() {
   DebugPrint("Statement");
 
