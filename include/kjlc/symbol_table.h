@@ -60,12 +60,14 @@ class SymbolTable {
     // a single map of global scope identifiers
     std::map<std::string, Symbol> global_scope_map_;
 
+    // flag for printing debug information
+    bool debug_;
+
     // key used in map for storing scope procedure. Real identifiers can't start
     // with underscores, so it is safe from overlap
     const std::string SCOPE_PROCEDURE_KEY = "__PROCEDURE";
 
-    // flag for printing debug information
-    bool debug_;
+    void InsertBuiltInsIntoGlobalScope(); 
 };
 
 } // namespace kjlc
