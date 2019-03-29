@@ -639,6 +639,16 @@ Symbol Parser::ParseDestination() {
     return symbol;
   }
 
+  // Destination needs to be a variable
+  if (symbol.GetDeclaration() != DECLARATION_VARIABLE) {
+    // symbol isn't a variable which is a problem
+    EmitError("Destination must be a variable.", lexeme);
+    // return an invalid symbol
+    symbol = Symbol::GenerateAnonymousSymbol();
+    symbol.SetIsValid(false);
+    return symbol;
+  }
+
   // peek to see if there are brackets for an index
   lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_BRACK_LEFT) {
@@ -1186,6 +1196,14 @@ Symbol Parser::ParseReference() {
     // consume left paren
     lexeme = scanner_.GetNextLexeme();
 
+    // since it's a procedure call, the symbol must be a procedure
+    if (symbol.GetDeclaration() != DECLARATION_PROCEDURE) {
+      EmitError("Non procedure cannot be called.", lexeme);
+      symbol = Symbol::GenerateAnonymousSymbol();
+      symbol.SetIsValid(false);
+      return symbol;
+    }
+
     // optionally ParseArgumentList
     // need to peek next token and see if it's in the (quite large) first set
     // for argument_list. See docs for derivation of first set 
@@ -1206,12 +1224,20 @@ Symbol Parser::ParseReference() {
       symbol.SetIsValid(false);
       return symbol;
     }
-  } else if (lexeme.token == T_BRACK_LEFT) {
-    // it's a name reference with an index operation
-    // parse the index operation
-    ParseIndex(symbol);
-  } else {
-    // it's a name, but without the [ <expression> ]
+  } else  {
+    // it's a name. Could be indexed. Must be variable
+    if (symbol.GetDeclaration() != DECLARATION_VARIABLE) {
+      EmitError("Reference to name must be a variable type.", lexeme);
+      symbol = Symbol::GenerateAnonymousSymbol();
+      symbol.SetIsValid(false);
+      return symbol;
+    }
+    
+    if (lexeme.token == T_BRACK_LEFT) {
+      // it's a name reference with an index operation
+      // parse the index operation
+      ParseIndex(symbol);
+    }
   }
 
   return symbol;
@@ -1465,7 +1491,20 @@ void Parser::ParseTypeMark(Symbol &symbol) {
       }
     } // end enum if
   } else if(lexeme.token == T_ID) {
-    ParseIdentifier();
+    std::string id = ParseIdentifier();
+    
+    // The referenced identifier must be a type declaration
+    Symbol symbol = symbol_table_.FindSymbolByIdentifier(id);
+
+    if (!symbol.IsValid()) {
+      EmitError("Symbol could not be found: " + id, lexeme);
+      return;
+    }
+
+    if (symbol.GetDeclaration() != DECLARATION_TYPE) {
+      EmitError("Type mark must be a declared type or built in.", lexeme);
+      return;
+    }
   } else {
     EmitError("Expected int, string, bool, enum, float, or identifier",
               lexeme);
