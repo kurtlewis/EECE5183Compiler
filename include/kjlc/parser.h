@@ -79,6 +79,10 @@ class Parser {
     // always considers T_PERIOD for end of file
     void ResyncOnTokens(Token tokens[], int tokens_length);
 
+    //
+    // Parse code deduplication rules
+    //
+
     // Loop Parsing declarations until one of the end tokens is peeked
     // built for code deduplication, everywhere that has (parse_declaration)*
     // is the exact same with possibly different end tokens
@@ -89,6 +93,9 @@ class Parser {
     // is the exact same, with possibly different end tokens
     void LoopStatements(Token end_tokens[], int tokens_length);
 
+    // Parse Index statements, i.e. array [ <expression> ]
+    // split out from existing references to reduce code duplication
+    void ParseIndex(Symbol identifier);
 
     //
     // Type Check Functions for Right Recursive rules
@@ -172,6 +179,7 @@ class Parser {
 
     // Handle parsing if statement
     void ParseIfStatement();
+
 
     // Handle parsing loop statement
     void ParseLoopStatement();

@@ -274,6 +274,41 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
   }
 }
 
+void Parser::ParseIndex(Symbol identifier) {
+  // Check for open bracket consume token
+  Lexeme lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_BRACK_LEFT) {
+    EmitExpectedTokenError("[", lexeme);
+    return;
+  }
+
+  Symbol bound = ParseExpression();
+    
+  // Type checking
+
+  // an index must be an integer
+  if (bound.GetType() != TYPE_INT) {
+    // lexeme points to '[' which is okay
+    EmitError("Array index must evaluate to integers.", lexeme);
+    // return invalid symbol
+    return;
+  }
+
+  // if there's an index, the indexed symbol must be an array
+  if (!identifier.IsArray()) {
+    EmitError("Can only index array types.", lexeme);
+    // return invalid symbol
+    return;
+  }
+
+  // ending bracket is required if it was opened
+  lexeme = scanner_.GetNextLexeme();
+  if (lexeme.token != T_BRACK_RIGHT) {
+    EmitExpectedTokenError("]", lexeme);
+    return;
+  }
+}
+
 Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
                                          Symbol expression_tail,
                                          Lexeme location,
@@ -604,44 +639,12 @@ Symbol Parser::ParseDestination() {
     return symbol;
   }
 
-  // peek to see if there are brackets
+  // peek to see if there are brackets for an index
   lexeme = scanner_.PeekNextLexeme();
   if (lexeme.token == T_BRACK_LEFT) {
-    // consume token
-    lexeme = scanner_.GetNextLexeme();
-
-    Symbol bound = ParseExpression();
     
-    // Type checking
-    // TODO:TypeCheck reduce code duplication for array index type checking
-
-    // create invalid symbol for returning in case of errors
-    Symbol invalid = Symbol::GenerateAnonymousSymbol();
-    invalid.SetIsValid(false);
-
-    // an index must be an integer
-    if (bound.GetType() != TYPE_INT) {
-      EmitError("Array index must evaluate to integers.", lexeme);
-      // return invalid symbol
-      return invalid;
-    }
-
-    // if there's an index, the indexed symbol must be an array
-    if (!symbol.IsArray()) {
-      EmitError("Can only index array types.", lexeme);
-      // return invalid symbol
-      return invalid;
-    }
-    // TODO:TypeCheck do I need to make a specific symbol for the single 
-    // location this is going to if it's an item in an array? I don't know at
-    // this point
-
-    // ending bracket is required if it was opened
-    lexeme = scanner_.GetNextLexeme();
-    if (lexeme.token != T_BRACK_RIGHT) {
-      EmitExpectedTokenError("]", lexeme);
-      return invalid;
-    }
+    // Parse the index, since there is one -> [ <expression> ]
+    ParseIndex(symbol);
   }
 
   return symbol;
@@ -1204,42 +1207,9 @@ Symbol Parser::ParseReference() {
       return symbol;
     }
   } else if (lexeme.token == T_BRACK_LEFT) {
-    // it's a name reference
-    // consume left bracket
-    lexeme = scanner_.GetNextLexeme();
-
-    Symbol bound = ParseExpression();
-    
-    // Type checking
-    // TODO:TypeCheck - reduce redundant code for parsing indices
-
-    // create invalid symbol for returning in case of errors
-    Symbol invalid = Symbol::GenerateAnonymousSymbol();
-    invalid.SetIsValid(false);
-
-    // an index must be an integer
-    if (bound.GetType() != TYPE_INT) {
-      EmitError("Array index must evaluate to integers.", lexeme);
-      // return invalid symbol
-      return invalid;
-    }
-
-    // if there's an index, the indexed symbol must be an array
-    if (!symbol.IsArray()) {
-      EmitError("Can only index array types.", lexeme);
-      // return invalid symbol
-      return invalid;
-    }
-    // TODO:TypeCheck do I need to make a specific symbol for the single 
-    // location this is going to if it's an item in an array? I don't know at
-    // this point
-
-    lexeme = scanner_.GetNextLexeme();
-    if (lexeme.token != T_BRACK_RIGHT) {
-      EmitExpectedTokenError("]", lexeme);
-      symbol.SetIsValid(false);
-      return symbol;
-    }
+    // it's a name reference with an index operation
+    // parse the index operation
+    ParseIndex(symbol);
   } else {
     // it's a name, but without the [ <expression> ]
   }
