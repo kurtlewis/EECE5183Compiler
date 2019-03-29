@@ -44,17 +44,6 @@ void Parser::DebugPrint(std::string parse_function) {
   }
 }
 
-void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
-  // don't output if still in an error_state_
-  if (error_state_) {
-    return;
-  }
-  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
-  std::cout << " - " << "Expected token '" << expected_token << "'";
-  std::cout << std::endl;
-  error_state_ = true;
-}
-
 void Parser::EmitError(Lexeme lexeme) {
   // don't output if still in an error_state_
   if (error_state_) {
@@ -76,8 +65,35 @@ void Parser::EmitError(std::string message, Lexeme lexeme) {
   error_state_ = true;
 }
 
-void Parser::EmitTypeCheckingError(std::string operation, std::string type1,
-                           std::string type2, Lexeme lexeme) {
+void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
+  // don't output if still in an error_state_
+  if (error_state_) {
+    return;
+  }
+  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
+  std::cout << " - " << "Expected token '" << expected_token << "'";
+  std::cout << std::endl;
+  error_state_ = true;
+}
+
+void Parser::EmitExpectedTypeError(std::string expected_type,
+                                   std::string found_type,
+                                   Lexeme lexeme) {
+  // Don't output if still in an error_state_
+  if (error_state_) {
+    return;
+  }
+  std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column;
+  std::cout << " - " << std::endl;
+  std::cout << "Expected Type: " << expected_type << std::endl;
+  std::cout << "But found: " << found_type << std::endl;
+  error_state_;
+}
+
+void Parser::EmitOperationTypeCheckingError(std::string operation,
+                                            std::string type1,
+                                            std::string type2,
+                                            Lexeme lexeme) {
   // don't output if still in an error_state_
   if (error_state_) {
     return;
@@ -270,10 +286,10 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     bool compatible = arith_op.CheckTypesForBinaryOp(expression_tail);
 
     if (!compatible) {
-      EmitTypeCheckingError("binary operation",
-                            Symbol::GetTypeString(arith_op),
-                            Symbol::GetTypeString(expression_tail),
-                            location);
+      EmitOperationTypeCheckingError("binary operation",
+                                     Symbol::GetTypeString(arith_op),
+                                     Symbol::GetTypeString(expression_tail),
+                                     location);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -297,9 +313,10 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     // if there's a not operation, we need to check the single operand
     if (not_operation && !arith_op.CheckTypeForBinaryOp()) {
       // can't NOT operate on arith_op
-      EmitTypeCheckingError("binary operation",
-                            Symbol::GetTypeString(arith_op),
-                            "N/A", location);
+      EmitOperationTypeCheckingError("binary operation",
+                                     Symbol::GetTypeString(arith_op),
+                                     "N/A",
+                                     location);
       // Generate anonymous symbol and return it
       Symbol symbol = Symbol::GenerateAnonymousSymbol();
       symbol.SetIsValid(false);
@@ -321,10 +338,10 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
                                                      equality_test);
 
     if (!compatible) {
-      EmitTypeCheckingError("relational operation",
-                            Symbol::GetTypeString(term),
-                            Symbol::GetTypeString(relation_tail),
-                            location);
+      EmitOperationTypeCheckingError("relational operation",
+                                     Symbol::GetTypeString(term),
+                                     Symbol::GetTypeString(relation_tail),
+                                     location);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -352,10 +369,10 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
     bool compatible = lead.CheckTypesForArithmeticOp(tail);
     
     if (!compatible) {
-      EmitTypeCheckingError("Arithmetic",
-                            Symbol::GetTypeString(lead),
-                            Symbol::GetTypeString(tail),
-                            location);
+      EmitOperationTypeCheckingError("Arithmetic",
+                                     Symbol::GetTypeString(lead),
+                                     Symbol::GetTypeString(tail),
+                                     location);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -392,10 +409,10 @@ void Parser::ParseArgumentList(std::vector<Symbol>::iterator param_current,
   if (param_current != param_end) {
     if (param_current->GetType() != expression.GetType()) {
       // argument types don't match
-      EmitTypeCheckingError("argument",
-                            Symbol::GetTypeString(*param_current),
-                            Symbol::GetTypeString(expression),
-                            lexeme);
+      EmitOperationTypeCheckingError("argument",
+                                     Symbol::GetTypeString(*param_current),
+                                     Symbol::GetTypeString(expression),
+                                     lexeme);
       return; 
     }
   } else {
@@ -464,7 +481,9 @@ void Parser::ParseAssignmentStatement() {
     // couldn't recover from mismatch via interoperability
     if (mismatch) {
       // lexeme refers to equals sign, which is ideal
-      EmitError("Destination and expression types do not match.", lexeme);
+      EmitExpectedTypeError(Symbol::GetTypeString(destination),
+                            Symbol::GetTypeString(expression),
+                            lexeme);
       return;
     }
   }
@@ -1307,7 +1326,9 @@ void Parser::ParseReturnStatement() {
   }
 
   if (expression.GetType() != procedure.GetType()) {
-    EmitError("Return type does not match expression type.", lexeme);
+    EmitExpectedTypeError(Symbol::GetTypeString(procedure),
+                          Symbol::GetTypeString(expression),
+                          lexeme);
     return;
   }
 }
@@ -1477,7 +1498,7 @@ void Parser::ParseTypeMark(Symbol &symbol) {
     ParseIdentifier();
   } else {
     EmitError("Expected int, string, bool, enum, float, or identifier",
-                     lexeme);
+              lexeme);
     return;
   }
 }

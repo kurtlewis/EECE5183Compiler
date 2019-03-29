@@ -48,18 +48,25 @@ class Parser {
     // Error Handlers
     //
 
-    // Error for missing token
-    void EmitExpectedTokenError(std::string expected_token, Lexeme lexeme);
-
     // Error hanlding message that only prints the location of a lexeme
     void EmitError(Lexeme lexeme);
 
     // Generic Error Handling function
     void EmitError(std::string message, Lexeme lexeme);
 
-    // Error Handler for incompatible types
-    void EmitTypeCheckingError(std::string operation, std::string type1,
-                               std::string type2, Lexeme lexeme);
+    // Error for missing token
+    void EmitExpectedTokenError(std::string expected_token, Lexeme lexeme);
+
+    // Error for when types mismatch
+    void EmitExpectedTypeError(std::string expected_type,
+                               std::string found_type,
+                               Lexeme lexeme);
+
+    // Error Handler for incompatible types on operations
+    void EmitOperationTypeCheckingError(std::string operation,
+                                        std::string type1,
+                                        std::string type2,
+                                        Lexeme lexeme);
 
     // Warning Handler - doesn't print if in error_state_, but doesn't 
     // set error_state_ to true
