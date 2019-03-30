@@ -47,8 +47,7 @@ void Symbol::PrintSymbolDebug() {
 
 bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
   // only return true in the switch statement if the types are compatible
-  // don't return false, let the error printer at the end of the function
-  // return false
+  // return false at the end of the function
   switch (type_) {
     case TYPE_BOOL:
       break;
@@ -78,8 +77,7 @@ bool Symbol::CheckTypeForBinaryOp() {
 
 bool Symbol::CheckTypesForBinaryOp(Symbol symbol) {
   // only return true in the switch statement if the types are compatible
-  // don't return false, let the error printer at the end of the function
-  // return false
+  // return false at the end of the function
   switch (type_) {
     case TYPE_BOOL:
       if (symbol.GetType() == TYPE_BOOL) {
@@ -105,8 +103,7 @@ bool Symbol::CheckTypesForBinaryOp(Symbol symbol) {
 
 bool Symbol::CheckTypesForRelationalOp(Symbol symbol, bool equality_test) {
   // only return true in the switch statement if the types are compatible
-  // don't return false, let the error printer at the end of the function
-  // return false
+  // return false at the end of the function
   switch (type_) {
     case TYPE_BOOL:
       if (symbol.GetType() == TYPE_BOOL || symbol.GetType() == TYPE_INT) {
@@ -163,8 +160,9 @@ std::string Symbol::GetTypeString(Symbol symbol) {
 }
 
 //
-// Mutators
+// Getters and Setters 
 //
+
 std::string Symbol::GetId() {
   return id_;
 }

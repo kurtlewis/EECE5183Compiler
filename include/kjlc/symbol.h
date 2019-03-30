@@ -40,25 +40,31 @@ class Symbol {
     // Get type from a symbol in a string format
     static std::string GetTypeString(Symbol symbol);
 
-    // Print out information on a given symbol
+    // Print out information for this symbol
     void PrintSymbolDebug();
 
-    // Compare types for arithmetic operation
+    // Compare types for arithmetic operation to make sure the type of
+    // param symbol is compatible with current symbol
     bool CheckTypesForArithmeticOp(Symbol symbol);
     
-    // Check single type for a binary operation against just this symbol
+    // Check single type for a binary operation against just this current symbol
     bool CheckTypeForBinaryOp();
 
-    // Compare types for a binary operation
+    // Compare types for a binary operation to make sure the type of param
+    // symbol is compatible with current symbol
     bool CheckTypesForBinaryOp(Symbol symbol);
 
-    // Compare types for a relational operation
+    // Compare types for a relational operation to make sure the type of the
+    // param symbol is compatible with the current symbol
     // params:
     //   symbol - symbol to check for compatability with
     //   equality_test - true if the relational op is a EQ or NEQ
     bool CheckTypesForRelationalOp(Symbol symbol, bool equality_test);
 
-    // Mutators
+    //
+    // Getters and Setters
+    //
+
     std::string GetId();
     void SetId(std::string id);
 
@@ -89,9 +95,12 @@ class Symbol {
     std::string id_;
 
     // the actual declaration is of this variant
+    // declaration, variable, or type
     Declaration declaration_;
 
     // the type of the declaration
+    // could represent variable type, type mark type, or return type of
+    // procedure
     Type type_;
 
     // if the symbol is in the global scope
@@ -99,6 +108,7 @@ class Symbol {
 
     // if the symbol is an array
     bool array_;
+    // size of the array if it is an array
     int array_bound_;
 
     // if a procedure, it could have an argument
@@ -111,11 +121,7 @@ class Symbol {
     // denotes if this is a valid symbol
     // example invalid symbol: lookup failed
     bool valid_;
-
-
 };
-
-
 } // end namespace kjlc
 #endif // EECE5183COMPILER_KJLC_SYMBOL_H
 

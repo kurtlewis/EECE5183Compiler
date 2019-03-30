@@ -108,7 +108,7 @@ class Parser {
     //   tail - output of ParseTermTail or ParseArithOp, can be invalid
     //   location - lexeme before the tail, used for error location printing
     Symbol CheckArithmeticParseTypes(Symbol lead, Symbol tail,
-                               Lexeme location);
+                                     Lexeme location);
 
     // Checks the lead and tail symbols for binary operation compatibility
     // for use in ParseExpression and ParseExpressionTail

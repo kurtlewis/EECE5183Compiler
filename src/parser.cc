@@ -87,7 +87,7 @@ void Parser::EmitExpectedTypeError(std::string expected_type,
   std::cout << " - " << std::endl;
   std::cout << "Expected Type: " << expected_type << std::endl;
   std::cout << "But found: " << found_type << std::endl;
-  error_state_;
+  error_state_ = true;
 }
 
 void Parser::EmitOperationTypeCheckingError(std::string operation,
@@ -113,6 +113,7 @@ void Parser::EmitWarning(std::string message, Lexeme lexeme) {
     return;
   }
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column << " - ";
+  std::cout << "Warning:" << std::endl;
   std::cout << message << std::endl;
   std::cout << std::endl;
   // don't flip error states for warning
@@ -289,7 +290,7 @@ void Parser::ParseIndex(Symbol identifier) {
   // an index must be an integer
   if (bound.GetType() != TYPE_INT) {
     // lexeme points to '[' which is okay
-    EmitError("Array index must evaluate to integers.", lexeme);
+    EmitError("Array index must evaluate to integer.", lexeme);
     // return invalid symbol
     return;
   }
@@ -413,9 +414,6 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
     }
 
     // if one of the symbols was a float, that's the return type, otherwise int
-    // safe assumption to make because the <term> grammar is for arithmetic
-    // operations, and they are only defined for ints and floats
-    // if there was a non int/float, it would be cause by term_tail being false
     if (lead.GetType() == TYPE_FLOAT || tail.GetType() == TYPE_FLOAT) {
       symbol.SetType(TYPE_FLOAT);
     } else {
@@ -444,10 +442,9 @@ void Parser::ParseArgumentList(std::vector<Symbol>::iterator param_current,
   if (param_current != param_end) {
     if (param_current->GetType() != expression.GetType()) {
       // argument types don't match
-      EmitOperationTypeCheckingError("argument",
-                                     Symbol::GetTypeString(*param_current),
-                                     Symbol::GetTypeString(expression),
-                                     lexeme);
+      EmitExpectedTypeError(Symbol::GetTypeString(*param_current),
+                            Symbol::GetTypeString(expression),
+                            lexeme);
       return; 
     }
   } else {
@@ -470,7 +467,7 @@ void Parser::ParseArgumentList(std::vector<Symbol>::iterator param_current,
     if (param_current != param_end) {
       if (std::next(param_current) != param_end) {
         // there are more argument that should be present
-        EmitError("Not enough arugments for function call", lexeme);
+        EmitError("Not enough arugments for procedure call", lexeme);
         return;
       }
     }
@@ -500,17 +497,23 @@ void Parser::ParseAssignmentStatement() {
     if (destination.GetType() == TYPE_BOOL &&
         expression.GetType() == TYPE_INT) {
       mismatch = false;
+      EmitWarning("Coercing int to bool.", lexeme);
     }
 
-    if (destination.GetType() == TYPE_INT &&
-        (expression.GetType() == TYPE_BOOL ||
-         expression.GetType() == TYPE_FLOAT)) {
-      mismatch = false;
+    if (destination.GetType() == TYPE_INT) {
+      if (expression.GetType() == TYPE_BOOL) {
+        mismatch = false;
+        EmitWarning("Coercing bool to int.", lexeme); 
+      } else if (expression.GetType() == TYPE_FLOAT) {
+        mismatch = false;
+        EmitWarning("Coercing float to int.", lexeme);
+      }
     }
 
     if (destination.GetType() == TYPE_FLOAT &&
         expression.GetType() == TYPE_INT) {
       mismatch = false;
+      EmitWarning("Coercing int to float.", lexeme);
     }
 
     // couldn't recover from mismatch via interoperability
@@ -703,6 +706,8 @@ Symbol Parser::ParseExpressionTail() {
     // Right recursive call
     Symbol expression_tail = ParseExpressionTail();
 
+    // _not_ only leads in expression, so not_operation param will always
+    // be false in ParseExpressionTail
     return CheckExpressionParseTypes(arith_op, expression_tail, lexeme, false);
   }
 
