@@ -4,8 +4,8 @@
  *************************
  * Header file for the Scanner class
  **/
-#ifndef EECE5138COMPILER_KJLC_SCANNER_H_
-#define EECE5138COMPILER_KJLC_SCANNER_H_
+#ifndef EECE5183COMPILER_KJLC_SCANNER_H_
+#define EECE5183COMPILER_KJLC_SCANNER_H_
 
 #include <fstream>
 #include <map>
@@ -141,4 +141,4 @@ class Scanner {
 };
 
 } // namespace kjlc
-#endif // EECE5138COMPILER_KJLC_SCANNER_H_
+#endif // EECE5183COMPILER_KJLC_SCANNER_H_

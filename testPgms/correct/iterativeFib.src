@@ -28,7 +28,7 @@ end procedure;
 
 begin
 
-tmp := getInteger(max);
+max := getInteger();
 for(i := 0; i < max)
 	x := Fib(i);
 	tmp := putInteger(x);

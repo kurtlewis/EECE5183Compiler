@@ -4,64 +4,16 @@
  *************************
  * Header file for the Symbol Table Class
  **/
-#ifndef EECE5138COMPILER_KJLC_SYMBOL_TABLE_H
-#define EECE5138COMPILER_KJLC_SYMBOL_TABLE_H
+#ifndef EECE5183COMPILER_KJLC_SYMBOL_TABLE_H
+#define EECE5183COMPILER_KJLC_SYMBOL_TABLE_H
 
 #include <map>
 #include <string>
 #include <vector>
 
+#include "symbol.h"
+
 namespace kjlc {
-
-enum Type {
-  TYPE_BOOL,
-  TYPE_ENUM,
-  TYPE_FLOAT,
-  TYPE_INT,
-  TYPE_STRING,
-};
-
-enum Declaration {
-  DECLARATION_PROCEDURE,
-  DECLARATION_VARIABLE,
-  DECLARATION_TYPE
-};
-
-struct Symbol {
-  // default initializer list for variables that need set
-  Symbol() : id(""),
-             global(false),
-             array(false),
-             bound(0),
-             params(),
-             valid(true) {}
-
-  // identifier for the symbol
-  std::string id;
-
-  // the actual declaration is of this variant
-  Declaration declaration;
-
-  // the type of the declaration
-  Type type;
-
-  // if the symbol is in the global scope
-  bool global;
-
-  // if the symbol is an array
-  bool array;
-  int bound;
-
-  // if a procedure, it could have argument
-  // NOTE - this is NOT a vector of references which means
-  // if I make changes it need re-inserted
-  // if this proves to be rough, look into std::reference_wrapper
-  std::vector<Symbol> params;
-
-  // denotes if this is a valid symbol
-  // example invalid symbol: lookup failed
-  bool valid;
-};
 
 class SymbolTable {
   public:
@@ -82,8 +34,21 @@ class SymbolTable {
     void IncreaseScope();
 
 
+    // inserts a symbol to the appropriate scope, global if it as marked as such
+    // or the top of the stack otherwise
     void InsertSymbol(Symbol &symbol);
 
+    // In our language, scopes are created when a new procedure is declared,
+    // which means one procedure is the owner of each scope
+    void SetScopeProcedure(Symbol procedure);
+
+    // returns the procedure set by SetScopeProcedure, or an invalid symbol
+    // if one was not set
+    Symbol GetScopeProcedure();
+
+    // TODO - as stands this function returns a copied object instead
+    // of a reference to it, one way I could fix it is by creating a global
+    // invalid symbol
     Symbol FindSymbolByIdentifier(std::string id);
 
 
@@ -98,9 +63,12 @@ class SymbolTable {
     // flag for printing debug information
     bool debug_;
 
-    void PrintSymbolDebug(Symbol &symbol);
+    // key used in map for storing scope procedure. Real identifiers can't start
+    // with underscores, so it is safe from overlap
+    const std::string SCOPE_PROCEDURE_KEY = "__PROCEDURE";
 
+    void InsertBuiltInsIntoGlobalScope(); 
 };
 
 } // namespace kjlc
-#endif // EECE5138COMPILER_KJLC_SYMBOL_TABLE_H
+#endif // EECE5183COMPILER_KJLC_SYMBOL_TABLE_H

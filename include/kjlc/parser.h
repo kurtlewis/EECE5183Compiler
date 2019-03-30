@@ -4,10 +4,11 @@
  *************************
  * Header file for the Parser Class
  **/
-#ifndef EECE5138COMPILER_KJLC_PARSER_H_
-#define EECE5138COMPILER_KJLC_PARSER_H_
+#ifndef EECE5183COMPILER_KJLC_PARSER_H_
+#define EECE5183COMPILER_KJLC_PARSER_H_
 
 #include "scanner.h"
+#include "symbol.h"
 #include "symbol_table.h"
 
 namespace kjlc {
@@ -40,17 +41,47 @@ class Parser {
     // parse_function: name of parse rule being expanded
     void DebugPrint(std::string parse_function);
 
+    // TODO: I probably need to rethink the implications of having my
+    // error output functions set the program to an error state
+
+    //
+    // Error Handlers
+    //
+
+    // Error hanlding message that only prints the location of a lexeme
+    void EmitError(Lexeme lexeme);
+
     // Generic Error Handling function
-    void EmitParsingError(std::string message, Lexeme lexeme);
+    void EmitError(std::string message, Lexeme lexeme);
 
     // Error for missing token
     void EmitExpectedTokenError(std::string expected_token, Lexeme lexeme);
+
+    // Error for when types mismatch
+    void EmitExpectedTypeError(std::string expected_type,
+                               std::string found_type,
+                               Lexeme lexeme);
+
+    // Error Handler for incompatible types on operations
+    void EmitOperationTypeCheckingError(std::string operation,
+                                        std::string type1,
+                                        std::string type2,
+                                        Lexeme lexeme);
+
+    // Warning Handler - doesn't print if in error_state_, but doesn't 
+    // set error_state_ to true
+    void EmitWarning(std::string message, Lexeme lexeme);
+
 
     // consumes tokens until the next one is in the tokens list
     // does not consume the token that is in the tokens list
     // should only be called in an error_state_ but will handle not being in one
     // always considers T_PERIOD for end of file
     void ResyncOnTokens(Token tokens[], int tokens_length);
+
+    //
+    // Parse code deduplication rules
+    //
 
     // Loop Parsing declarations until one of the end tokens is peeked
     // built for code deduplication, everywhere that has (parse_declaration)*
@@ -62,18 +93,61 @@ class Parser {
     // is the exact same, with possibly different end tokens
     void LoopStatements(Token end_tokens[], int tokens_length);
 
+    // Parse Index statements, i.e. array [ <expression> ]
+    // split out from existing references to reduce code duplication
+    void ParseIndex(Symbol identifier);
+
+    //
+    // Type Check Functions for Right Recursive rules
+    //
+
+    // Checks the lead and tail symbols to make sure they are type compatible
+    // for use in ParseArithOp, ParseTerm, ParseArithOpTail, ParseTermTail
+    // params:
+    //   lead - output of ParseFactor or ParseRelation
+    //   tail - output of ParseTermTail or ParseArithOp, can be invalid
+    //   location - lexeme before the tail, used for error location printing
+    Symbol CheckArithmeticParseTypes(Symbol lead, Symbol tail,
+                                     Lexeme location);
+
+    // Checks the lead and tail symbols for binary operation compatibility
+    // for use in ParseExpression and ParseExpressionTail
+    // params:
+    //   arith_op - output of ParseArithOp
+    //   expression_tail - output of ParseExpressionTail, can be invalid
+    //   location - lexeme before the tail, used for error location printing
+    //   not_operation - boolean representing if the result or arith_op has
+    //                   a not operation being applied to it
+    Symbol CheckExpressionParseTypes(Symbol arith_op, Symbol expression_tail,
+                                     Lexeme location, bool not_operation);
+
+    // Checks the term and relation_tail to make sure they are type compatible
+    // for use in ParseRelation and ParseRelationTail
+    // params:
+    //   term - output of ParseTerm
+    //   relation_tail - output of ParseRelationTail, can be invalid
+    //   location - lexeme before the tail, used for error location printing
+    //   equality_test - true if the operation will be EQ or NEQ
+    Symbol CheckRelationParseTypes(Symbol term, Symbol relation_tail,
+                                   Lexeme location, bool equality_test);
+
     //
     // Parse rules functions
     //
 
     // Handle parsing argument list
-    void ParseArgumentList();
+    // params:
+    //   param_current - iterator to the current parameter, non-recusrive calls
+    //                   should be the begin iterator of the vector
+    //   param_end - iterator to the end of the vector
+    void ParseArgumentList(std::vector<Symbol>::iterator param_current,
+                           std::vector<Symbol>::iterator param_end);
 
     // handle parsing arithmetic operators
-    void ParseArithOp();
+    Symbol ParseArithOp();
 
     // handle parsing the right recursive ArithOp rule
-    void ParseArithOpTail();
+    Symbol ParseArithOpTail();
 
     // Handle parsing assignment statement
     void ParseAssignmentStatement();
@@ -88,16 +162,16 @@ class Parser {
     void ParseDeclaration();
 
     // Hanlde parsing destination
-    void ParseDestination();
+    Symbol ParseDestination();
     
     // Handle Parsing expression
-    void ParseExpression();
+    Symbol ParseExpression();
 
     // Handle right recursive part of ParseExpression
-    void ParseExpressionTail();
+    Symbol ParseExpressionTail();
 
     // Handle parsing factor rule
-    void ParseFactor();
+    Symbol ParseFactor();
 
     // Handle Parsing Identifier rule
     // @return - string representation of the identifier
@@ -105,6 +179,7 @@ class Parser {
 
     // Handle parsing if statement
     void ParseIfStatement();
+
 
     // Handle parsing loop statement
     void ParseLoopStatement();
@@ -152,13 +227,13 @@ class Parser {
     void ParseProgramHeader();
     
     // Handle parsing references. Combination of <procedure_call> and <name>
-    void ParseReference();
+    Symbol ParseReference();
 
     // Handle parsing relation rule
-    void ParseRelation();
+    Symbol ParseRelation();
 
     // Handle parsing right recursive Relation rule
-    void ParseRelationTail();
+    Symbol ParseRelationTail();
 
     // Handle parsing return statements
     void ParseReturnStatement();
@@ -170,10 +245,10 @@ class Parser {
     void ParseString();
 
     // Handle parsing term
-    void ParseTerm();
+    Symbol ParseTerm();
     
     // handle parsing right recursive term
-    void ParseTermTail();
+    Symbol ParseTermTail();
 
     // Parse Type Declaration
     // @params:
@@ -197,4 +272,4 @@ class Parser {
 };
 
 } // namespace kjlc
-#endif // EECE5138COMPILER_KJLC_SCANNER_H_
+#endif // EECE5183COMPILER_KJLC_SCANNER_H_

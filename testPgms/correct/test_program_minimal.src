@@ -3,6 +3,7 @@ program test_program is
     variable tmp : integer;
     procedure f : integer(variable x : integer)
         variable b : integer;
+        variable y : integer;
     begin
         b := 3;
         y := b;
