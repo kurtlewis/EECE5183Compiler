@@ -2,7 +2,7 @@ program Logicals is
 
 global variable x : bool;
 global variable c : string;
-global variable tmp : integer;
+global variable tmp : bool;
 
 begin
 

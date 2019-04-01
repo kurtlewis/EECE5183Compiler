@@ -1,7 +1,7 @@
 program MultipleProcs is
 
 global variable y : integer;
-variable tmp : integer;
+variable tmp : bool;
 
 procedure Proc1 : integer(variable val : integer)
 	procedure Proc2 : integer(variable val : integer)

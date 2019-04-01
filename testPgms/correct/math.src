@@ -2,6 +2,7 @@ program Maths is
 
 variable value : integer;
 variable tmp : integer;
+variable out : bool;
 
 procedure Fib : integer(variable val : integer)
 	variable tmp1 : integer;
@@ -27,6 +28,6 @@ end procedure;
 begin
 
 value := Fib(15);
-tmp := putInteger(value);
+out := putInteger(value);
 
 end program.

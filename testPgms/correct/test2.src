@@ -1,6 +1,7 @@
 program test_program is
     variable fibb_result : integer;
-    variable tmp : integer;
+    variable out : bool;
+
     procedure fibb : integer(variable n : integer)
         variable result : integer;
         variable a : integer;
@@ -27,5 +28,5 @@ program test_program is
 begin
     fibb_result := -1234;
     fibb_result := fibb(12);
-    tmp := putInteger(fibb_result);
+    out := putInteger(fibb_result);
 end program.

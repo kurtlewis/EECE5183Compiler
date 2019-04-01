@@ -1,6 +1,6 @@
 program test_program is
     variable a : integer;
-    variable tmp : integer;
+    variable tmp : bool;
     procedure f : integer(variable x : integer)
         variable b : integer;
         variable y : integer;
