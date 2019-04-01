@@ -1,0 +1,6 @@
+Line:10 Col:1 - Destination must be a variable.
+
+Line:11 Col:2 - Array index must evaluate to integer.
+
+Line:13 Col:2 - Can only index array types.
+

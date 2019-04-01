@@ -1,0 +1,15 @@
+Program testProgram is
+// declarations
+// <dec> <id> : <type>;
+type a is integer;
+variable b : integer[10];
+variable c : integer;
+
+begin
+
+a := 10;
+b[true] := 100;
+b[4] := 100; // should work
+c[1] := 100;
+
+end program.
