@@ -1,0 +1,27 @@
+Program testProgram is
+// declarations
+// <dec> <id> : <type>;
+variable a : bool;
+variable b : integer;
+variable c : string;
+variable d : float;
+
+
+begin
+
+a := d;
+a := c;
+b := c;
+c := a;
+c := b;
+c := d;
+d := c;
+d := a;
+
+// coercion tests
+b := true;
+d := b;
+
+
+
+end program.

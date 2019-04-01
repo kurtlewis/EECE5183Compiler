@@ -1,0 +1,30 @@
+Line:12 Col:3 - 
+Expected Type: boolean
+But found: float
+Line:13 Col:3 - 
+Expected Type: boolean
+But found: string
+Line:14 Col:3 - 
+Expected Type: integer
+But found: string
+Line:15 Col:3 - 
+Expected Type: string
+But found: boolean
+Line:16 Col:3 - 
+Expected Type: string
+But found: integer
+Line:17 Col:3 - 
+Expected Type: string
+But found: float
+Line:18 Col:3 - 
+Expected Type: float
+But found: string
+Line:19 Col:3 - 
+Expected Type: float
+But found: boolean
+Line:22 Col:3 - Warning:
+Coercing bool to int.
+
+Line:23 Col:3 - Warning:
+Coercing int to float.
+
