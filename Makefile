@@ -37,6 +37,10 @@ $(OBJS): | $(ODIR)
 $(ODIR):
 	mkdir $(ODIR)
 
+# test control
+test: $(ODIR)/$(OUT_NAME)
+	python3 testPgms/test.py
+
 clean:
 	rm -f $(ODIR)/*.o
 	rm $(ODIR)/$(OUT_NAME)

@@ -1,0 +1,10 @@
+Line:4 Col:12 - Expected token ':'
+Line:5 Col:1 - Could not parse declaration - expected a variable, type, or procedure
+
+Line:6 Col:10 - Expected Identifier
+
+Line:7 Col:14 - Expected int, string, bool, enum, float, or identifier
+
+Line:8 Col:14 - Symbol could not be found: str
+
+Line:9 Col:11 - Expected token ':'

@@ -1,0 +1,19 @@
+Program testProgram is
+// declarations
+// <dec> <id> : <type>;
+type a integer;
+tpe b is integer;
+type  is integer;
+type d is ;
+type e is str;
+type f;;
+// check the happy path
+type g is integer;
+variable h : g;
+variable i : g;
+ 
+
+begin
+
+
+end program.

@@ -1,0 +1,50 @@
+Program testProgram is
+// declarations
+// this file reaalllly messes up the state of the parser, so it's okay that
+// the errors aren't all perfect because this is error after error
+// two ';' to avoid having the next procedure get eaten by resyncing
+// <dec> <id> : <type>;;
+procedure a integer ()
+    begin
+    end procedure;;
+procede b : integer ()
+    begin
+    end procedure;;
+procedure c : integer )
+    begin
+    end procedure;;
+procedure d : integer (
+    begin
+    end procedure;;
+procedure e : integer()
+    end procedure;;
+procedure f : integer()
+    begin
+    procedure;;
+    end procedure;;
+procedure g : integer ()
+    begin
+    end;;
+procedure h : integer(variable z integer)
+    begin
+    end procedure;;
+procedure i : integer(variable y : )
+    begin
+    end procedure;;
+procedure j : integer(variable : integer)
+    begin
+    end procedure;;
+procedure k : integer (variable x : integer,)
+    begin
+    end procedure;;
+
+// happy path
+procedure l : integer (variable w : integer, variable v : integer)
+    begin
+    end procedure;;
+
+
+begin
+
+
+end program.

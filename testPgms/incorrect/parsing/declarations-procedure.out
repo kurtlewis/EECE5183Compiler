@@ -1,0 +1,29 @@
+Line:7 Col:13 - Expected token ':'
+Line:9 Col:5 - Could not parse declaration - expected a variable, type, or procedure
+
+Line:10 Col:1 - Could not parse declaration - expected a variable, type, or procedure
+
+Line:12 Col:5 - Could not parse declaration - expected a variable, type, or procedure
+
+Line:13 Col:23 - Expected token '('
+Line:17 Col:5 - Expected token ')'
+Line:20 Col:5 - Could not parse declaration - expected a variable, type, or procedure
+
+Line:23 Col:5 - Expected identifier, if, for, or return
+
+Line:24 Col:19 - Could not parse declaration - expected a variable, type, or procedure
+
+Line:27 Col:8 - Expected token 'procedure'
+Line:28 Col:34 - Expected token ':'
+Line:31 Col:36 - Expected int, string, bool, enum, float, or identifier
+
+Line:34 Col:32 - Expected Identifier
+
+Line:37 Col:45 - Expected token 'variable'
+Line:44 Col:19 - Could not parse declaration - expected a variable, type, or procedure
+
+Line:50 Col:5 - Expected token 'procedure'
+Line:50 Col:12 - Expected token 'begin'
+Line:52 Col:0 - Expected token 'begin'
+Line:669204192 Col:32765 - Expected token 'begin'
+Line:669205408 Col:32765 - Expected token ';'

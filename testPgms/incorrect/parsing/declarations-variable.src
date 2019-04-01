@@ -1,0 +1,21 @@
+Program testProgram is
+// declarations
+// <dec> <id> : <type>;
+variable a integer;
+varbiel b : integer;
+variable : integer;
+variable d : ;
+variable e : str;
+variable f;
+// valid variables - should be parsed because resync works
+varible g : enum;
+variable h : integer;
+variable i : string;
+variable j : float;
+variable k : bool;
+
+
+begin
+
+
+end program.
