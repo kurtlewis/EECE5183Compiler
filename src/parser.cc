@@ -8,6 +8,7 @@
 
 #include <iostream>
 
+#include "llvm/IR/Module.h"
 #include "kjlc/scanner.h"
 
 namespace kjlc {

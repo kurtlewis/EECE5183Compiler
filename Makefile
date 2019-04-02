@@ -3,6 +3,8 @@
 CXX=g++
 # CPPFLAGS = 
 CXXFLAGS = -I $(IDIR) -std=c++11
+# LLVM command
+LLVM = `llvm-config --cxxflags --ldflags --libs --system-libs`
 # Include directory
 IDIR=./include
 # Look for *.h files in IDIR
@@ -24,11 +26,11 @@ OBJS = $(addprefix $(ODIR)/, main.o scanner.o parser.o symbol.o symbol_table.o)
 
 # Create the compiler
 $(ODIR)/$(OUT_NAME): $(OBJS)
-	$(CXX) -o $@ $(CXXFLAGS) $^
+	$(CXX) -o $@ $(CXXFLAGS) $^ $(LLVM) 
 
 # Rule for implicitly creating object files when they're found to be out of date
 $(ODIR)/%.o : %.cc $(DEPS)
-	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $< 
+	$(CXX) -o $@ -c $(CPPFLAGS) $(CXXFLAGS) $< $(LLVM)
 
 # mark the Out directory as a dependency only if it doesn't exist
 $(OBJS): | $(ODIR)
