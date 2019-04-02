@@ -1,0 +1,21 @@
+program testProgram is
+variable a : integer;
+variable b : bool;
+variable c : string;
+variable d : float;
+
+begin
+
+b := not c;
+b := not a;
+b := not d;
+
+b := true & 10;
+b := false | 10;
+
+a := d | 10;
+a := c | 10;
+
+
+
+end program.
