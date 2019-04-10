@@ -52,7 +52,7 @@ class Symbol {
 
     // Compare types for a binary operation to make sure the type of param
     // symbol is compatible with current symbol
-    bool CheckTypesForBinaryOp(Symbol symbol);
+    bool CheckTypesForBinaryOrLogicalOp(Symbol symbol);
 
     // Compare types for a relational operation to make sure the type of the
     // param symbol is compatible with the current symbol

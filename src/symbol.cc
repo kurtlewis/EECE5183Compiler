@@ -75,12 +75,15 @@ bool Symbol::CheckTypeForBinaryOp() {
   }
 }
 
-bool Symbol::CheckTypesForBinaryOp(Symbol symbol) {
+// TODO: This is a temporary fix on the issue of is a '&', '|', or 'not' a 
+// logical or binary operation. I need to get some clarity and this will
+// probably result in a pretty major rewrite
+bool Symbol::CheckTypesForBinaryOrLogicalOp(Symbol symbol) {
   // only return true in the switch statement if the types are compatible
   // return false at the end of the function
   switch (type_) {
     case TYPE_BOOL:
-      if (symbol.GetType() == TYPE_BOOL) {
+      if (symbol.GetType() == TYPE_BOOL || symbol.GetType() == TYPE_INT) {
         return true;
       }
       break;
@@ -89,7 +92,7 @@ bool Symbol::CheckTypesForBinaryOp(Symbol symbol) {
     case TYPE_FLOAT:
       break;
     case TYPE_INT:
-      if (symbol.GetType() == TYPE_INT) {
+      if (symbol.GetType() == TYPE_INT || symbol.GetType() == TYPE_BOOL) {
         return true;
       }
       break;

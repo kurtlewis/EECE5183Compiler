@@ -319,7 +319,7 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
     
-    bool compatible = arith_op.CheckTypesForBinaryOp(expression_tail);
+    bool compatible = arith_op.CheckTypesForBinaryOrLogicalOp(expression_tail);
 
     if (!compatible) {
       EmitOperationTypeCheckingError("binary operation",
