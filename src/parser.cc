@@ -8,6 +8,10 @@
 
 #include <iostream>
 
+#include "llvm/IR/IRPrintingPasses.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/Support/raw_ostream.h"
 #include "kjlc/scanner.h"
 
 namespace kjlc {
@@ -43,6 +47,25 @@ void Parser::ParseProgram() {
   ParseProgramBody();
 
   // no need to decrease scope because the program is over
+}
+
+void Parser::BuildProgram() {
+  if (!codegen_) {
+    std::cout << "Codegen is not enabled, skipping build." << std::endl;
+    return;
+  }
+
+  // check the generated module for errors
+  bool broken = llvm::verifyModule(*llvm_module_, &llvm::errs());
+  
+  if (!broken) {
+    // Module can be safely compiled, it is not broken
+    llvm::legacy::PassManager pass_manager;
+    pass_manager.add(llvm::createPrintModulePass(llvm::outs()));
+    pass_manager.run(*llvm_module_);
+  } else {
+    std::cout << "Error creating LLVM Module. See stderr." << std::endl;
+  }
 }
 
 void Parser::DebugPrint(std::string parse_function) {

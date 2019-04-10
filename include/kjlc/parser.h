@@ -27,6 +27,9 @@ class Parser {
 
     // Parse Program. Starting point of the parse
     void ParseProgram();
+
+    // Builds LLVM IR
+    void BuildProgram();
     
   private:
     // Scanner being used to drive the parse

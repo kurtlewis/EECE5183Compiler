@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     kjlc::Parser parser(argv[1], parser_debug, symbol_debug, codegen_enable,
                         codegen_debug);
     parser.ParseProgram();
-
+    parser.BuildProgram();
   }
   return 0;
 }
