@@ -8,24 +8,30 @@
 
 #include <iostream>
 
-#include "llvm/IR/Module.h"
 #include "kjlc/scanner.h"
 
 namespace kjlc {
 
 // Default Constructor
-Parser::Parser(std::string filename, bool parser_debug, bool symbol_debug)
+Parser::Parser(std::string filename, bool parser_debug, bool symbol_debug,
+               bool codegen_enable, bool codegen_debug)
     : scanner_(filename),
       symbol_table_(symbol_debug),
       error_state_(false),
       end_parse_(false),
-      debug_(parser_debug) {
+      parser_debug_(parser_debug),
+      codegen_(codegen_enable),
+      codegen_debug_(codegen_debug),
+      llvm_module_(nullptr),
+      llvm_global_context_() {
 
 }
 
 // Deconstructor
 Parser::~Parser() {
-
+  if (llvm_module_ != nullptr) {
+    delete llvm_module_;
+  }
 }
 
 void Parser::ParseProgram() {
@@ -40,7 +46,7 @@ void Parser::ParseProgram() {
 }
 
 void Parser::DebugPrint(std::string parse_function) {
-  if (debug_) {
+  if (parser_debug_) {
     std::cout << parse_function << std::endl;
   }
 }
@@ -1224,7 +1230,12 @@ void Parser::ParseProgramHeader() {
   }
 
   // read the identifier
-  ParseIdentifier();
+  std::string program_name = ParseIdentifier();
+
+  if (codegen_) {
+    // Create the module in which all this code will go
+    llvm_module_ = new llvm::Module(program_name, llvm_global_context_);
+  }
 
   // read 'is'
   lexeme = scanner_.GetNextLexeme(); 

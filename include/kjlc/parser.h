@@ -7,6 +7,8 @@
 #ifndef EECE5183COMPILER_KJLC_PARSER_H_
 #define EECE5183COMPILER_KJLC_PARSER_H_
 
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
 #include "scanner.h"
 #include "symbol.h"
 #include "symbol_table.h"
@@ -17,7 +19,8 @@ class Parser {
   public:
     // Constructor sets things up for parsing.
     // takes a string of the file for parsing.
-    Parser(std::string filename, bool parser_debug, bool symbol_debug);
+    Parser(std::string filename, bool parser_debug, bool symbol_debug,
+           bool codegen_enable, bool codegen_debug);
 
     // Deconstructor cleans up any allocated memory.
     ~Parser();
@@ -35,7 +38,20 @@ class Parser {
     // true if parse should end
     bool end_parse_;
     // flag for debug state
-    bool debug_;
+    bool parser_debug_;
+    // flag to enable code_gen
+    bool codegen_;
+    // flag for codegen_debug
+    bool codegen_debug_;
+
+
+    //
+    // LLVM Member variables
+    //
+    // The module that contains all compiled code
+    llvm::Module *llvm_module_;
+    // global context for compiler
+    llvm::LLVMContext llvm_global_context_;
 
     // Prints out debugging information when requested
     // parse_function: name of parse rule being expanded

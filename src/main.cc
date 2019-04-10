@@ -25,6 +25,8 @@ int main(int argc, char* argv[]) {
   bool parser_debug = false;
   bool scanner_only = false;
   bool symbol_debug = false;
+  bool codegen_enable = true;
+  bool codegen_debug = false;
   // look through any other arguments for flags and set them
   for (int idx = 1; idx < argc; idx++) {
     if (std::string(argv[idx]).compare("--help") == 0 ||
@@ -40,6 +42,12 @@ int main(int argc, char* argv[]) {
     }
     if (std::string(argv[idx]).compare("--symbol-debug") == 0) {
       symbol_debug = true;
+    }
+    if (std::string(argv[idx]).compare("--codegen-disable") == 0) {
+      codegen_enable = false;
+    }
+    if (std::string(argv[idx]).compare("--codegen-debug") == 0) {
+      codegen_debug = true;
     }
   }
 
@@ -61,7 +69,8 @@ int main(int argc, char* argv[]) {
     }
   } else {
     // run the whole compiler
-    kjlc::Parser parser(argv[1], parser_debug, symbol_debug);
+    kjlc::Parser parser(argv[1], parser_debug, symbol_debug, codegen_enable,
+                        codegen_debug);
     parser.ParseProgram();
 
   }
@@ -82,5 +91,8 @@ void PrintHelp() {
   std::cout << " debugging" << std::endl;
   std::cout << "                    information." << std::endl;
   std::cout << "  --symbol-debug    Prints symbol table debug information.";
+  std::cout << std::endl;
+  std::cout << "  --codegen-disable Disables codegen operations." << std::endl;
+  std::cout << "  --codegen-debug   Prints codegen debugging operations.";
   std::cout << std::endl;
 }
