@@ -104,32 +104,43 @@ class Parser {
     // Checks the lead and tail symbols to make sure they are type compatible
     // for use in ParseArithOp, ParseTerm, ParseArithOpTail, ParseTermTail
     // params:
+    //   type_context - destination type/expected result
     //   lead - output of ParseFactor or ParseRelation
     //   tail - output of ParseTermTail or ParseArithOp, can be invalid
     //   location - lexeme before the tail, used for error location printing
-    Symbol CheckArithmeticParseTypes(Symbol lead, Symbol tail,
+    Symbol CheckArithmeticParseTypes(Symbol type_context,
+                                     Symbol lead,
+                                     Symbol tail,
                                      Lexeme location);
 
     // Checks the lead and tail symbols for binary operation compatibility
     // for use in ParseExpression and ParseExpressionTail
     // params:
+    //   type_context - destination type/expected result
     //   arith_op - output of ParseArithOp
     //   expression_tail - output of ParseExpressionTail, can be invalid
     //   location - lexeme before the tail, used for error location printing
     //   not_operation - boolean representing if the result or arith_op has
     //                   a not operation being applied to it
-    Symbol CheckExpressionParseTypes(Symbol arith_op, Symbol expression_tail,
-                                     Lexeme location, bool not_operation);
+    Symbol CheckExpressionParseTypes(Symbol type_context,
+                                     Symbol arith_op,
+                                     Symbol expression_tail,
+                                     Lexeme location,
+                                     bool not_operation);
 
     // Checks the term and relation_tail to make sure they are type compatible
     // for use in ParseRelation and ParseRelationTail
     // params:
+    //   type_context - destination type/expected result
     //   term - output of ParseTerm
     //   relation_tail - output of ParseRelationTail, can be invalid
     //   location - lexeme before the tail, used for error location printing
     //   equality_test - true if the operation will be EQ or NEQ
-    Symbol CheckRelationParseTypes(Symbol term, Symbol relation_tail,
-                                   Lexeme location, bool equality_test);
+    Symbol CheckRelationParseTypes(Symbol type_context,
+                                   Symbol term,
+                                   Symbol relation_tail,
+                                   Lexeme location,
+                                   bool equality_test);
 
     //
     // Parse rules functions
@@ -171,9 +182,15 @@ class Parser {
     Symbol ParseExpression(Symbol type_context);
 
     // Handle right recursive part of ParseExpression
+    // @param:
+    //   Symbol type_context - a symbol reperesenting the expected type
+    //                         the expression will evaluate to
     Symbol ParseExpressionTail(Symbol type_context);
 
     // Handle parsing factor rule
+    // @param:
+    //   Symbol type_context - a symbol reperesenting the expected type
+    //                         the expression will evaluate to
     Symbol ParseFactor(Symbol type_context);
 
     // Handle Parsing Identifier rule
@@ -233,9 +250,15 @@ class Parser {
     Symbol ParseReference();
 
     // Handle parsing relation rule
+    // @param:
+    //   Symbol type_context - a symbol reperesenting the expected type
+    //                         the expression will evaluate to
     Symbol ParseRelation(Symbol type_context);
 
     // Handle parsing right recursive Relation rule
+    // @param:
+    //   Symbol type_context - a symbol reperesenting the expected type
+    //                         the expression will evaluate to
     Symbol ParseRelationTail(Symbol type_context);
 
     // Handle parsing return statements
@@ -248,9 +271,15 @@ class Parser {
     void ParseString();
 
     // Handle parsing term
+    // @param:
+    //   Symbol type_context - a symbol reperesenting the expected type
+    //                         the expression will evaluate to
     Symbol ParseTerm(Symbol type_context);
     
     // handle parsing right recursive term
+    // @param:
+    //   Symbol type_context - a symbol reperesenting the expected type
+    //                         the expression will evaluate to
     Symbol ParseTermTail(Symbol type_context);
 
     // Parse Type Declaration

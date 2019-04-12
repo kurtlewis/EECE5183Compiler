@@ -313,7 +313,8 @@ void Parser::ParseIndex(Symbol identifier) {
   }
 }
 
-Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
+Symbol Parser::CheckExpressionParseTypes(Symbol type_context,
+                                         Symbol arith_op,
                                          Symbol expression_tail,
                                          Lexeme location,
                                          bool not_operation) {
@@ -366,7 +367,8 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
   }
 }
 
-Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
+Symbol Parser::CheckRelationParseTypes(Symbol type_context, Symbol term,
+                                       Symbol relation_tail,
                                        Lexeme location, bool equality_test) {
   // is the relation_tail a valid symbol?
   if (relation_tail.IsValid()) {
@@ -397,8 +399,8 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
   }
 }
 
-Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
-                                   Lexeme location) {
+Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
+                                         Symbol tail, Lexeme location) {
   // is tail a valid Symbol?
   if (tail.IsValid()) {
     // Generate an anonymous symbol to return
@@ -544,7 +546,8 @@ Symbol Parser::ParseArithOp(Symbol type_context) {
 
   Symbol arith_op_tail = ParseArithOpTail(type_context);
 
-  return CheckArithmeticParseTypes(relation, arith_op_tail, lexeme);
+  return CheckArithmeticParseTypes(type_context, relation, arith_op_tail,
+                                   lexeme);
 }
 
 // because this is a left recursive rule made right recursive, it is necessary
@@ -565,7 +568,8 @@ Symbol Parser::ParseArithOpTail(Symbol type_context) {
     // recursive call
     Symbol arith_op_tail = ParseArithOpTail(type_context);
 
-    return CheckArithmeticParseTypes(relation, arith_op_tail, lexeme);
+    return CheckArithmeticParseTypes(type_context, relation, arith_op_tail,
+                                     lexeme);
   }
 
   // Empty evaluation of the rule, return an invalid symbol
@@ -689,8 +693,8 @@ Symbol Parser::ParseExpression(Symbol type_context) {
 
   Symbol expression_tail = ParseExpressionTail(type_context);
 
-  return CheckExpressionParseTypes(arith_op, expression_tail, lexeme,
-                                   not_operation);
+  return CheckExpressionParseTypes(type_context, arith_op, expression_tail,
+                                   lexeme, not_operation);
 }
 
 Symbol Parser::ParseExpressionTail(Symbol type_context) {
@@ -713,7 +717,8 @@ Symbol Parser::ParseExpressionTail(Symbol type_context) {
 
     // _not_ only leads in expression, so not_operation param will always
     // be false in ParseExpressionTail
-    return CheckExpressionParseTypes(arith_op, expression_tail, lexeme, false);
+    return CheckExpressionParseTypes(type_context, arith_op, expression_tail,
+                                     lexeme, false);
   }
 
   // empty evaluation of this rule, return an invalid anonymous symbol
@@ -1278,7 +1283,8 @@ Symbol Parser::ParseRelation(Symbol type_context) {
 
   Symbol relation_tail = ParseRelationTail(type_context);
 
-  return CheckRelationParseTypes(term, relation_tail, lexeme, equality_test);
+  return CheckRelationParseTypes(type_context, term, relation_tail,
+                                 lexeme, equality_test);
 }
 
 // Right recursive portion of the rule
@@ -1309,7 +1315,8 @@ Symbol Parser::ParseRelationTail(Symbol type_context) {
     // Recursive call
     Symbol relation_tail = ParseRelationTail(type_context);
 
-    return CheckRelationParseTypes(term, relation_tail, lexeme, equality_test);
+    return CheckRelationParseTypes(type_context, term, relation_tail,
+                                   lexeme, equality_test);
   }
   
   // empty evaluation of rule, return invalid anonymous symbol
@@ -1389,7 +1396,7 @@ Symbol Parser::ParseTerm(Symbol type_context) {
 
   Symbol term_tail = ParseTermTail(type_context);
 
-  return CheckArithmeticParseTypes(factor, term_tail, lexeme);
+  return CheckArithmeticParseTypes(type_context, factor, term_tail, lexeme);
 
 }
 
@@ -1410,7 +1417,7 @@ Symbol Parser::ParseTermTail(Symbol type_context) {
 
     Symbol term_tail =  ParseTermTail(type_context);
 
-    return CheckArithmeticParseTypes(factor, term_tail, lexeme);
+    return CheckArithmeticParseTypes(type_context, factor, term_tail, lexeme);
   }
 
   // Empty evaluation of the rule, return an invalid symbol
