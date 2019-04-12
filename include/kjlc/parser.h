@@ -144,10 +144,10 @@ class Parser {
                            std::vector<Symbol>::iterator param_end);
 
     // handle parsing arithmetic operators
-    Symbol ParseArithOp();
+    Symbol ParseArithOp(Symbol type_context);
 
     // handle parsing the right recursive ArithOp rule
-    Symbol ParseArithOpTail();
+    Symbol ParseArithOpTail(Symbol type_context);
 
     // Handle parsing assignment statement
     void ParseAssignmentStatement();
@@ -165,13 +165,16 @@ class Parser {
     Symbol ParseDestination();
     
     // Handle Parsing expression
-    Symbol ParseExpression();
+    // @param:
+    //   Symbol type_context - a symbol reperesenting the expected type
+    //                         the expression will evaluate to
+    Symbol ParseExpression(Symbol type_context);
 
     // Handle right recursive part of ParseExpression
-    Symbol ParseExpressionTail();
+    Symbol ParseExpressionTail(Symbol type_context);
 
     // Handle parsing factor rule
-    Symbol ParseFactor();
+    Symbol ParseFactor(Symbol type_context);
 
     // Handle Parsing Identifier rule
     // @return - string representation of the identifier
@@ -230,10 +233,10 @@ class Parser {
     Symbol ParseReference();
 
     // Handle parsing relation rule
-    Symbol ParseRelation();
+    Symbol ParseRelation(Symbol type_context);
 
     // Handle parsing right recursive Relation rule
-    Symbol ParseRelationTail();
+    Symbol ParseRelationTail(Symbol type_context);
 
     // Handle parsing return statements
     void ParseReturnStatement();
@@ -245,10 +248,10 @@ class Parser {
     void ParseString();
 
     // Handle parsing term
-    Symbol ParseTerm();
+    Symbol ParseTerm(Symbol type_context);
     
     // handle parsing right recursive term
-    Symbol ParseTermTail();
+    Symbol ParseTermTail(Symbol type_context);
 
     // Parse Type Declaration
     // @params:

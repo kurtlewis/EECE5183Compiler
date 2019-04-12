@@ -283,7 +283,10 @@ void Parser::ParseIndex(Symbol identifier) {
     return;
   }
 
-  Symbol bound = ParseExpression();
+  // a bound will evaluate to an integer
+  Symbol context = Symbol::GenerateAnonymousSymbol();
+  context.SetType(TYPE_INT);
+  Symbol bound = ParseExpression(context);
     
   // Type checking
 
@@ -433,7 +436,8 @@ void Parser::ParseArgumentList(std::vector<Symbol>::iterator param_current,
                                std::vector<Symbol>::iterator param_end) {
   DebugPrint("ArgumentList");
 
-  Symbol expression = ParseExpression();
+  // The type expectation is the current parameter
+  Symbol expression = ParseExpression(*param_current);
 
   // peek a lexeme for possible error reporting
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -485,7 +489,8 @@ void Parser::ParseAssignmentStatement() {
     return;
   }
 
-  Symbol expression = ParseExpression();
+  // the expected type is the destination symbol
+  Symbol expression = ParseExpression(destination);
 
   // destination and expression evaluation must generally be of the same type
   // but ints and bools are interoperable
@@ -529,22 +534,22 @@ void Parser::ParseAssignmentStatement() {
 
 // this is a left recursive rule that has been modified to be right recursive
 // see docs/language-grammar-modified.txt for more information
-Symbol Parser::ParseArithOp() {
+Symbol Parser::ParseArithOp(Symbol type_context) {
   DebugPrint("ArithOp");
 
-  Symbol relation = ParseRelation();
+  Symbol relation = ParseRelation(type_context);
 
   // Peek location for use in possible error messages
   Lexeme lexeme = scanner_.PeekNextLexeme();
 
-  Symbol arith_op_tail = ParseArithOpTail();
+  Symbol arith_op_tail = ParseArithOpTail(type_context);
 
   return CheckArithmeticParseTypes(relation, arith_op_tail, lexeme);
 }
 
 // because this is a left recursive rule made right recursive, it is necessary
 // to support empty evaluations
-Symbol Parser::ParseArithOpTail() {
+Symbol Parser::ParseArithOpTail(Symbol type_context) {
   DebugPrint("ArithOpTail");
 
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -552,13 +557,13 @@ Symbol Parser::ParseArithOpTail() {
     // consume the "+" or "-"
     lexeme = scanner_.GetNextLexeme();
 
-    Symbol relation = ParseRelation();
+    Symbol relation = ParseRelation(type_context);
 
     // peek the lexeme location for possible error messages
     Lexeme lexeme = scanner_.PeekNextLexeme();
 
     // recursive call
-    Symbol arith_op_tail = ParseArithOpTail();
+    Symbol arith_op_tail = ParseArithOpTail(type_context);
 
     return CheckArithmeticParseTypes(relation, arith_op_tail, lexeme);
   }
@@ -665,7 +670,7 @@ Symbol Parser::ParseDestination() {
 
 // this is a left recursive rule made right recursive
 // see `docs/language-gramamr-modified` for notes on the rules
-Symbol Parser::ParseExpression() {
+Symbol Parser::ParseExpression(Symbol type_context) {
   DebugPrint("Expression");
 
   bool not_operation = false;
@@ -677,18 +682,18 @@ Symbol Parser::ParseExpression() {
   }
 
   // parse arithOp
-  Symbol arith_op = ParseArithOp();
+  Symbol arith_op = ParseArithOp(type_context);
 
   // peek location of next symbol for possible error reporting
   lexeme = scanner_.PeekNextLexeme();
 
-  Symbol expression_tail = ParseExpressionTail();
+  Symbol expression_tail = ParseExpressionTail(type_context);
 
   return CheckExpressionParseTypes(arith_op, expression_tail, lexeme,
                                    not_operation);
 }
 
-Symbol Parser::ParseExpressionTail() {
+Symbol Parser::ParseExpressionTail(Symbol type_context) {
   DebugPrint("ExpressionTail");
 
   // there is an lambda(empty) evaluation of this rule, so start with a peek
@@ -698,13 +703,13 @@ Symbol Parser::ParseExpressionTail() {
     lexeme = scanner_.GetNextLexeme();
     
     // Next is arith op
-    Symbol arith_op = ParseArithOp();
+    Symbol arith_op = ParseArithOp(type_context);
 
     // peek location of next symbol for possible error reporting
     lexeme = scanner_.PeekNextLexeme();
 
     // Right recursive call
-    Symbol expression_tail = ParseExpressionTail();
+    Symbol expression_tail = ParseExpressionTail(type_context);
 
     // _not_ only leads in expression, so not_operation param will always
     // be false in ParseExpressionTail
@@ -717,7 +722,7 @@ Symbol Parser::ParseExpressionTail() {
   return symbol;
 }
 
-Symbol Parser::ParseFactor() {
+Symbol Parser::ParseFactor(Symbol type_context) {
   DebugPrint("Factor");
   
   // Initially create an anonymous symbol for return - will be replaced if
@@ -731,7 +736,8 @@ Symbol Parser::ParseFactor() {
     // consume paren
     lexeme = scanner_.GetNextLexeme();
     
-    symbol = ParseExpression();
+    // TODO: Come back here to get the context
+    symbol = ParseExpression(type_context);
 
     // closing paren is required
     lexeme = scanner_.GetNextLexeme();
@@ -824,7 +830,10 @@ void Parser::ParseIfStatement() {
   }
 
   // handle parsing the expression
-  Symbol expression = ParseExpression();
+  // Expected type is a boolean
+  Symbol context = Symbol::GenerateAnonymousSymbol();
+  context.SetType(TYPE_BOOL);
+  Symbol expression = ParseExpression(context);
 
   // expression must evaluate to a boolean
   // lexeme points to '(' which is okay
@@ -904,7 +913,10 @@ void Parser::ParseLoopStatement() {
     return;
   }
 
-  Symbol expression = ParseExpression();
+  // Expected type is a boolean
+  Symbol context = Symbol::GenerateAnonymousSymbol();
+  context.SetType(TYPE_BOOL);
+  Symbol expression = ParseExpression(context);
 
   // expression must evaluate to a bool or int
   // lexeme points to ';' which is okay
@@ -1250,10 +1262,10 @@ Symbol Parser::ParseReference() {
 
 // this is a left recursive rule made right recursive
 // see docs for full write-out of rule
-Symbol Parser::ParseRelation() {
+Symbol Parser::ParseRelation(Symbol type_context) {
   DebugPrint("Relation");
 
-  Symbol term = ParseTerm();
+  Symbol term = ParseTerm(type_context);
 
   // peek the next token to see if there is going to be an equality test
   // needed for type checking, this is reaching down into ParseRelationTail
@@ -1264,13 +1276,13 @@ Symbol Parser::ParseRelation() {
     equality_test = true;
   }
 
-  Symbol relation_tail = ParseRelationTail();
+  Symbol relation_tail = ParseRelationTail(type_context);
 
   return CheckRelationParseTypes(term, relation_tail, lexeme, equality_test);
 }
 
 // Right recursive portion of the rule
-Symbol Parser::ParseRelationTail() {
+Symbol Parser::ParseRelationTail(Symbol type_context) {
   DebugPrint("RelationTail");
 
   // Need to allow for empty evaluation so peek
@@ -1282,7 +1294,7 @@ Symbol Parser::ParseRelationTail() {
     lexeme = scanner_.GetNextLexeme();
 
 
-    Symbol term = ParseTerm();
+    Symbol term = ParseTerm(type_context);
 
     // check to see if the next token is an equality test
     // needed for type checking
@@ -1295,7 +1307,7 @@ Symbol Parser::ParseRelationTail() {
     }
 
     // Recursive call
-    Symbol relation_tail = ParseRelationTail();
+    Symbol relation_tail = ParseRelationTail(type_context);
 
     return CheckRelationParseTypes(term, relation_tail, lexeme, equality_test);
   }
@@ -1315,8 +1327,6 @@ void Parser::ParseReturnStatement() {
     return;
   }
 
-  Symbol expression = ParseExpression();
-
   // get the symbol for this scope - it will correspond to the return statement
   Symbol procedure = symbol_table_.GetScopeProcedure();
 
@@ -1325,6 +1335,9 @@ void Parser::ParseReturnStatement() {
     EmitError("Return not valid in this scope.", lexeme);
     return;
   }
+
+  // return type context is the type of the scope procedure
+  Symbol expression = ParseExpression(procedure);
 
   if (expression.GetType() != procedure.GetType()) {
     EmitExpectedTypeError(Symbol::GetTypeString(procedure),
@@ -1366,22 +1379,22 @@ void Parser::ParseString() {
 }
 
 // a left recursive rule made right recursive. See docs for writeout
-Symbol Parser::ParseTerm() {
+Symbol Parser::ParseTerm(Symbol type_context) {
   DebugPrint("Term");
 
-  Symbol factor = ParseFactor();
+  Symbol factor = ParseFactor(type_context);
 
   // peek the location of the operator for possible error reporting
   Lexeme lexeme = scanner_.PeekNextLexeme();
 
-  Symbol term_tail = ParseTermTail();
+  Symbol term_tail = ParseTermTail(type_context);
 
   return CheckArithmeticParseTypes(factor, term_tail, lexeme);
 
 }
 
 // Right recursive version of ParseTerm
-Symbol Parser::ParseTermTail() {
+Symbol Parser::ParseTermTail(Symbol type_context) {
   DebugPrint("TermTail");
 
   // peek because there can be an empty evaluation
@@ -1390,12 +1403,12 @@ Symbol Parser::ParseTermTail() {
     // consume the token
     lexeme = scanner_.GetNextLexeme();
 
-    Symbol factor = ParseFactor();
+    Symbol factor = ParseFactor(type_context);
 
     // peek the location of the operator for possible error reporting
     Lexeme lexeme = scanner_.PeekNextLexeme();
 
-    Symbol term_tail =  ParseTermTail();
+    Symbol term_tail =  ParseTermTail(type_context);
 
     return CheckArithmeticParseTypes(factor, term_tail, lexeme);
   }
