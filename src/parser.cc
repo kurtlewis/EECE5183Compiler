@@ -401,9 +401,22 @@ Symbol Parser::CheckRelationParseTypes(Symbol type_context, Symbol term,
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
-    bool compatible = term.CheckTypesForRelationalOp(relation_tail,
-                                                     equality_test);
+    bool compatible = false;
 
+    if (term.GetType() == TYPE_BOOL) {
+      compatible = (relation_tail.GetType() == TYPE_BOOL ||
+                    relation_tail.GetType() == TYPE_INT);
+    } else if (term.GetType() == TYPE_FLOAT) {
+      compatible = (relation_tail.GetType() == TYPE_FLOAT ||
+                    relation_tail.GetType() == TYPE_INT);
+    } else if (term.GetType() == TYPE_INT) {
+      compatible = (relation_tail.GetType() == TYPE_INT ||
+                    relation_tail.GetType() == TYPE_BOOL ||
+                    relation_tail.GetType() == TYPE_FLOAT);
+    } else if (term.GetType() == TYPE_STRING) {
+      compatible = (equality_test && relation_tail.GetType() == TYPE_STRING);
+    }
+    
     if (!compatible) {
       EmitOperationTypeCheckingError("relational operation",
                                      Symbol::GetTypeString(term),
@@ -417,7 +430,6 @@ Symbol Parser::CheckRelationParseTypes(Symbol type_context, Symbol term,
     symbol.SetType(TYPE_BOOL);
 
     return symbol;
-
   } else {
     // relation tail was invalid, so just return the term
     // it can be whatever type it wants to be :)

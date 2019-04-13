@@ -46,13 +46,6 @@ class Symbol {
     // Compare types for arithmetic operation to make sure the type of
     // param symbol is compatible with current symbol
     bool CheckTypesForArithmeticOp(Symbol symbol);
-    
-    // Compare types for a relational operation to make sure the type of the
-    // param symbol is compatible with the current symbol
-    // params:
-    //   symbol - symbol to check for compatability with
-    //   equality_test - true if the relational op is a EQ or NEQ
-    bool CheckTypesForRelationalOp(Symbol symbol, bool equality_test);
 
     //
     // Getters and Setters

@@ -66,38 +66,6 @@ bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
   return false;
 }
 
-bool Symbol::CheckTypesForRelationalOp(Symbol symbol, bool equality_test) {
-  // only return true in the switch statement if the types are compatible
-  // return false at the end of the function
-  switch (type_) {
-    case TYPE_BOOL:
-      if (symbol.GetType() == TYPE_BOOL || symbol.GetType() == TYPE_INT) {
-        return true;
-      }
-      break;
-    case TYPE_ENUM:
-      break;
-    case TYPE_FLOAT:
-      if (symbol.GetType() == TYPE_FLOAT || symbol.GetType() == TYPE_INT) {
-        return true;
-      }
-      break;
-    case TYPE_INT:
-      if (symbol.GetType() == TYPE_BOOL || symbol.GetType() == TYPE_FLOAT ||
-          symbol.GetType() == TYPE_INT) {
-        return true;
-      }
-      break;
-    case TYPE_STRING:
-      if (equality_test && symbol.GetType() == TYPE_STRING) {
-        return true;
-      }
-      break;
-  }
-  // code only reaches here by being type incompatible
-  return false;
-}
-
 std::string Symbol::GetTypeString(Symbol symbol) {
   if (!symbol.IsValid()) {
     return "Invalid symbol";
