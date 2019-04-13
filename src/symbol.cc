@@ -66,44 +66,6 @@ bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
   return false;
 }
 
-bool Symbol::CheckTypeForBinaryOp() {
-  // Only TYPE_BOOL and TYPE_INT are compatible for binary operations
-  if (type_ == TYPE_BOOL || type_ == TYPE_INT) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// TODO: This is a temporary fix on the issue of is a '&', '|', or 'not' a 
-// logical or binary operation. I need to get some clarity and this will
-// probably result in a pretty major rewrite
-bool Symbol::CheckTypesForBinaryOrLogicalOp(Symbol symbol) {
-  // only return true in the switch statement if the types are compatible
-  // return false at the end of the function
-  switch (type_) {
-    case TYPE_BOOL:
-      if (symbol.GetType() == TYPE_BOOL || symbol.GetType() == TYPE_INT) {
-        return true;
-      }
-      break;
-    case TYPE_ENUM:
-      break;
-    case TYPE_FLOAT:
-      break;
-    case TYPE_INT:
-      if (symbol.GetType() == TYPE_INT || symbol.GetType() == TYPE_BOOL) {
-        return true;
-      }
-      break;
-    case TYPE_STRING:
-      break;
-  }
-  // code only reaches here by being incompatible
-  return false;
-}
-
-
 bool Symbol::CheckTypesForRelationalOp(Symbol symbol, bool equality_test) {
   // only return true in the switch statement if the types are compatible
   // return false at the end of the function

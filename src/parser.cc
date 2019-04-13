@@ -323,44 +323,70 @@ Symbol Parser::CheckExpressionParseTypes(Symbol type_context,
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
     
-    bool compatible = arith_op.CheckTypesForBinaryOrLogicalOp(expression_tail);
-
-    if (!compatible) {
-      EmitOperationTypeCheckingError("binary operation",
-                                     Symbol::GetTypeString(arith_op),
-                                     Symbol::GetTypeString(expression_tail),
-                                     location);
-      symbol.SetIsValid(false);
-      return symbol;
-    }
-
-    // if input type was TYPE_INT, output is TYPE_INT, or if TYPE_BOOL, output
-    // is TYPE_BOOL
-    if (arith_op.GetType() == TYPE_INT) {
-      symbol.SetType(TYPE_INT);
-    } else if (arith_op.GetType() == TYPE_BOOL) {
+    bool compatible = false;
+    std::string operation_type_string;
+    if (type_context.GetType() == TYPE_BOOL) {
+      // expected output is a bool so the expression operator ('&', '|', 'not')
+      // is a logical operation
+      // logical operation is only supported between bools
+      operation_type_string = "logical operation";
+      compatible = (arith_op.GetType() == TYPE_BOOL &&
+                    expression_tail.GetType() == TYPE_BOOL);
+      // output type is boolean because that's what's expected
       symbol.SetType(TYPE_BOOL);
+    } else if (type_context.GetType() == TYPE_INT ||
+               type_context.GetType() == TYPE_FLOAT) {
+      // allow for compatibility between ints floats
+      // expected output is a int so it's a binary operator
+      // binary operators are only compatible between int types
+      compatible = (arith_op.GetType() == TYPE_INT &&
+                    expression_tail.GetType() == TYPE_INT);  
+      operation_type_string = "binary operation";
+      // output type is int because that's what's expected
+      // even if a float is expected, output a int and let where the float
+      // is expected do the conversion
+      symbol.SetType(TYPE_INT);
     } else {
       // other types aren't allowed
       EmitError("Invalid type in expression.", location);
       symbol.SetIsValid(false);
       return symbol;
     }
+     
 
-    return symbol;
-
-  } else {
-    // if there's a not operation, we need to check the single operand
-    if (not_operation && !arith_op.CheckTypeForBinaryOp()) {
-      // can't NOT operate on arith_op
-      EmitOperationTypeCheckingError("binary operation",
+    if (!compatible) {
+      EmitOperationTypeCheckingError(operation_type_string,
                                      Symbol::GetTypeString(arith_op),
-                                     "N/A",
+                                     Symbol::GetTypeString(expression_tail),
                                      location);
-      // Generate anonymous symbol and return it
-      Symbol symbol = Symbol::GenerateAnonymousSymbol();
       symbol.SetIsValid(false);
       return symbol;
+    }
+    
+    return symbol;
+  } else {
+    // if there's a not operation, we need to check the single operand
+    if (not_operation) {
+      bool compatible = false;
+      if (type_context.GetType() == TYPE_BOOL) {
+        // logical not only valid on bool
+        compatible = (arith_op.GetType() == TYPE_BOOL);
+      } else if (type_context.GetType() == TYPE_INT ||
+                 type_context.GetType() == TYPE_FLOAT) {
+        // logical not only valid on int
+        compatible = (arith_op.GetType() == TYPE_INT);
+      }
+      if (!compatible) {
+        // can't NOT operate on arith_op
+        EmitOperationTypeCheckingError("binary operation",
+                                       Symbol::GetTypeString(arith_op),
+                                       "N/A",
+                                       location);
+        // Generate anonymous symbol and return it
+        Symbol symbol = Symbol::GenerateAnonymousSymbol();
+        symbol.SetIsValid(false);
+        return symbol;
+      }
     }
     // the tail was not a valid symbol, return the arith_op lead as is
     return arith_op;

@@ -47,13 +47,6 @@ class Symbol {
     // param symbol is compatible with current symbol
     bool CheckTypesForArithmeticOp(Symbol symbol);
     
-    // Check single type for a binary operation against just this current symbol
-    bool CheckTypeForBinaryOp();
-
-    // Compare types for a binary operation to make sure the type of param
-    // symbol is compatible with current symbol
-    bool CheckTypesForBinaryOrLogicalOp(Symbol symbol);
-
     // Compare types for a relational operation to make sure the type of the
     // param symbol is compatible with the current symbol
     // params:
