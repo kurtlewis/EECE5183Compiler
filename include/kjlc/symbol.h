@@ -43,10 +43,6 @@ class Symbol {
     // Print out information for this symbol
     void PrintSymbolDebug();
 
-    // Compare types for arithmetic operation to make sure the type of
-    // param symbol is compatible with current symbol
-    bool CheckTypesForArithmeticOp(Symbol symbol);
-
     //
     // Getters and Setters
     //

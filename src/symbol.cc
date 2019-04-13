@@ -45,27 +45,6 @@ void Symbol::PrintSymbolDebug() {
   std::cout << std::endl;
 }
 
-bool Symbol::CheckTypesForArithmeticOp(Symbol symbol) {
-  // only return true in the switch statement if the types are compatible
-  // return false at the end of the function
-  switch (type_) {
-    case TYPE_BOOL:
-      break;
-    case TYPE_ENUM:
-      break;
-    case TYPE_FLOAT: // fall through to TYPE_INT
-    case TYPE_INT:
-      if (symbol.GetType() == TYPE_INT || symbol.GetType() == TYPE_FLOAT) {
-        return true;
-      }
-      break;
-    case TYPE_STRING:
-      break;
-  }
-  // code only reaches here by being incompatible
-  return false;
-}
-
 std::string Symbol::GetTypeString(Symbol symbol) {
   if (!symbol.IsValid()) {
     return "Invalid symbol";

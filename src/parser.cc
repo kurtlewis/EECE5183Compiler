@@ -445,7 +445,12 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
     // do a type check between the results
-    bool compatible = lead.CheckTypesForArithmeticOp(tail);
+    bool compatible = false;
+    if (lead.GetType() == TYPE_INT) {
+      compatible = (tail.GetType() == TYPE_INT || tail.GetType() == TYPE_FLOAT);
+    } else if (lead.GetType() == TYPE_FLOAT) {
+      compatible = (tail.GetType() == TYPE_INT || tail.GetType() == TYPE_FLOAT);
+    }
     
     if (!compatible) {
       EmitOperationTypeCheckingError("Arithmetic",
@@ -456,11 +461,19 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
       return symbol;
     }
 
-    // if one of the symbols was a float, that's the return type, otherwise int
-    if (lead.GetType() == TYPE_FLOAT || tail.GetType() == TYPE_FLOAT) {
+    // cast the output to the type context
+    if (type_context.GetType() == TYPE_FLOAT) {
       symbol.SetType(TYPE_FLOAT);
-    } else {
+    } else if(type_context.GetType() == TYPE_INT) {
       symbol.SetType(TYPE_INT);
+    } else {
+      // arithmetic operation in a context that isn't clear what our output
+      // type should be. Favor float if one of the types was a float
+      if (lead.GetType() == TYPE_FLOAT || tail.GetType() == TYPE_FLOAT) {
+        symbol.SetType(TYPE_FLOAT);
+      } else {
+        symbol.SetType(TYPE_FLOAT);
+      }
     }
 
     // return an anonymous symbol of the operation return type
