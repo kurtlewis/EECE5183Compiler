@@ -1,0 +1,40 @@
+program testProgram is
+variable a : integer;
+variable b : bool;
+variable c : string;
+variable d : float;
+
+begin
+
+// test output type
+b := a == 10; // correct
+a := true == true; // compatible but coerced
+c := true == true; // will fail
+d := true == true; // will fail
+
+// test integer compatibility
+b := 10 == 10.0; // correct
+b := 10.0 == 10; // correct
+b := 10 == "hello"; // will fail
+b := "hello" == 10; // will fail
+b := 10 == true; // correct
+b := true == 10; // correct
+
+// test bool compatibility
+b := true == 1; // correct
+b := 1 == true; // correct
+b := true == 10.0; // will fail
+b := 10.0 == true; // will fail
+b := true == "hello"; // will fail
+b := "hello" == true; // will fail
+
+// test float compatibility
+// has already been tested above
+
+// string compatibility
+b := "hello" == "hello"; // correct
+b := "hello" != "hello"; // correct
+b := "hello" <= "hello"; // will fail
+b := "hello" >= "hello"; // will fail
+
+end program.

@@ -1,0 +1,41 @@
+Line:11 Col:3 - Warning:
+Coercing bool to int.
+
+Line:12 Col:3 - 
+Expected Type: string
+But found: boolean
+Line:13 Col:3 - 
+Expected Type: float
+But found: boolean
+Line:18 Col:9 - Incompatible types for relational operation:
+Type 1: integer
+Type 2: string
+
+Line:19 Col:14 - Incompatible types for relational operation:
+Type 1: string
+Type 2: integer
+
+Line:26 Col:11 - Incompatible types for relational operation:
+Type 1: boolean
+Type 2: float
+
+Line:27 Col:11 - Incompatible types for relational operation:
+Type 1: float
+Type 2: boolean
+
+Line:28 Col:11 - Incompatible types for relational operation:
+Type 1: boolean
+Type 2: string
+
+Line:29 Col:14 - Incompatible types for relational operation:
+Type 1: string
+Type 2: boolean
+
+Line:37 Col:14 - Incompatible types for relational operation:
+Type 1: string
+Type 2: string
+
+Line:38 Col:14 - Incompatible types for relational operation:
+Type 1: string
+Type 2: string
+
