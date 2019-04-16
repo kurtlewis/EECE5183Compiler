@@ -472,7 +472,7 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
       if (lead.GetType() == TYPE_FLOAT || tail.GetType() == TYPE_FLOAT) {
         symbol.SetType(TYPE_FLOAT);
       } else {
-        symbol.SetType(TYPE_FLOAT);
+        symbol.SetType(TYPE_INT);
       }
     }
 
