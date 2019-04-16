@@ -283,7 +283,10 @@ void Parser::ParseIndex(Symbol identifier) {
     return;
   }
 
-  Symbol bound = ParseExpression();
+  // a bound will evaluate to an integer
+  Symbol context = Symbol::GenerateAnonymousSymbol();
+  context.SetType(TYPE_INT);
+  Symbol bound = ParseExpression(context);
     
   // Type checking
 
@@ -310,7 +313,8 @@ void Parser::ParseIndex(Symbol identifier) {
   }
 }
 
-Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
+Symbol Parser::CheckExpressionParseTypes(Symbol type_context,
+                                         Symbol arith_op,
                                          Symbol expression_tail,
                                          Lexeme location,
                                          bool not_operation) {
@@ -319,60 +323,100 @@ Symbol Parser::CheckExpressionParseTypes(Symbol arith_op,
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
     
-    bool compatible = arith_op.CheckTypesForBinaryOrLogicalOp(expression_tail);
-
-    if (!compatible) {
-      EmitOperationTypeCheckingError("binary operation",
-                                     Symbol::GetTypeString(arith_op),
-                                     Symbol::GetTypeString(expression_tail),
-                                     location);
-      symbol.SetIsValid(false);
-      return symbol;
-    }
-
-    // if input type was TYPE_INT, output is TYPE_INT, or if TYPE_BOOL, output
-    // is TYPE_BOOL
-    if (arith_op.GetType() == TYPE_INT) {
-      symbol.SetType(TYPE_INT);
-    } else if (arith_op.GetType() == TYPE_BOOL) {
+    bool compatible = false;
+    std::string operation_type_string;
+    if (type_context.GetType() == TYPE_BOOL) {
+      // expected output is a bool so the expression operator ('&', '|', 'not')
+      // is a logical operation
+      // logical operation is only supported between bools
+      operation_type_string = "logical operation";
+      compatible = (arith_op.GetType() == TYPE_BOOL &&
+                    expression_tail.GetType() == TYPE_BOOL);
+      // output type is boolean because that's what's expected
       symbol.SetType(TYPE_BOOL);
+    } else if (type_context.GetType() == TYPE_INT ||
+               type_context.GetType() == TYPE_FLOAT) {
+      // allow for compatibility between ints floats
+      // expected output is a int so it's a binary operator
+      // binary operators are only compatible between int types
+      compatible = (arith_op.GetType() == TYPE_INT &&
+                    expression_tail.GetType() == TYPE_INT);  
+      operation_type_string = "binary operation";
+      // output type is int because that's what's expected
+      // even if a float is expected, output a int and let where the float
+      // is expected do the conversion
+      symbol.SetType(TYPE_INT);
     } else {
       // other types aren't allowed
       EmitError("Invalid type in expression.", location);
       symbol.SetIsValid(false);
       return symbol;
     }
+     
 
-    return symbol;
-
-  } else {
-    // if there's a not operation, we need to check the single operand
-    if (not_operation && !arith_op.CheckTypeForBinaryOp()) {
-      // can't NOT operate on arith_op
-      EmitOperationTypeCheckingError("binary operation",
+    if (!compatible) {
+      EmitOperationTypeCheckingError(operation_type_string,
                                      Symbol::GetTypeString(arith_op),
-                                     "N/A",
+                                     Symbol::GetTypeString(expression_tail),
                                      location);
-      // Generate anonymous symbol and return it
-      Symbol symbol = Symbol::GenerateAnonymousSymbol();
       symbol.SetIsValid(false);
       return symbol;
+    }
+    
+    return symbol;
+  } else {
+    // if there's a not operation, we need to check the single operand
+    if (not_operation) {
+      bool compatible = false;
+      if (type_context.GetType() == TYPE_BOOL) {
+        // logical not only valid on bool
+        compatible = (arith_op.GetType() == TYPE_BOOL);
+      } else if (type_context.GetType() == TYPE_INT ||
+                 type_context.GetType() == TYPE_FLOAT) {
+        // logical not only valid on int
+        compatible = (arith_op.GetType() == TYPE_INT);
+      }
+      if (!compatible) {
+        // can't NOT operate on arith_op
+        EmitOperationTypeCheckingError("binary operation",
+                                       Symbol::GetTypeString(arith_op),
+                                       "N/A",
+                                       location);
+        // Generate anonymous symbol and return it
+        Symbol symbol = Symbol::GenerateAnonymousSymbol();
+        symbol.SetIsValid(false);
+        return symbol;
+      }
     }
     // the tail was not a valid symbol, return the arith_op lead as is
     return arith_op;
   }
 }
 
-Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
+Symbol Parser::CheckRelationParseTypes(Symbol type_context, Symbol term,
+                                       Symbol relation_tail,
                                        Lexeme location, bool equality_test) {
   // is the relation_tail a valid symbol?
   if (relation_tail.IsValid()) {
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
-    bool compatible = term.CheckTypesForRelationalOp(relation_tail,
-                                                     equality_test);
+    bool compatible = false;
 
+    if (term.GetType() == TYPE_BOOL) {
+      compatible = (relation_tail.GetType() == TYPE_BOOL ||
+                    relation_tail.GetType() == TYPE_INT);
+    } else if (term.GetType() == TYPE_FLOAT) {
+      compatible = (relation_tail.GetType() == TYPE_FLOAT ||
+                    relation_tail.GetType() == TYPE_INT);
+    } else if (term.GetType() == TYPE_INT) {
+      compatible = (relation_tail.GetType() == TYPE_INT ||
+                    relation_tail.GetType() == TYPE_BOOL ||
+                    relation_tail.GetType() == TYPE_FLOAT);
+    } else if (term.GetType() == TYPE_STRING) {
+      compatible = (equality_test && relation_tail.GetType() == TYPE_STRING);
+    }
+    
     if (!compatible) {
       EmitOperationTypeCheckingError("relational operation",
                                      Symbol::GetTypeString(term),
@@ -386,7 +430,6 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
     symbol.SetType(TYPE_BOOL);
 
     return symbol;
-
   } else {
     // relation tail was invalid, so just return the term
     // it can be whatever type it wants to be :)
@@ -394,15 +437,20 @@ Symbol Parser::CheckRelationParseTypes(Symbol term, Symbol relation_tail,
   }
 }
 
-Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
-                                   Lexeme location) {
+Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
+                                         Symbol tail, Lexeme location) {
   // is tail a valid Symbol?
   if (tail.IsValid()) {
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
     // do a type check between the results
-    bool compatible = lead.CheckTypesForArithmeticOp(tail);
+    bool compatible = false;
+    if (lead.GetType() == TYPE_INT) {
+      compatible = (tail.GetType() == TYPE_INT || tail.GetType() == TYPE_FLOAT);
+    } else if (lead.GetType() == TYPE_FLOAT) {
+      compatible = (tail.GetType() == TYPE_INT || tail.GetType() == TYPE_FLOAT);
+    }
     
     if (!compatible) {
       EmitOperationTypeCheckingError("Arithmetic",
@@ -413,11 +461,19 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol lead, Symbol tail,
       return symbol;
     }
 
-    // if one of the symbols was a float, that's the return type, otherwise int
-    if (lead.GetType() == TYPE_FLOAT || tail.GetType() == TYPE_FLOAT) {
+    // cast the output to the type context
+    if (type_context.GetType() == TYPE_FLOAT) {
       symbol.SetType(TYPE_FLOAT);
-    } else {
+    } else if(type_context.GetType() == TYPE_INT) {
       symbol.SetType(TYPE_INT);
+    } else {
+      // arithmetic operation in a context that isn't clear what our output
+      // type should be. Favor float if one of the types was a float
+      if (lead.GetType() == TYPE_FLOAT || tail.GetType() == TYPE_FLOAT) {
+        symbol.SetType(TYPE_FLOAT);
+      } else {
+        symbol.SetType(TYPE_INT);
+      }
     }
 
     // return an anonymous symbol of the operation return type
@@ -433,7 +489,8 @@ void Parser::ParseArgumentList(std::vector<Symbol>::iterator param_current,
                                std::vector<Symbol>::iterator param_end) {
   DebugPrint("ArgumentList");
 
-  Symbol expression = ParseExpression();
+  // The type expectation is the current parameter
+  Symbol expression = ParseExpression(*param_current);
 
   // peek a lexeme for possible error reporting
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -485,7 +542,8 @@ void Parser::ParseAssignmentStatement() {
     return;
   }
 
-  Symbol expression = ParseExpression();
+  // the expected type is the destination symbol
+  Symbol expression = ParseExpression(destination);
 
   // destination and expression evaluation must generally be of the same type
   // but ints and bools are interoperable
@@ -529,22 +587,23 @@ void Parser::ParseAssignmentStatement() {
 
 // this is a left recursive rule that has been modified to be right recursive
 // see docs/language-grammar-modified.txt for more information
-Symbol Parser::ParseArithOp() {
+Symbol Parser::ParseArithOp(Symbol type_context) {
   DebugPrint("ArithOp");
 
-  Symbol relation = ParseRelation();
+  Symbol relation = ParseRelation(type_context);
 
   // Peek location for use in possible error messages
   Lexeme lexeme = scanner_.PeekNextLexeme();
 
-  Symbol arith_op_tail = ParseArithOpTail();
+  Symbol arith_op_tail = ParseArithOpTail(type_context);
 
-  return CheckArithmeticParseTypes(relation, arith_op_tail, lexeme);
+  return CheckArithmeticParseTypes(type_context, relation, arith_op_tail,
+                                   lexeme);
 }
 
 // because this is a left recursive rule made right recursive, it is necessary
 // to support empty evaluations
-Symbol Parser::ParseArithOpTail() {
+Symbol Parser::ParseArithOpTail(Symbol type_context) {
   DebugPrint("ArithOpTail");
 
   Lexeme lexeme = scanner_.PeekNextLexeme();
@@ -552,15 +611,16 @@ Symbol Parser::ParseArithOpTail() {
     // consume the "+" or "-"
     lexeme = scanner_.GetNextLexeme();
 
-    Symbol relation = ParseRelation();
+    Symbol relation = ParseRelation(type_context);
 
     // peek the lexeme location for possible error messages
     Lexeme lexeme = scanner_.PeekNextLexeme();
 
     // recursive call
-    Symbol arith_op_tail = ParseArithOpTail();
+    Symbol arith_op_tail = ParseArithOpTail(type_context);
 
-    return CheckArithmeticParseTypes(relation, arith_op_tail, lexeme);
+    return CheckArithmeticParseTypes(type_context, relation, arith_op_tail,
+                                     lexeme);
   }
 
   // Empty evaluation of the rule, return an invalid symbol
@@ -665,7 +725,7 @@ Symbol Parser::ParseDestination() {
 
 // this is a left recursive rule made right recursive
 // see `docs/language-gramamr-modified` for notes on the rules
-Symbol Parser::ParseExpression() {
+Symbol Parser::ParseExpression(Symbol type_context) {
   DebugPrint("Expression");
 
   bool not_operation = false;
@@ -677,18 +737,18 @@ Symbol Parser::ParseExpression() {
   }
 
   // parse arithOp
-  Symbol arith_op = ParseArithOp();
+  Symbol arith_op = ParseArithOp(type_context);
 
   // peek location of next symbol for possible error reporting
   lexeme = scanner_.PeekNextLexeme();
 
-  Symbol expression_tail = ParseExpressionTail();
+  Symbol expression_tail = ParseExpressionTail(type_context);
 
-  return CheckExpressionParseTypes(arith_op, expression_tail, lexeme,
-                                   not_operation);
+  return CheckExpressionParseTypes(type_context, arith_op, expression_tail,
+                                   lexeme, not_operation);
 }
 
-Symbol Parser::ParseExpressionTail() {
+Symbol Parser::ParseExpressionTail(Symbol type_context) {
   DebugPrint("ExpressionTail");
 
   // there is an lambda(empty) evaluation of this rule, so start with a peek
@@ -698,17 +758,18 @@ Symbol Parser::ParseExpressionTail() {
     lexeme = scanner_.GetNextLexeme();
     
     // Next is arith op
-    Symbol arith_op = ParseArithOp();
+    Symbol arith_op = ParseArithOp(type_context);
 
     // peek location of next symbol for possible error reporting
     lexeme = scanner_.PeekNextLexeme();
 
     // Right recursive call
-    Symbol expression_tail = ParseExpressionTail();
+    Symbol expression_tail = ParseExpressionTail(type_context);
 
     // _not_ only leads in expression, so not_operation param will always
     // be false in ParseExpressionTail
-    return CheckExpressionParseTypes(arith_op, expression_tail, lexeme, false);
+    return CheckExpressionParseTypes(type_context, arith_op, expression_tail,
+                                     lexeme, false);
   }
 
   // empty evaluation of this rule, return an invalid anonymous symbol
@@ -717,7 +778,7 @@ Symbol Parser::ParseExpressionTail() {
   return symbol;
 }
 
-Symbol Parser::ParseFactor() {
+Symbol Parser::ParseFactor(Symbol type_context) {
   DebugPrint("Factor");
   
   // Initially create an anonymous symbol for return - will be replaced if
@@ -731,7 +792,8 @@ Symbol Parser::ParseFactor() {
     // consume paren
     lexeme = scanner_.GetNextLexeme();
     
-    symbol = ParseExpression();
+    // TODO: Come back here to get the context
+    symbol = ParseExpression(type_context);
 
     // closing paren is required
     lexeme = scanner_.GetNextLexeme();
@@ -824,7 +886,10 @@ void Parser::ParseIfStatement() {
   }
 
   // handle parsing the expression
-  Symbol expression = ParseExpression();
+  // Expected type is a boolean
+  Symbol context = Symbol::GenerateAnonymousSymbol();
+  context.SetType(TYPE_BOOL);
+  Symbol expression = ParseExpression(context);
 
   // expression must evaluate to a boolean
   // lexeme points to '(' which is okay
@@ -904,7 +969,10 @@ void Parser::ParseLoopStatement() {
     return;
   }
 
-  Symbol expression = ParseExpression();
+  // Expected type is a boolean
+  Symbol context = Symbol::GenerateAnonymousSymbol();
+  context.SetType(TYPE_BOOL);
+  Symbol expression = ParseExpression(context);
 
   // expression must evaluate to a bool or int
   // lexeme points to ';' which is okay
@@ -1250,10 +1318,10 @@ Symbol Parser::ParseReference() {
 
 // this is a left recursive rule made right recursive
 // see docs for full write-out of rule
-Symbol Parser::ParseRelation() {
+Symbol Parser::ParseRelation(Symbol type_context) {
   DebugPrint("Relation");
 
-  Symbol term = ParseTerm();
+  Symbol term = ParseTerm(type_context);
 
   // peek the next token to see if there is going to be an equality test
   // needed for type checking, this is reaching down into ParseRelationTail
@@ -1264,13 +1332,14 @@ Symbol Parser::ParseRelation() {
     equality_test = true;
   }
 
-  Symbol relation_tail = ParseRelationTail();
+  Symbol relation_tail = ParseRelationTail(type_context);
 
-  return CheckRelationParseTypes(term, relation_tail, lexeme, equality_test);
+  return CheckRelationParseTypes(type_context, term, relation_tail,
+                                 lexeme, equality_test);
 }
 
 // Right recursive portion of the rule
-Symbol Parser::ParseRelationTail() {
+Symbol Parser::ParseRelationTail(Symbol type_context) {
   DebugPrint("RelationTail");
 
   // Need to allow for empty evaluation so peek
@@ -1282,7 +1351,7 @@ Symbol Parser::ParseRelationTail() {
     lexeme = scanner_.GetNextLexeme();
 
 
-    Symbol term = ParseTerm();
+    Symbol term = ParseTerm(type_context);
 
     // check to see if the next token is an equality test
     // needed for type checking
@@ -1295,9 +1364,10 @@ Symbol Parser::ParseRelationTail() {
     }
 
     // Recursive call
-    Symbol relation_tail = ParseRelationTail();
+    Symbol relation_tail = ParseRelationTail(type_context);
 
-    return CheckRelationParseTypes(term, relation_tail, lexeme, equality_test);
+    return CheckRelationParseTypes(type_context, term, relation_tail,
+                                   lexeme, equality_test);
   }
   
   // empty evaluation of rule, return invalid anonymous symbol
@@ -1315,8 +1385,6 @@ void Parser::ParseReturnStatement() {
     return;
   }
 
-  Symbol expression = ParseExpression();
-
   // get the symbol for this scope - it will correspond to the return statement
   Symbol procedure = symbol_table_.GetScopeProcedure();
 
@@ -1325,6 +1393,9 @@ void Parser::ParseReturnStatement() {
     EmitError("Return not valid in this scope.", lexeme);
     return;
   }
+
+  // return type context is the type of the scope procedure
+  Symbol expression = ParseExpression(procedure);
 
   if (expression.GetType() != procedure.GetType()) {
     EmitExpectedTypeError(Symbol::GetTypeString(procedure),
@@ -1366,22 +1437,22 @@ void Parser::ParseString() {
 }
 
 // a left recursive rule made right recursive. See docs for writeout
-Symbol Parser::ParseTerm() {
+Symbol Parser::ParseTerm(Symbol type_context) {
   DebugPrint("Term");
 
-  Symbol factor = ParseFactor();
+  Symbol factor = ParseFactor(type_context);
 
   // peek the location of the operator for possible error reporting
   Lexeme lexeme = scanner_.PeekNextLexeme();
 
-  Symbol term_tail = ParseTermTail();
+  Symbol term_tail = ParseTermTail(type_context);
 
-  return CheckArithmeticParseTypes(factor, term_tail, lexeme);
+  return CheckArithmeticParseTypes(type_context, factor, term_tail, lexeme);
 
 }
 
 // Right recursive version of ParseTerm
-Symbol Parser::ParseTermTail() {
+Symbol Parser::ParseTermTail(Symbol type_context) {
   DebugPrint("TermTail");
 
   // peek because there can be an empty evaluation
@@ -1390,14 +1461,14 @@ Symbol Parser::ParseTermTail() {
     // consume the token
     lexeme = scanner_.GetNextLexeme();
 
-    Symbol factor = ParseFactor();
+    Symbol factor = ParseFactor(type_context);
 
     // peek the location of the operator for possible error reporting
     Lexeme lexeme = scanner_.PeekNextLexeme();
 
-    Symbol term_tail =  ParseTermTail();
+    Symbol term_tail =  ParseTermTail(type_context);
 
-    return CheckArithmeticParseTypes(factor, term_tail, lexeme);
+    return CheckArithmeticParseTypes(type_context, factor, term_tail, lexeme);
   }
 
   // Empty evaluation of the rule, return an invalid symbol

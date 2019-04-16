@@ -43,24 +43,6 @@ class Symbol {
     // Print out information for this symbol
     void PrintSymbolDebug();
 
-    // Compare types for arithmetic operation to make sure the type of
-    // param symbol is compatible with current symbol
-    bool CheckTypesForArithmeticOp(Symbol symbol);
-    
-    // Check single type for a binary operation against just this current symbol
-    bool CheckTypeForBinaryOp();
-
-    // Compare types for a binary operation to make sure the type of param
-    // symbol is compatible with current symbol
-    bool CheckTypesForBinaryOrLogicalOp(Symbol symbol);
-
-    // Compare types for a relational operation to make sure the type of the
-    // param symbol is compatible with the current symbol
-    // params:
-    //   symbol - symbol to check for compatability with
-    //   equality_test - true if the relational op is a EQ or NEQ
-    bool CheckTypesForRelationalOp(Symbol symbol, bool equality_test);
-
     //
     // Getters and Setters
     //

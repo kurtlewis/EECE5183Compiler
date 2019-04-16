@@ -1,0 +1,109 @@
+Line:13 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: integer
+
+Line:14 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: float
+
+Line:15 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: integer
+
+Line:16 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: float
+
+Line:17 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: boolean
+
+Line:23 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: integer
+
+Line:24 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: float
+
+Line:25 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: integer
+
+Line:26 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: float
+
+Line:27 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: boolean
+
+Line:32 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: integer
+
+Line:33 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: float
+
+Line:34 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: integer
+
+Line:35 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: float
+
+Line:36 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: boolean
+
+Line:42 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: integer
+
+Line:43 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: float
+
+Line:44 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: integer
+
+Line:45 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: float
+
+Line:46 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: boolean
+
+Line:49 Col:3 - Warning:
+Coercing int to bool.
+
+Line:50 Col:3 - 
+Expected Type: boolean
+But found: float
+Line:51 Col:3 - 
+Expected Type: boolean
+But found: float
+Line:52 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: integer
+
+Line:53 Col:11 - Incompatible types for Arithmetic:
+Type 1: boolean
+Type 2: float
+
+Line:54 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: integer
+
+Line:55 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: float
+
+Line:56 Col:14 - Incompatible types for Arithmetic:
+Type 1: string
+Type 2: boolean
+

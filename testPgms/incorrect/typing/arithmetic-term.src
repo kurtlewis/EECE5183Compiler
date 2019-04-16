@@ -1,0 +1,58 @@
+Program testProgram is
+variable a : integer;
+variable b : bool;
+variable c : string;
+variable d : float;
+
+begin
+
+// a bunch of operand interoperability
+a := 10 + 10; // correct
+a := 10.0 + 10; // correct
+a := 10.0 + 10.0; // correct
+a := true + 10; // incorrect
+a := true + 10.0; // incorrect
+a := "hello" + 10; // incorrect
+a := "hello" + 10.0; // incorrect
+a := "hello" + true; // incorrect
+
+
+d := 10 + 10; // correct
+d := 10.0 + 10; // correct
+d := 10.0 + 10.0; // correct
+d := true + 10; // incorrect
+d := true + 10.0; // incorrect
+d := "hello" + 10; // incorrect
+d := "hello" + 10.0; // incorrect
+d := "hello" + true; // incorrect
+
+a := 10 * 10; // correct
+a := 10.0 * 10; // correct
+a := 10.0 * 10.0; // correct
+a := true * 10; // incorrect
+a := true * 10.0; // incorrect
+a := "hello" * 10; // incorrect
+a := "hello" * 10.0; // incorrect
+a := "hello" * true; // incorrect
+
+
+d := 10 * 10; // correct
+d := 10.0 * 10; // correct
+d := 10.0 * 10.0; // correct
+d := true * 10; // incorrect
+d := true * 10.0; // incorrect
+d := "hello" * 10; // incorrect
+d := "hello" * 10.0; // incorrect
+d := "hello" * true; // incorrect
+
+// test putting values in bools
+b := 10 + 10; // correct
+b := 10.0 + 10; // incorrect
+b := 10.0 + 10.0; // incorrect
+b := true + 10; // incorrect
+b := true + 10.0; // incorrect
+b := "hello" + 10; // incorrect
+b := "hello" + 10.0; // incorrect
+b := "hello" + true; // incorrect
+
+end program.
