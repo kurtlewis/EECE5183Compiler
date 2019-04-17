@@ -1583,6 +1583,12 @@ void Parser::ParseReturnStatement() {
                           lexeme);
     return;
   }
+
+  if (codegen_) {
+    // TODO:codegen - is there type coercien that needs to go down?
+    // add llvm return statement
+    llvm_builder_->CreateRet(expression.GetLLVMValue());
+  }
 }
 
 void Parser::ParseStatement() {
