@@ -1121,7 +1121,7 @@ Symbol Parser::ParseNumber() {
       constant = llvm::ConstantInt::getIntegerValue(
           GetRespectiveLLVMType(symbol), // always use function to get type
           llvm::APInt(32, lexeme.int_value, true));
-    } else if (lexeme.token == T_INT_LITERAL) {
+    } else if (lexeme.token == T_FLOAT_LITERAL) {
       constant = llvm::ConstantFP::get(
           GetRespectiveLLVMType(symbol), // use single type def defined in func
           llvm::APFloat(lexeme.float_value));
