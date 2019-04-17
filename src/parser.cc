@@ -1208,6 +1208,18 @@ void Parser::ParseProcedureBody() {
     EmitExpectedTokenError("procedure", lexeme);
     return;
   }
+
+  if (codegen_) {
+    // program is over - get the current block and ensure it is well formed
+    // because it has a terminator
+    if (llvm_builder_->GetInsertBlock()->getTerminator() == NULL) {
+      // Return 0 from the program
+      llvm::Constant *val = llvm::ConstantInt::getIntegerValue(
+          llvm::IntegerType::getInt32Ty(llvm_current_procedure_->getContext()),
+          llvm::APInt(32, 0, true));
+      llvm_builder_->CreateRet(val);
+    }
+  }
 }
 
 void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
@@ -1306,11 +1318,18 @@ void Parser::ParseProgramBody() {
     // create main function so it's available for statement creation 
     //
     
-    // can easily create function directly without worrying about params
-    llvm::Constant *main = llvm_module_->getOrInsertFunction(
-        "main",
+    // create empty param list for main
+    std::vector<llvm::Type *> params;
+
+    // function returns i32 exit code
+    llvm::FunctionType *functionType = llvm::FunctionType::get(
         llvm::IntegerType::getInt32Ty(llvm_module_->getContext()),
-        nullptr);
+        params,
+        false);
+
+    llvm::Constant *main = llvm_module_->getOrInsertFunction(
+        "main", // always name main function main
+        functionType);
 
     // cast it to a function and store it as current procedure
     llvm_current_procedure_ = llvm::cast<llvm::Function>(main);
@@ -1344,6 +1363,22 @@ void Parser::ParseProgramBody() {
   if (lexeme.token != T_PROGRAM) {
     EmitExpectedTokenError("program", lexeme);
     return;
+  }
+
+  if (codegen_) {
+    // program is over - get the current block and ensure it is well formed
+    // because it has a terminator
+    if (llvm_builder_->GetInsertBlock()->getTerminator() == NULL) {
+      // there is no terminator - add a return of the correct type
+      // TODO:codegen - this is actually an error that should
+      // cancel compilation
+      // in a procedure, there must be a return
+      // for testing purposes, leave this in
+      llvm::Constant *val = llvm::ConstantInt::getIntegerValue(
+          llvm::IntegerType::getInt32Ty(llvm_current_procedure_->getContext()),
+          llvm::APInt(32, 0, true));
+      llvm_builder_->CreateRet(val);
+    }
   }
   
   // successfully parsed rule
