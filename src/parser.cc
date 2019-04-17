@@ -536,13 +536,13 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
 llvm::Type* Parser::GetRespectiveLLVMType(Symbol symbol) {
   switch(symbol.GetType()) {
     case TYPE_BOOL:
-      return llvm::IntegerType::getInt1Ty(llvm_module_->getContext());
+      return llvm_builder_->getInt1Ty();
       break;
     case TYPE_INT:
-      return llvm::IntegerType::getInt32Ty(llvm_module_->getContext());
+      return llvm_builder_->getInt32Ty();
       break;
     case TYPE_FLOAT:
-      return llvm::Type::getFloatTy(llvm_module_->getContext());
+      return llvm_builder_->getFloatTy();
       break;
     case TYPE_STRING:
       // TODO:codgen This is fun. Need to implement strings myself. Start with
