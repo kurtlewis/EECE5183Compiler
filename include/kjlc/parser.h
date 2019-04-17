@@ -7,6 +7,7 @@
 #ifndef EECE5183COMPILER_KJLC_PARSER_H_
 #define EECE5183COMPILER_KJLC_PARSER_H_
 
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
@@ -55,11 +56,13 @@ class Parser {
     //
     // The module that contains all compiled code
     llvm::Module *llvm_module_;
-    // global context for compiler
+    // global context for compiler - default constructor creates one
     llvm::LLVMContext llvm_global_context_;
     // current function
     // set in the header for whatever is being added to
     llvm::Function *llvm_current_procedure_;
+    // the current builder
+    llvm::IRBuilder<> *llvm_builder_;
 
     // Prints out debugging information when requested
     // parse_function: name of parse rule being expanded

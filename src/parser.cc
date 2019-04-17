@@ -30,12 +30,17 @@ Parser::Parser(std::string filename, bool parser_debug, bool symbol_debug,
       codegen_(codegen_enable),
       codegen_debug_(codegen_debug),
       llvm_module_(nullptr),
-      llvm_global_context_() {
+      llvm_global_context_(), // create a new global context
+      llvm_current_procedure_(nullptr),
+      llvm_builder_(nullptr) {
 
 }
 
 // Deconstructor
 Parser::~Parser() {
+  if (llvm_builder_ != nullptr) {
+    delete llvm_builder_;
+  }
   if (llvm_current_procedure_ != nullptr) {
     delete llvm_current_procedure_;
   }
@@ -1135,6 +1140,49 @@ void Parser::ParseProcedureBody() {
   int tokens_length = 1;
   LoopDeclarations(end_tokens, tokens_length);
   
+  if (codegen_) {
+    //
+    // create a function definition
+    // Do this when entering the body statements so that it isn't overwritten
+    // by new functions being declared
+    //
+    Symbol procedure_symbol = symbol_table_.GetScopeProcedure();
+    
+    // Go through the list of arguments and create params
+    std::vector<llvm::Type *> params;
+    for (Symbol symbol : procedure_symbol.GetParams()) {
+      params.push_back(GetRespectiveLLVMType(symbol));
+    }
+
+    // define the types of the function
+    llvm::FunctionType *functionType = llvm::FunctionType::get(
+        GetRespectiveLLVMType(procedure_symbol), // return type
+        params, // list of args
+        false); // is varargs - always no our language doesn't support
+        
+    // TODO:codegen - need to add a consistent character to avoid
+    // name conflicts of "main" - if someone creates a function
+    // "main" that will kill it. Alternatively, disallow "main" as procedure id
+    // Actually create the function
+    llvm::Constant *procedure = llvm_module_->getOrInsertFunction(
+        procedure_symbol.GetId(), // name of function
+        functionType);
+
+    // cast it to a function and insert it into the current procedure member var
+    llvm_current_procedure_ = llvm::cast<llvm::Function>(procedure);
+
+    // set the calling convention of our procedure to that of a C program
+    llvm_current_procedure_->setCallingConv(llvm::CallingConv::C);
+
+    // generate the starting block
+    llvm::BasicBlock *procedure_entrypoint = llvm::BasicBlock::Create(
+        llvm_current_procedure_->getContext(), // use function as context
+        "entrypoint", // first block is always entrypoint
+        llvm_current_procedure_); // parent function
+
+    llvm_builder_->SetInsertPoint(procedure_entrypoint);
+  }
+
   // Parse the 'begin'
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_BEGIN) {
@@ -1235,37 +1283,6 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
     return;
   }
 
-  if (codegen_) {
-    //
-    // create a function definition
-    //
-    
-    // Go through the list of arguments and create params
-    std::vector<llvm::Type *> params;
-    for (Symbol symbol : procedure_symbol.GetParams()) {
-      params.push_back(GetRespectiveLLVMType(symbol));
-    }
-
-    // define the types of the function
-    llvm::FunctionType *functionType = llvm::FunctionType::get(
-        GetRespectiveLLVMType(procedure_symbol), // return type
-        params, // list of args
-        false); // is varargs - always no our language doesn't support
-        
-    // TODO:codegen - need to add a consistent character to avoid
-    // name conflicts of "main" - if someone creates a function
-    // "main" that will kill it. Alternatively, disallow "main" as procedure id
-    // Actually create the function
-    llvm::Constant *procedure = llvm_module_->getOrInsertFunction(
-        procedure_symbol.GetId(), // name of function
-        functionType);
-
-    // cast it to a function and insert it into the current procedure member var
-    llvm_current_procedure_ = llvm::cast<llvm::Function>(procedure);
-
-    // set the calling convention of our procedure to that of a C program
-    llvm_current_procedure_->setCallingConv(llvm::CallingConv::C);
-  }
 
 }
 
@@ -1300,6 +1317,14 @@ void Parser::ParseProgramBody() {
 
     // make it interoperable with C
     llvm_current_procedure_->setCallingConv(llvm::CallingConv::C);
+
+    // generate the starting block
+    llvm::BasicBlock *procedure_entrypoint = llvm::BasicBlock::Create(
+        llvm_current_procedure_->getContext(), // use function as context
+        "entrypoint", // first block is always entrypoint
+        llvm_current_procedure_); // parent function
+
+    llvm_builder_->SetInsertPoint(procedure_entrypoint);
   }
 
   // parse statements until end is found
@@ -1341,6 +1366,8 @@ void Parser::ParseProgramHeader() {
   if (codegen_) {
     // Create the module in which all this code will go
     llvm_module_ = new llvm::Module(program_name, llvm_global_context_);
+    // create the builder that references this module
+    llvm_builder_ = new llvm::IRBuilder<>(llvm_global_context_);
   }
 
   // read 'is'
