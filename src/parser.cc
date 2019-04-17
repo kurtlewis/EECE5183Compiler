@@ -1200,6 +1200,25 @@ void Parser::ParseProcedureBody() {
         llvm_current_procedure_); // parent function
 
     llvm_builder_->SetInsertPoint(procedure_entrypoint);
+
+    // create values for arguments and update their symbol table entries
+    llvm::Function::arg_iterator args = llvm_current_procedure_->arg_begin();
+    for (Symbol symbol : procedure_symbol.GetParams()) {
+      if (args == llvm_current_procedure_->arg_end()) {
+        // this shouldn't happen, because the args were generated from this
+        // same vector, but play it safe
+        EmitError("Error generating IR for arguments.",
+            scanner_.PeekNextLexeme());
+        return;
+      }
+
+      // create value from arg
+      llvm::Value *val = &*args++;
+
+      // update symbol and reinsert it into the symbol table
+      symbol.SetLLVMValue(val);
+      symbol_table_.InsertSymbol(symbol);
+    }
   }
 
   // Parse the 'begin'
