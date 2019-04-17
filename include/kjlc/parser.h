@@ -293,7 +293,7 @@ class Parser {
     void ParseStatement();
 
     // Handle parsings tring
-    void ParseString();
+    Symbol ParseString();
 
     // Handle parsing term
     // @param:

@@ -545,10 +545,9 @@ llvm::Type* Parser::GetRespectiveLLVMType(Symbol symbol) {
       return llvm_builder_->getFloatTy();
       break;
     case TYPE_STRING:
-      // TODO:codgen This is fun. Need to implement strings myself. Start with
-      // an i8 ptr for now
+      // strings are implemented as an array of 8 bit integers
       // optional AS param, default is = 0
-      return llvm::Type::getInt8PtrTy(llvm_module_->getContext());
+      return llvm_builder_->getInt8PtrTy();
       break;
     default:
       std::cout << "Unknown type to convert to LLVM." << std::endl;
@@ -908,8 +907,7 @@ Symbol Parser::ParseFactor(Symbol type_context) {
     // number
     symbol = ParseNumber();
   } else if (lexeme.token == T_STRING_LITERAL) {
-    symbol.SetType(TYPE_STRING);
-    ParseString();
+    symbol = ParseString();
   } else if (lexeme.token == T_TRUE) {
     // consume true
     symbol.SetType(TYPE_BOOL);
@@ -1631,14 +1629,26 @@ void Parser::ParseStatement() {
   }
 }
 
-void Parser::ParseString() {
+Symbol Parser::ParseString() {
   DebugPrint("String");
+
+  // generate anonymous symbol
+  Symbol symbol = Symbol::GenerateAnonymousSymbol();
+  symbol.SetType(TYPE_STRING);
 
   // consume the string token
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_STRING_LITERAL) {
     EmitError("Expected string literal", lexeme);
+    return symbol;
   }
+
+  if (codegen_) {
+    llvm::Value *constant = llvm_builder_->CreateGlobalStringPtr(
+        lexeme.str_value);
+    symbol.SetLLVMValue(constant);
+  }
+  return symbol;
 }
 
 // a left recursive rule made right recursive. See docs for writeout
