@@ -914,10 +914,26 @@ Symbol Parser::ParseFactor(Symbol type_context) {
     // consume true
     symbol.SetType(TYPE_BOOL);
     lexeme = scanner_.GetNextLexeme();
+    
+    // build the constant for codegen
+    if (codegen_) {
+      llvm::Value *constant = llvm::ConstantInt::getIntegerValue(
+          GetRespectiveLLVMType(symbol),
+          llvm::APInt(1, 1, true)); // 1==true
+      symbol.SetLLVMValue(constant);
+    }
   } else if (lexeme.token == T_FALSE) {
     // consume false
     symbol.SetType(TYPE_BOOL);
     lexeme = scanner_.GetNextLexeme();
+
+    // build the constant for codegen
+    if (codegen_) {
+      llvm::Value *constant = llvm::ConstantInt::getIntegerValue(
+          GetRespectiveLLVMType(symbol),
+          llvm::APInt(1, 0, true)); // 0==false
+      symbol.SetLLVMValue(constant);
+    }
   } else {
     EmitError("Exected valid factor", lexeme);
     symbol.SetIsValid(false);
