@@ -73,6 +73,8 @@ class Parser {
 
     //
     // Error Handlers
+    // All error handles set an error_state_ (which can be recovered from)
+    // and turn off codegen (which there is no recovery from)
     //
 
     // Error hanlding message that only prints the location of a lexeme

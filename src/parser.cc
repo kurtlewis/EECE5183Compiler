@@ -66,7 +66,8 @@ void Parser::ParseProgram() {
 
 void Parser::BuildProgram() {
   if (!codegen_) {
-    std::cout << "Codegen is not enabled, skipping build." << std::endl;
+    std::cout << "Codegen was either disabled or errors were detected. ";
+    std::cout << "Skipping build." << std::endl;
     return;
   }
 
@@ -100,6 +101,7 @@ void Parser::EmitError(Lexeme lexeme) {
   std::cout << "Line:" << lexeme.line << " Col:" << lexeme.column << std::endl;
   std::cout << std::endl;
   error_state_ = true;
+  codegen_ = false;
 }
 
 void Parser::EmitError(std::string message, Lexeme lexeme) {
@@ -111,6 +113,7 @@ void Parser::EmitError(std::string message, Lexeme lexeme) {
   std::cout << " - " << message << std::endl;
   std::cout << std::endl;
   error_state_ = true;
+  codegen_ = false;
 }
 
 void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
@@ -122,6 +125,7 @@ void Parser::EmitExpectedTokenError(std::string expected_token, Lexeme lexeme) {
   std::cout << " - " << "Expected token '" << expected_token << "'";
   std::cout << std::endl;
   error_state_ = true;
+  codegen_ = false;
 }
 
 void Parser::EmitExpectedTypeError(std::string expected_type,
@@ -136,6 +140,7 @@ void Parser::EmitExpectedTypeError(std::string expected_type,
   std::cout << "Expected Type: " << expected_type << std::endl;
   std::cout << "But found: " << found_type << std::endl;
   error_state_ = true;
+  codegen_ = false;
 }
 
 void Parser::EmitOperationTypeCheckingError(std::string operation,
@@ -153,6 +158,7 @@ void Parser::EmitOperationTypeCheckingError(std::string operation,
   std::cout << "Type 2: " << type2 << std::endl;
   std::cout << std::endl;
   error_state_ = true;
+  codegen_ = false;
 }
 
 void Parser::EmitWarning(std::string message, Lexeme lexeme) {
