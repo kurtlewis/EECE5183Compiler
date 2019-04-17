@@ -8,6 +8,9 @@
 
 #include <iostream>
 
+#include "llvm/IR/CallingConv.h"
+#include "llvm/IR/Constant.h"
+#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRPrintingPasses.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Verifier.h"
@@ -33,6 +36,9 @@ Parser::Parser(std::string filename, bool parser_debug, bool symbol_debug,
 
 // Deconstructor
 Parser::~Parser() {
+  if (llvm_current_procedure_ != nullptr) {
+    delete llvm_current_procedure_;
+  }
   if (llvm_module_ != nullptr) {
     delete llvm_module_;
   }
@@ -59,9 +65,12 @@ void Parser::BuildProgram() {
   bool broken = llvm::verifyModule(*llvm_module_, &llvm::errs());
   
   if (!broken) {
+    // TODO:codegen Need to actually figure out my build process
     // Module can be safely compiled, it is not broken
     llvm::legacy::PassManager pass_manager;
+    // print IR to stdout
     pass_manager.add(llvm::createPrintModulePass(llvm::outs()));
+    // run and send to llvm IR to stdout
     pass_manager.run(*llvm_module_);
   } else {
     std::cout << "Error creating LLVM Module. See stderr." << std::endl;
@@ -512,6 +521,29 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
     // tail was not a valid symbol, so just return the lead symbol
     // allow it to be whatever type it is
     return lead;
+  }
+}
+
+llvm::Type* Parser::GetRespectiveLLVMType(Symbol symbol) {
+  switch(symbol.GetType()) {
+    case TYPE_BOOL:
+      return llvm::IntegerType::getInt1Ty(llvm_module_->getContext());
+      break;
+    case TYPE_INT:
+      return llvm::IntegerType::getInt32Ty(llvm_module_->getContext());
+      break;
+    case TYPE_FLOAT:
+      return llvm::Type::getFloatTy(llvm_module_->getContext());
+      break;
+    case TYPE_STRING:
+      // TODO:codgen This is fun. Need to implement strings myself. Start with
+      // an i8 ptr for now
+      // optional AS param, default is = 0
+      return llvm::Type::getInt8PtrTy(llvm_module_->getContext());
+      break;
+    default:
+      std::cout << "Unknown type to convert to LLVM." << std::endl;
+      return llvm::IntegerType::getInt1Ty(llvm_module_->getContext());
   }
 }
 
@@ -1172,6 +1204,7 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
   std::string id = ParseIdentifier();
   procedure_symbol.SetId(id);
 
+
   // colon required
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_COLON) {
@@ -1202,6 +1235,38 @@ void Parser::ParseProcedureHeader(Symbol &procedure_symbol) {
     return;
   }
 
+  if (codegen_) {
+    //
+    // create a function definition
+    //
+    
+    // Go through the list of arguments and create params
+    std::vector<llvm::Type *> params;
+    for (Symbol symbol : procedure_symbol.GetParams()) {
+      params.push_back(GetRespectiveLLVMType(symbol));
+    }
+
+    // define the types of the function
+    llvm::FunctionType *functionType = llvm::FunctionType::get(
+        GetRespectiveLLVMType(procedure_symbol), // return type
+        params, // list of args
+        false); // is varargs - always no our language doesn't support
+        
+    // TODO:codegen - need to add a consistent character to avoid
+    // name conflicts of "main" - if someone creates a function
+    // "main" that will kill it. Alternatively, disallow "main" as procedure id
+    // Actually create the function
+    llvm::Constant *procedure = llvm_module_->getOrInsertFunction(
+        procedure_symbol.GetId(), // name of function
+        functionType);
+
+    // cast it to a function and insert it into the current procedure member var
+    llvm_current_procedure_ = llvm::cast<llvm::Function>(procedure);
+
+    // set the calling convention of our procedure to that of a C program
+    llvm_current_procedure_->setCallingConv(llvm::CallingConv::C);
+  }
+
 }
 
 void Parser::ParseProgramBody() {
@@ -1217,6 +1282,24 @@ void Parser::ParseProgramBody() {
   if (lexeme.token != T_BEGIN) {
     EmitExpectedTokenError(";", lexeme);
     return;
+  }
+
+  if (codegen_) {
+    //
+    // create main function so it's available for statement creation 
+    //
+    
+    // can easily create function directly without worrying about params
+    llvm::Constant *main = llvm_module_->getOrInsertFunction(
+        "main",
+        llvm::IntegerType::getInt32Ty(llvm_module_->getContext()),
+        nullptr);
+
+    // cast it to a function and store it as current procedure
+    llvm_current_procedure_ = llvm::cast<llvm::Function>(main);
+
+    // make it interoperable with C
+    llvm_current_procedure_->setCallingConv(llvm::CallingConv::C);
   }
 
   // parse statements until end is found

@@ -7,8 +7,10 @@
 #ifndef EECE5183COMPILER_KJLC_PARSER_H_
 #define EECE5183COMPILER_KJLC_PARSER_H_
 
+#include "llvm/IR/Function.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
 #include "scanner.h"
 #include "symbol.h"
 #include "symbol_table.h"
@@ -55,6 +57,9 @@ class Parser {
     llvm::Module *llvm_module_;
     // global context for compiler
     llvm::LLVMContext llvm_global_context_;
+    // current function
+    // set in the header for whatever is being added to
+    llvm::Function *llvm_current_procedure_;
 
     // Prints out debugging information when requested
     // parse_function: name of parse rule being expanded
@@ -160,6 +165,12 @@ class Parser {
                                    Symbol relation_tail,
                                    Lexeme location,
                                    bool equality_test);
+
+    //
+    // Codegen Utility functions 
+    //
+    llvm::Type* GetRespectiveLLVMType(Symbol symbol);
+
 
     //
     // Parse rules functions
