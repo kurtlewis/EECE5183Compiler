@@ -653,6 +653,17 @@ void Parser::ParseAssignmentStatement() {
       return;
     }
   }
+
+  if (codegen_) {
+    // TODO:codegen - this is incomplete, I have no type checking
+    // we know what the destination is, update the symbol value to be
+    // the expression value
+    // TODO:codegen this doesn't consider arrays
+    destination.SetLLVMValue(expression.GetLLVMValue());
+
+    // update the symbol table entry for the destination
+    symbol_table_.InsertSymbol(destination);
+  }
 }
 
 // this is a left recursive rule that has been modified to be right recursive
@@ -1526,6 +1537,15 @@ Symbol Parser::ParseReference() {
       // it's a name reference with an index operation
       // parse the index operation
       ParseIndex(symbol);
+    }
+
+    if (codegen_) {
+      // TODO:codegen - re-enable this once codegen is further along
+      //if (symbol.GetLLVMValue() == nullptr) {
+      //  EmitError("Attempt to use variable before it's initialized.", lexeme);
+      //  symbol.SetIsValid(false);
+      //  return symbol;
+      //}
     }
   }
 
