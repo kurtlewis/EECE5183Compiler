@@ -26,7 +26,7 @@ Symbol::Symbol()
 Symbol::~Symbol() {
   if (llvm_value_ != nullptr) {
     // TODO:codegen - who takes ownership of llvm value pointers?
-    llvm_value_->deleteValue();
+    //llvm_value_->deleteValue();
   }
 }
 

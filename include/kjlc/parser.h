@@ -240,16 +240,8 @@ class Parser {
     // Handle parsing number
     // does not return a value for the parsed number
     // see ParseNumberInteger or ParseNumberFloat if a value is needed
-    void ParseNumber();
+    Symbol ParseNumber();
     
-    // Parses a numeric literal, but insists it must be a float value
-    // returns the float literal
-    float ParseNumberFloat();
-
-    // Parses a numeric literal, but insists it must be an int value
-    // returns the int literal
-    int ParseNumberInteger();
-
     // Handle parsing a parameter
     // @params:
     //    Symbol &procedure_symbol - procedure symbol to place parameters in

@@ -8,8 +8,11 @@
 
 #include <iostream>
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/APInt.h"
 #include "llvm/IR/CallingConv.h"
 #include "llvm/IR/Constant.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRPrintingPasses.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -708,11 +711,22 @@ void Parser::ParseBound(Symbol &symbol) {
     negative = true;
   }
 
-  int bound = ParseNumberInteger();
-  if (negative) {
-    bound = bound * -1;
+  lexeme = scanner_.PeekNextLexeme();
+  // next lexeme must be an integer - floats are not allowed
+  if (lexeme.token != T_INT_LITERAL) {
+    EmitExpectedTokenError("int literal", lexeme);
+    return;
   }
-  symbol.SetArrayBound(bound);
+  
+  Symbol bound = ParseNumber();
+
+  // safe because it was checked to be int
+  int bound_value = lexeme.int_value;
+
+  if (negative) {
+    bound_value = bound_value * -1;
+  }
+  symbol.SetArrayBound(bound_value);
 }
 
 void Parser::ParseDeclaration() {
@@ -880,13 +894,7 @@ Symbol Parser::ParseFactor(Symbol type_context) {
     lexeme = scanner_.PeekNextLexeme();
     if (lexeme.token == T_INT_LITERAL || lexeme.token == T_FLOAT_LITERAL) {
       // number
-      // Check to see if it's an int or a float to update the symbol
-      if (lexeme.token == T_INT_LITERAL) {
-        symbol.SetType(TYPE_INT);
-      } else if (lexeme.token == T_FLOAT_LITERAL) {
-        symbol.SetType(TYPE_FLOAT);
-      }
-      ParseNumber();
+      symbol = ParseNumber();
     } else if (lexeme.token == T_ID) {
       // name reference
       symbol = ParseReference();
@@ -897,13 +905,7 @@ Symbol Parser::ParseFactor(Symbol type_context) {
     }
   } else if (lexeme.token == T_INT_LITERAL || lexeme.token == T_FLOAT_LITERAL) {
     // number
-    // Check to see if it's an int or a float to update the symbol
-    if (lexeme.token == T_INT_LITERAL) {
-      symbol.SetType(TYPE_INT);
-    } else if (lexeme.token == T_FLOAT_LITERAL) {
-      symbol.SetType(TYPE_FLOAT);
-    }
-    ParseNumber();
+    symbol = ParseNumber();
   } else if (lexeme.token == T_STRING_LITERAL) {
     symbol.SetType(TYPE_STRING);
     ParseString();
@@ -1077,39 +1079,41 @@ void Parser::ParseLoopStatement() {
   }
 }
 
-void Parser::ParseNumber() {
+Symbol Parser::ParseNumber() {
   DebugPrint("Number");
+
+  Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
   // consume number token
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_INT_LITERAL && lexeme.token != T_FLOAT_LITERAL) {
     EmitError("Expected numeric literal", lexeme);
-    return;
+    symbol.SetIsValid(false);
+    return symbol;
   }
-}
 
-float Parser::ParseNumberFloat() {
-  DebugPrint("NumberFloat");
-
-  // consume number token, but expect it to be a float
-  Lexeme lexeme = scanner_.GetNextLexeme();
-  if (lexeme.token != T_FLOAT_LITERAL) {
-    EmitError("Expected float literal", lexeme);
-    return 0.0;
+  // Check to see if it's an int or a float to update the symbol
+  if (lexeme.token == T_INT_LITERAL) {
+    symbol.SetType(TYPE_INT);
+  } else if (lexeme.token == T_FLOAT_LITERAL) {
+    symbol.SetType(TYPE_FLOAT);
   }
-  return lexeme.float_value;
-}
 
-int Parser::ParseNumberInteger() {
-  DebugPrint("NumberInteger");
-
-  // consume number token, but expect it to be an integer
-  Lexeme lexeme = scanner_.GetNextLexeme();
-  if (lexeme.token != T_INT_LITERAL) {
-    EmitError("Expected integer literal", lexeme);
-    return 0;
+  if (codegen_) {
+    
+    llvm::Value *constant;
+    if (lexeme.token == T_INT_LITERAL) {
+      constant = llvm::ConstantInt::getIntegerValue(
+          GetRespectiveLLVMType(symbol), // always use function to get type
+          llvm::APInt(32, lexeme.int_value, true));
+    } else if (lexeme.token == T_INT_LITERAL) {
+      constant = llvm::ConstantFP::get(
+          GetRespectiveLLVMType(symbol), // use single type def defined in func
+          llvm::APFloat(lexeme.float_value));
+    }
+    symbol.SetLLVMValue(constant);
   }
-  return lexeme.int_value;
+  return symbol;
 }
 
 void Parser::ParseParameter(Symbol &procedure_symbol) {
