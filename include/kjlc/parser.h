@@ -57,7 +57,7 @@ class Parser {
     // The module that contains all compiled code
     llvm::Module *llvm_module_;
     // global context for compiler - default constructor creates one
-    llvm::LLVMContext llvm_global_context_;
+    llvm::LLVMContext llvm_context_;
     // current function
     // set in the header for whatever is being added to
     llvm::Function *llvm_current_procedure_;

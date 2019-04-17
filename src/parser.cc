@@ -34,7 +34,7 @@ Parser::Parser(std::string filename, bool parser_debug, bool symbol_debug,
       codegen_(codegen_enable),
       codegen_debug_(codegen_debug),
       llvm_module_(nullptr),
-      llvm_global_context_(), // create a new global context
+      llvm_context_(), // create a new global context
       llvm_current_procedure_(nullptr),
       llvm_builder_(nullptr) {
 
@@ -1197,7 +1197,7 @@ void Parser::ParseProcedureBody() {
 
     // generate the starting block
     llvm::BasicBlock *procedure_entrypoint = llvm::BasicBlock::Create(
-        llvm_current_procedure_->getContext(), // use function as context
+        llvm_context_,
         "entrypoint", // first block is always entrypoint
         llvm_current_procedure_); // parent function
 
@@ -1231,12 +1231,13 @@ void Parser::ParseProcedureBody() {
   }
 
   if (codegen_) {
-    // program is over - get the current block and ensure it is well formed
+    // procedure is over - get the current block and ensure it is well formed
     // because it has a terminator
     if (llvm_builder_->GetInsertBlock()->getTerminator() == NULL) {
-      // Return 0 from the program
+      // there is not a terminator, this is an error and should kill
+      // compilation, but leave this for testing
       llvm::Constant *val = llvm::ConstantInt::getIntegerValue(
-          llvm::IntegerType::getInt32Ty(llvm_current_procedure_->getContext()),
+          llvm_builder_->getInt32Ty(),
           llvm::APInt(32, 0, true));
       llvm_builder_->CreateRet(val);
     }
@@ -1344,7 +1345,7 @@ void Parser::ParseProgramBody() {
 
     // function returns i32 exit code
     llvm::FunctionType *functionType = llvm::FunctionType::get(
-        llvm::IntegerType::getInt32Ty(llvm_module_->getContext()),
+        llvm_builder_->getInt32Ty(),
         params,
         false);
 
@@ -1360,7 +1361,7 @@ void Parser::ParseProgramBody() {
 
     // generate the starting block
     llvm::BasicBlock *procedure_entrypoint = llvm::BasicBlock::Create(
-        llvm_current_procedure_->getContext(), // use function as context
+        llvm_context_,
         "entrypoint", // first block is always entrypoint
         llvm_current_procedure_); // parent function
 
@@ -1391,12 +1392,9 @@ void Parser::ParseProgramBody() {
     // because it has a terminator
     if (llvm_builder_->GetInsertBlock()->getTerminator() == NULL) {
       // there is no terminator - add a return of the correct type
-      // TODO:codegen - this is actually an error that should
-      // cancel compilation
-      // in a procedure, there must be a return
-      // for testing purposes, leave this in
+      // exit 0 from the program
       llvm::Constant *val = llvm::ConstantInt::getIntegerValue(
-          llvm::IntegerType::getInt32Ty(llvm_current_procedure_->getContext()),
+          llvm_builder_->getInt32Ty(),
           llvm::APInt(32, 0, true));
       llvm_builder_->CreateRet(val);
     }
@@ -1421,9 +1419,9 @@ void Parser::ParseProgramHeader() {
 
   if (codegen_) {
     // Create the module in which all this code will go
-    llvm_module_ = new llvm::Module(program_name, llvm_global_context_);
+    llvm_module_ = new llvm::Module(program_name, llvm_context_);
     // create the builder that references this module
-    llvm_builder_ = new llvm::IRBuilder<>(llvm_global_context_);
+    llvm_builder_ = new llvm::IRBuilder<>(llvm_context_);
   }
 
   // read 'is'
