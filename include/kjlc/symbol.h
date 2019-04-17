@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "llvm/IR/Value.h"
+
 namespace kjlc {
 
 enum Type {
@@ -72,6 +74,10 @@ class Symbol {
     bool IsValid();
     void SetIsValid(bool valid);
 
+    // LLVM Mutators
+    void SetLLVMValue(llvm::Value *value);
+    llvm::Value *GetLLVMValue();
+
   private:
     // identifier for the symbol
     std::string id_;
@@ -103,6 +109,11 @@ class Symbol {
     // denotes if this is a valid symbol
     // example invalid symbol: lookup failed
     bool valid_;
+
+    //
+    // llvm variables
+    //
+    llvm::Value *llvm_value_;
 };
 } // end namespace kjlc
 #endif // EECE5183COMPILER_KJLC_SYMBOL_H

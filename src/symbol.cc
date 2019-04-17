@@ -18,12 +18,16 @@ Symbol::Symbol()
     array_(false),
     array_bound_(0),
     params_(),
-    valid_(true) {
+    valid_(true),
+    llvm_value_(nullptr) {
  
 }
 
 Symbol::~Symbol() {
-
+  if (llvm_value_ != nullptr) {
+    // TODO:codegen - who takes ownership of llvm value pointers?
+    llvm_value_->deleteValue();
+  }
 }
 
 Symbol Symbol::GenerateAnonymousSymbol() {
@@ -135,4 +139,11 @@ void Symbol::SetIsValid(bool valid) {
   valid_ = valid;
 }
 
+void Symbol::SetLLVMValue(llvm::Value *value) {
+  llvm_value_ = value;
+}
+
+llvm::Value *Symbol::GetLLVMValue() {
+  return llvm_value_;
+}
 } // namespace kjlc
