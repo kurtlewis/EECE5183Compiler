@@ -136,11 +136,12 @@ class Parser {
     //   type_context - destination type/expected result
     //   lead - output of ParseFactor or ParseRelation
     //   tail - output of ParseTermTail or ParseArithOp, can be invalid
-    //   location - lexeme before the tail, used for error location printing
+    //   operation - lexeme of the operation being done. Used for type checking
+    //               error reporting as well.
     Symbol CheckArithmeticParseTypes(Symbol type_context,
                                      Symbol lead,
                                      Symbol tail,
-                                     Lexeme location);
+                                     Lexeme operation);
 
     // Checks the lead and tail symbols for binary operation compatibility
     // for use in ParseExpression and ParseExpressionTail
@@ -176,6 +177,7 @@ class Parser {
     //
     llvm::Type* GetRespectiveLLVMType(Symbol symbol);
 
+    llvm::Type* GetRespectiveLLVMType(Type type);
 
     //
     // Parse rules functions

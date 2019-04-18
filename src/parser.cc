@@ -10,11 +10,12 @@
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
+#include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/CallingConv.h"
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Constants.h"
-#include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Instruction.h"
 #include "llvm/IR/IRPrintingPasses.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Verifier.h"
@@ -492,37 +493,144 @@ Symbol Parser::CheckRelationParseTypes(Symbol type_context, Symbol term,
 }
 
 Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
-                                         Symbol tail, Lexeme location) {
+                                         Symbol tail, Lexeme operation) {
   // is tail a valid Symbol?
   if (tail.IsValid()) {
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
     // do a type check between the results
+    // if an llvm type conversion ends up being necessary,
+    // always do a widening conversion, so whatever is the int goes int->float
     bool compatible = false;
     if (lead.GetType() == TYPE_INT) {
       compatible = (tail.GetType() == TYPE_INT || tail.GetType() == TYPE_FLOAT);
+
+      // if the tail is a float, need to convert lead
+      if (codegen_ && compatible && tail.GetType() == TYPE_FLOAT) {
+        // do actual type conversion and update symbol
+        llvm::Value *val = llvm_builder_->CreateSIToFP(
+            lead.GetLLVMValue(),
+            GetRespectiveLLVMType(TYPE_FLOAT));
+        // update the lead symbol
+        lead.SetLLVMValue(val);
+      }
     } else if (lead.GetType() == TYPE_FLOAT) {
       compatible = (tail.GetType() == TYPE_INT || tail.GetType() == TYPE_FLOAT);
+
+      // if the tail is an int need to make it a float
+      if (codegen_ && compatible && tail.GetType() == TYPE_INT) {
+        // do actual type conversion and update symbol
+        llvm::Value *val = llvm_builder_->CreateSIToFP(
+            tail.GetLLVMValue(),
+            GetRespectiveLLVMType(TYPE_FLOAT));
+        // update the tail symbol
+        tail.SetLLVMValue(val);
+      }
     }
     
     if (!compatible) {
       EmitOperationTypeCheckingError("Arithmetic",
                                      Symbol::GetTypeString(lead),
                                      Symbol::GetTypeString(tail),
-                                     location);
+                                     operation);
       symbol.SetIsValid(false);
       return symbol;
     }
 
+    // codegen requires different instructions if the types are of float
+    // we know it's float because either of the params is a float
+    // and we always widen type when casting
+    bool floating_point_op = (lead.GetType() == TYPE_FLOAT ||
+                              tail.GetType() == TYPE_FLOAT); 
+    if (codegen_) {
+      // do actual operation instruction
+      llvm::Value *val;
+      switch (operation.token) {
+        case T_PLUS:
+          if (floating_point_op) {
+            val = llvm_builder_->CreateBinOp(llvm::Instruction::FAdd,
+                                             lead.GetLLVMValue(),
+                                             tail.GetLLVMValue());
+          } else {
+          std::cout << "Sanity Check." << std::endl;
+            val = llvm_builder_->CreateBinOp(llvm::Instruction::Add,
+                                             lead.GetLLVMValue(),
+                                             tail.GetLLVMValue());
+          }
+          break;
+        case T_MINUS:
+          if (floating_point_op) {
+            val = llvm_builder_->CreateBinOp(llvm::Instruction::FSub,
+                                             lead.GetLLVMValue(),
+                                             tail.GetLLVMValue());
+          } else {
+            val = llvm_builder_->CreateBinOp(llvm::Instruction::Sub,
+                                             lead.GetLLVMValue(),
+                                             tail.GetLLVMValue());
+          }
+          break;
+        case T_MULT:
+          if (floating_point_op) {
+            val = llvm_builder_->CreateBinOp(llvm::Instruction::FMul,
+                                             lead.GetLLVMValue(),
+                                             tail.GetLLVMValue());
+          } else {
+            val = llvm_builder_->CreateBinOp(llvm::Instruction::Mul,
+                                             lead.GetLLVMValue(),
+                                             tail.GetLLVMValue());
+          }
+          break;
+        case T_DIV:
+          if (floating_point_op) {
+            val = llvm_builder_->CreateBinOp(llvm::Instruction::FDiv,
+                                             lead.GetLLVMValue(),
+                                             tail.GetLLVMValue());
+          } else {
+            val = llvm_builder_->CreateBinOp(llvm::Instruction::SDiv,
+                                             lead.GetLLVMValue(),
+                                             tail.GetLLVMValue());
+          }
+          break;
+        default:
+          std::cout << "Error matching operation to case." << std::endl;
+      }
+      // update the outgoing symbol with the new value
+      symbol.SetLLVMValue(val);
+    }
+
+
     // cast the output to the type context
     if (type_context.GetType() == TYPE_FLOAT) {
       symbol.SetType(TYPE_FLOAT);
+
+      if (codegen_ && !floating_point_op) {
+        // floating point op is false, so the operation was between ints
+        // need to cast to a float
+        llvm::Value *val = llvm_builder_->CreateSIToFP(
+            symbol.GetLLVMValue(),
+            GetRespectiveLLVMType(TYPE_FLOAT));
+        // update the output symbol
+        symbol.SetLLVMValue(val);
+      }
     } else if(type_context.GetType() == TYPE_INT) {
       symbol.SetType(TYPE_INT);
+
+      if (codegen_ && floating_point_op) {
+        // it was a floating point op, so need to go back to an int
+        llvm::Value *val = llvm_builder_->CreateFPToSI(
+            symbol.GetLLVMValue(),
+            GetRespectiveLLVMType(TYPE_INT));
+        // update the output symbol
+        symbol.SetLLVMValue(val);
+      }
     } else {
       // arithmetic operation in a context that isn't clear what our output
       // type should be. Favor float if one of the types was a float
+      // this is automatically handled in terms of codegen,
+      // type conversion is widening so if one was a float the other one
+      // was cast to it and the output is a float. If both were ints
+      // the result is an int
       if (lead.GetType() == TYPE_FLOAT || tail.GetType() == TYPE_FLOAT) {
         symbol.SetType(TYPE_FLOAT);
       } else {
@@ -539,8 +647,12 @@ Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
   }
 }
 
-llvm::Type* Parser::GetRespectiveLLVMType(Symbol symbol) {
-  switch(symbol.GetType()) {
+llvm::Type *Parser::GetRespectiveLLVMType(Symbol symbol) {
+  return GetRespectiveLLVMType(symbol.GetType());
+}
+
+llvm::Type *Parser::GetRespectiveLLVMType(Type type) {
+  switch(type) {
     case TYPE_BOOL:
       return llvm_builder_->getInt1Ty();
       break;
