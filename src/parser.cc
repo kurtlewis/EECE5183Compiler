@@ -368,18 +368,22 @@ void Parser::ParseIndex(Symbol identifier) {
   }
 }
 
-Symbol Parser::CheckExpressionParseTypes(Symbol type_context,
-                                         Symbol arith_op,
-                                         Symbol expression_tail,
-                                         Lexeme location,
-                                         bool not_operation) {
+Symbol Parser::DoExpressionTypeCheckingAndCodegen(Symbol type_context,
+                                                  Symbol arith_op,
+                                                  Symbol expression_tail,
+                                                  Lexeme operation,
+                                                  bool not_operation) {
   // is the tail a valid symbol?
   if (expression_tail.IsValid()) {
+    // there is a tail, which means there is an operation
+
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
     
     bool compatible = false;
     std::string operation_type_string;
+    // context is important in determining type compatibility for this
+    // Parse rule
     if (type_context.GetType() == TYPE_BOOL) {
       // expected output is a bool so the expression operator ('&', '|', 'not')
       // is a logical operation
@@ -387,7 +391,8 @@ Symbol Parser::CheckExpressionParseTypes(Symbol type_context,
       operation_type_string = "logical operation";
       compatible = (arith_op.GetType() == TYPE_BOOL &&
                     expression_tail.GetType() == TYPE_BOOL);
-      // output type is boolean because that's what's expected
+      // output type is boolean because that's what's expected and what the
+      // result will be
       symbol.SetType(TYPE_BOOL);
     } else if (type_context.GetType() == TYPE_INT ||
                type_context.GetType() == TYPE_FLOAT) {
@@ -403,7 +408,7 @@ Symbol Parser::CheckExpressionParseTypes(Symbol type_context,
       symbol.SetType(TYPE_INT);
     } else {
       // other types aren't allowed
-      EmitError("Invalid type in expression.", location);
+      EmitError("Invalid type in expression.", operation);
       symbol.SetIsValid(false);
       return symbol;
     }
@@ -413,9 +418,36 @@ Symbol Parser::CheckExpressionParseTypes(Symbol type_context,
       EmitOperationTypeCheckingError(operation_type_string,
                                      Symbol::GetTypeString(arith_op),
                                      Symbol::GetTypeString(expression_tail),
-                                     location);
+                                     operation);
       symbol.SetIsValid(false);
       return symbol;
+    }
+
+    if (codegen_) {
+      // despite the fact this rule handles both logical and bitwise operations
+      // in llvm, these are they same, because booleans are 1 bit integers!
+      llvm::Value *val;
+      switch (operation.token) {
+        case T_AND:
+          val = llvm_builder_->CreateAnd(arith_op.GetLLVMValue(),
+                                         expression_tail.GetLLVMValue()); 
+          break;
+        case T_BAR: // or
+          val = llvm_builder_->CreateOr(arith_op.GetLLVMValue(),
+                                        expression_tail.GetLLVMValue());
+          break;
+        default:
+          std::cout << "Error matching operation to codegen." << std::endl;
+      }
+      // update the outgoing symbol
+      symbol.SetLLVMValue(val);
+
+      // Check to see if there is a not on the operation
+      if (not_operation) {
+        val = llvm_builder_->CreateNot(symbol.GetLLVMValue());
+        // update outgoing symbol
+        symbol.SetLLVMValue(val);
+      }
     }
     
     return symbol;
@@ -436,11 +468,18 @@ Symbol Parser::CheckExpressionParseTypes(Symbol type_context,
         EmitOperationTypeCheckingError("binary operation",
                                        Symbol::GetTypeString(arith_op),
                                        "N/A",
-                                       location);
+                                       operation);
         // Generate anonymous symbol and return it
         Symbol symbol = Symbol::GenerateAnonymousSymbol();
         symbol.SetIsValid(false);
         return symbol;
+      }
+
+      if (codegen_) {
+        // do the actual not operation on arith_op
+        llvm::Value *val = llvm_builder_->CreateNot(arith_op.GetLLVMValue());
+        // update arith op before returning it
+        arith_op.SetLLVMValue(val);
       }
     }
     // the tail was not a valid symbol, return the arith_op lead as is
@@ -673,7 +712,6 @@ Symbol Parser::DoArithmeticTypeCheckingAndCodegen(Symbol type_context,
                                              lead.GetLLVMValue(),
                                              tail.GetLLVMValue());
           } else {
-          std::cout << "Sanity Check." << std::endl;
             val = llvm_builder_->CreateBinOp(llvm::Instruction::Add,
                                              lead.GetLLVMValue(),
                                              tail.GetLLVMValue());
@@ -1071,13 +1109,15 @@ Symbol Parser::ParseExpression(Symbol type_context) {
   // parse arithOp
   Symbol arith_op = ParseArithOp(type_context);
 
-  // peek location of next symbol for possible error reporting
-  lexeme = scanner_.PeekNextLexeme();
+  // peek location of next symbol for operation token and possible error
+  // reporting
+  Lexeme operation = scanner_.PeekNextLexeme();
 
   Symbol expression_tail = ParseExpressionTail(type_context);
 
-  return CheckExpressionParseTypes(type_context, arith_op, expression_tail,
-                                   lexeme, not_operation);
+  return DoExpressionTypeCheckingAndCodegen(type_context, arith_op,
+                                            expression_tail, operation,
+                                            not_operation);
 }
 
 Symbol Parser::ParseExpressionTail(Symbol type_context) {
@@ -1092,16 +1132,18 @@ Symbol Parser::ParseExpressionTail(Symbol type_context) {
     // Next is arith op
     Symbol arith_op = ParseArithOp(type_context);
 
-    // peek location of next symbol for possible error reporting
-    lexeme = scanner_.PeekNextLexeme();
+    // peek location of next symbol for operation token and possible error
+    // reporting
+    Lexeme operation = scanner_.PeekNextLexeme();
 
     // Right recursive call
     Symbol expression_tail = ParseExpressionTail(type_context);
 
     // _not_ only leads in expression, so not_operation param will always
     // be false in ParseExpressionTail
-    return CheckExpressionParseTypes(type_context, arith_op, expression_tail,
-                                     lexeme, false);
+    return DoExpressionTypeCheckingAndCodegen(type_context, arith_op,
+                                              expression_tail, operation,
+                                              false);
   }
 
   // empty evaluation of this rule, return an invalid anonymous symbol

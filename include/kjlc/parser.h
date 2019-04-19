@@ -127,7 +127,7 @@ class Parser {
     void ParseIndex(Symbol identifier);
 
     //
-    // Type Check Functions for Right Recursive rules
+    // Type Check / Codegen Functions for Right Recursive rules
     //
 
     // Checks the lead and tail symbols to make sure they are type compatible
@@ -150,14 +150,15 @@ class Parser {
     //   type_context - destination type/expected result
     //   arith_op - output of ParseArithOp
     //   expression_tail - output of ParseExpressionTail, can be invalid
-    //   location - lexeme before the tail, used for error location printing
+    //   operation - lexeme before the tail, used to determine operation and
+    //               for error reporting 
     //   not_operation - boolean representing if the result or arith_op has
     //                   a not operation being applied to it
-    Symbol CheckExpressionParseTypes(Symbol type_context,
-                                     Symbol arith_op,
-                                     Symbol expression_tail,
-                                     Lexeme location,
-                                     bool not_operation);
+    Symbol DoExpressionTypeCheckingAndCodegen(Symbol type_context,
+                                              Symbol arith_op,
+                                              Symbol expression_tail,
+                                              Lexeme operation,
+                                              bool not_operation);
 
     // Checks the term and relation_tail to make sure they are type compatible
     // for use in ParseRelation and ParseRelationTail
