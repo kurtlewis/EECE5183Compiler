@@ -492,8 +492,10 @@ Symbol Parser::CheckRelationParseTypes(Symbol type_context, Symbol term,
   }
 }
 
-Symbol Parser::CheckArithmeticParseTypes(Symbol type_context, Symbol lead,
-                                         Symbol tail, Lexeme operation) {
+Symbol Parser::DoArithmeticTypeCheckingAndCodegen(Symbol type_context,
+                                                  Symbol lead,
+                                                  Symbol tail,
+                                                  Lexeme operation) {
   // is tail a valid Symbol?
   if (tail.IsValid()) {
     // Generate an anonymous symbol to return
@@ -791,13 +793,14 @@ Symbol Parser::ParseArithOp(Symbol type_context) {
 
   Symbol relation = ParseRelation(type_context);
 
-  // Peek location for use in possible error messages
-  Lexeme lexeme = scanner_.PeekNextLexeme();
+  // Peek ahead - will be used for error reporting, and if there's a tail
+  // it is the operation
+  Lexeme operation = scanner_.PeekNextLexeme();
 
   Symbol arith_op_tail = ParseArithOpTail(type_context);
 
-  return CheckArithmeticParseTypes(type_context, relation, arith_op_tail,
-                                   lexeme);
+  return DoArithmeticTypeCheckingAndCodegen(type_context, relation,
+                                            arith_op_tail, operation);
 }
 
 // because this is a left recursive rule made right recursive, it is necessary
@@ -812,14 +815,15 @@ Symbol Parser::ParseArithOpTail(Symbol type_context) {
 
     Symbol relation = ParseRelation(type_context);
 
-    // peek the lexeme location for possible error messages
-    Lexeme lexeme = scanner_.PeekNextLexeme();
+    // Peek ahead - will be used for error reporting, and if there's a tail
+    // it is the operation
+    Lexeme operation = scanner_.PeekNextLexeme();
 
     // recursive call
     Symbol arith_op_tail = ParseArithOpTail(type_context);
 
-    return CheckArithmeticParseTypes(type_context, relation, arith_op_tail,
-                                     lexeme);
+    return DoArithmeticTypeCheckingAndCodegen(type_context, relation,
+                                              arith_op_tail, operation);
   }
 
   // Empty evaluation of the rule, return an invalid symbol
@@ -1814,12 +1818,14 @@ Symbol Parser::ParseTerm(Symbol type_context) {
 
   Symbol factor = ParseFactor(type_context);
 
-  // peek the location of the operator for possible error reporting
-  Lexeme lexeme = scanner_.PeekNextLexeme();
+  // Peek ahead - it will be used for error reporting and if there's a tail
+  // it is the operation
+  Lexeme operation = scanner_.PeekNextLexeme();
 
   Symbol term_tail = ParseTermTail(type_context);
 
-  return CheckArithmeticParseTypes(type_context, factor, term_tail, lexeme);
+  return DoArithmeticTypeCheckingAndCodegen(type_context, factor, term_tail,
+                                            operation);
 
 }
 
@@ -1835,12 +1841,14 @@ Symbol Parser::ParseTermTail(Symbol type_context) {
 
     Symbol factor = ParseFactor(type_context);
 
-    // peek the location of the operator for possible error reporting
-    Lexeme lexeme = scanner_.PeekNextLexeme();
+    // Peek ahead - it will be used for error reporting and if there's a tail
+    // it is the operation
+    Lexeme operation = scanner_.PeekNextLexeme();
 
     Symbol term_tail =  ParseTermTail(type_context);
 
-    return CheckArithmeticParseTypes(type_context, factor, term_tail, lexeme);
+    return DoArithmeticTypeCheckingAndCodegen(type_context, factor, term_tail,
+                                              operation);
   }
 
   // Empty evaluation of the rule, return an invalid symbol

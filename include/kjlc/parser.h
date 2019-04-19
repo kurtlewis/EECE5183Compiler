@@ -132,16 +132,17 @@ class Parser {
 
     // Checks the lead and tail symbols to make sure they are type compatible
     // for use in ParseArithOp, ParseTerm, ParseArithOpTail, ParseTermTail
+    // if the types are compatible, does appropriate codegen
     // params:
     //   type_context - destination type/expected result
     //   lead - output of ParseFactor or ParseRelation
     //   tail - output of ParseTermTail or ParseArithOp, can be invalid
     //   operation - lexeme of the operation being done. Used for type checking
     //               error reporting as well.
-    Symbol CheckArithmeticParseTypes(Symbol type_context,
-                                     Symbol lead,
-                                     Symbol tail,
-                                     Lexeme operation);
+    Symbol DoArithmeticTypeCheckingAndCodegen(Symbol type_context,
+                                              Symbol lead,
+                                              Symbol tail,
+                                              Lexeme operation);
 
     // Checks the lead and tail symbols for binary operation compatibility
     // for use in ParseExpression and ParseExpressionTail
