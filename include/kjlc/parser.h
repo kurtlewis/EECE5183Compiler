@@ -161,17 +161,17 @@ class Parser {
 
     // Checks the term and relation_tail to make sure they are type compatible
     // for use in ParseRelation and ParseRelationTail
+    // if the types are compatible, it does codegen
     // params:
     //   type_context - destination type/expected result
     //   term - output of ParseTerm
     //   relation_tail - output of ParseRelationTail, can be invalid
-    //   location - lexeme before the tail, used for error location printing
-    //   equality_test - true if the operation will be EQ or NEQ
-    Symbol CheckRelationParseTypes(Symbol type_context,
-                                   Symbol term,
-                                   Symbol relation_tail,
-                                   Lexeme location,
-                                   bool equality_test);
+    //   operation - lexeme before the tail, used to determine operation and
+    //               for error reporting 
+    Symbol DoRelationTypeCheckingAndCodegen(Symbol type_context,
+                                            Symbol term,
+                                            Symbol relation_tail,
+                                            Lexeme operation);
 
     //
     // Codegen Utility functions 

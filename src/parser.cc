@@ -448,37 +448,155 @@ Symbol Parser::CheckExpressionParseTypes(Symbol type_context,
   }
 }
 
-Symbol Parser::CheckRelationParseTypes(Symbol type_context, Symbol term,
-                                       Symbol relation_tail,
-                                       Lexeme location, bool equality_test) {
+Symbol Parser::DoRelationTypeCheckingAndCodegen(Symbol type_context,
+                                                Symbol term,
+                                                Symbol relation_tail,
+                                                Lexeme operation) {
   // is the relation_tail a valid symbol?
   if (relation_tail.IsValid()) {
+    // yes it is valid, so there is a relation operation
     // Generate an anonymous symbol to return
     Symbol symbol = Symbol::GenerateAnonymousSymbol();
 
     bool compatible = false;
 
+
+    bool floating_point_comparison = false;
+
+    // confirm that types are compatible. Always do type widening
+    // so bool->int->float (but not across unallowable boundaries)
     if (term.GetType() == TYPE_BOOL) {
       compatible = (relation_tail.GetType() == TYPE_BOOL ||
                     relation_tail.GetType() == TYPE_INT);
+      if (codegen_ && compatible && relation_tail.GetType() == TYPE_INT) {
+        // zero extend the bool term to an int
+        llvm::Value *val = llvm_builder_->CreateZExtOrTrunc(
+            term.GetLLVMValue(),
+            GetRespectiveLLVMType(TYPE_INT));
+        // update the term llvm value
+        term.SetLLVMValue(val);
+      }
     } else if (term.GetType() == TYPE_FLOAT) {
+      // comparison is between floats
+      floating_point_comparison = true;
+
       compatible = (relation_tail.GetType() == TYPE_FLOAT ||
                     relation_tail.GetType() == TYPE_INT);
+      if (codegen_ && compatible && relation_tail.GetType() == TYPE_INT) {
+        // need to widen relation tail to float
+        llvm::Value *val = llvm_builder_->CreateSIToFP(
+            relation_tail.GetLLVMValue(),
+            GetRespectiveLLVMType(TYPE_FLOAT));
+        // update the relation tail symbol
+        relation_tail.SetLLVMValue(val);
+      }
     } else if (term.GetType() == TYPE_INT) {
       compatible = (relation_tail.GetType() == TYPE_INT ||
                     relation_tail.GetType() == TYPE_BOOL ||
                     relation_tail.GetType() == TYPE_FLOAT);
+
+      if (codegen_ && compatible) {
+        if (relation_tail.GetType() == TYPE_BOOL) {
+          // convert bool -> int
+          llvm::Value *val = llvm_builder_->CreateZExtOrTrunc(
+              relation_tail.GetLLVMValue(),
+              GetRespectiveLLVMType(TYPE_INT));
+          //update the tail value
+          relation_tail.SetLLVMValue(val);
+        } else if (relation_tail.GetType() == TYPE_FLOAT) {
+          // widen term int -> float
+          llvm::Value *val = llvm_builder_->CreateSIToFP(
+              term.GetLLVMValue(),
+              GetRespectiveLLVMType(TYPE_FLOAT));
+          // update the term value
+          term.SetLLVMValue(val);
+
+          // now the comparison is between floats
+          floating_point_comparison = true;
+        }
+      }
     } else if (term.GetType() == TYPE_STRING) {
-      compatible = (equality_test && relation_tail.GetType() == TYPE_STRING);
+      // strings are only compatible for equality tests
+      compatible = ((operation.token == T_EQ || operation.token == T_NEQ) &&
+                    relation_tail.GetType() == TYPE_STRING);
+
+      // if I understand correctly, llvm will automatically dereference and
+      // compare? IDK
+      // TODO:codegen
     }
     
     if (!compatible) {
       EmitOperationTypeCheckingError("relational operation",
                                      Symbol::GetTypeString(term),
                                      Symbol::GetTypeString(relation_tail),
-                                     location);
+                                     operation);
       symbol.SetIsValid(false);
       return symbol;
+    }
+
+    if (codegen_) {
+      // do actual comparison
+      llvm::Value *val;
+      switch (operation.token) {
+        case T_EQ:
+            if (floating_point_comparison) {
+              val = llvm_builder_->CreateFCmpOEQ(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            } else {
+              val = llvm_builder_->CreateICmpEQ(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            }
+          break;
+        case T_NEQ:
+            if (floating_point_comparison) {
+              val = llvm_builder_->CreateFCmpONE(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            } else {
+              val = llvm_builder_->CreateICmpNE(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            }
+          break;
+        case T_GT:
+            if (floating_point_comparison) {
+              val = llvm_builder_->CreateFCmpOGT(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            } else {
+              val = llvm_builder_->CreateICmpSGT(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            }
+          break;
+        case T_GT_EQ:
+            if (floating_point_comparison) {
+              val = llvm_builder_->CreateFCmpOGE(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            } else {
+              val = llvm_builder_->CreateICmpSGE(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            }
+          break;
+        case T_LT:
+            if (floating_point_comparison) {
+              val = llvm_builder_->CreateFCmpOLT(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            } else {
+              val = llvm_builder_->CreateICmpSLT(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            }
+          break;
+        case T_LT_EQ:
+            if (floating_point_comparison) {
+              val = llvm_builder_->CreateFCmpOLE(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            } else {
+              val = llvm_builder_->CreateICmpSLE(term.GetLLVMValue(),
+                                                relation_tail.GetLLVMValue());
+            }
+          break;
+        default:
+          std::cout << "Error matching operation to codegen." << std::endl;
+      }
+      // update the outgoing symbol
+      symbol.SetLLVMValue(val);
     }
 
     // relational operations always return a boolean
@@ -1681,19 +1799,14 @@ Symbol Parser::ParseRelation(Symbol type_context) {
 
   Symbol term = ParseTerm(type_context);
 
-  // peek the next token to see if there is going to be an equality test
-  // needed for type checking, this is reaching down into ParseRelationTail
-  // lexeme also used for location in possible error reporting
-  bool equality_test = false;
-  Lexeme lexeme = scanner_.PeekNextLexeme();
-  if (lexeme.token == T_EQ || lexeme.token == T_NEQ) {
-    equality_test = true;
-  }
+  // Peek the next token to get what the operation will be, will also be used
+  // for error reporting
+  Lexeme operation = scanner_.PeekNextLexeme();
 
   Symbol relation_tail = ParseRelationTail(type_context);
 
-  return CheckRelationParseTypes(type_context, term, relation_tail,
-                                 lexeme, equality_test);
+  return DoRelationTypeCheckingAndCodegen(type_context, term, relation_tail,
+                                          operation);
 }
 
 // Right recursive portion of the rule
@@ -1711,21 +1824,15 @@ Symbol Parser::ParseRelationTail(Symbol type_context) {
 
     Symbol term = ParseTerm(type_context);
 
-    // check to see if the next token is an equality test
-    // needed for type checking
-    // this is technically reaching down into the next ParseRelationTail
-    // lexeme also used for location in possible error reporting
-    lexeme = scanner_.PeekNextLexeme();
-    bool equality_test = false;
-    if (lexeme.token == T_EQ || lexeme.token == T_NEQ) {
-      equality_test = true;
-    }
+    // Peek the next token to get what the operation will be, will also be used
+    // for error reporting
+    Lexeme operation = scanner_.PeekNextLexeme();
 
     // Recursive call
     Symbol relation_tail = ParseRelationTail(type_context);
 
-    return CheckRelationParseTypes(type_context, term, relation_tail,
-                                   lexeme, equality_test);
+    return DoRelationTypeCheckingAndCodegen(type_context, term, relation_tail,
+                                            operation);
   }
   
   // empty evaluation of rule, return invalid anonymous symbol
