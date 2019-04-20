@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
 
 namespace kjlc {
@@ -78,6 +79,9 @@ class Symbol {
     void SetLLVMValue(llvm::Value *value);
     llvm::Value *GetLLVMValue();
 
+    void SetLLVMFunction(llvm::Function *function);
+    llvm::Function *GetLLVMFunction();
+
   private:
     // identifier for the symbol
     std::string id_;
@@ -114,6 +118,7 @@ class Symbol {
     // llvm variables
     //
     llvm::Value *llvm_value_;
+    llvm::Function *llvm_function_;
 };
 } // end namespace kjlc
 #endif // EECE5183COMPILER_KJLC_SYMBOL_H

@@ -83,6 +83,8 @@ Symbol SymbolTable::FindSymbolByIdentifier(std::string id) {
   std::map<std::string, Symbol>::iterator result
     = local_scope_stack_.back().find(id);
   if (result != local_scope_stack_.back().end()) {
+    std::cout << "Found the following symbol:" << std::endl;
+    result->second.PrintSymbolDebug();
     return result->second;
   }
   result = global_scope_map_.find(id);

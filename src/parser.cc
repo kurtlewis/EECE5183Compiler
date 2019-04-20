@@ -831,50 +831,72 @@ llvm::Type *Parser::GetRespectiveLLVMType(Type type) {
   }
 }
 
-void Parser::ParseArgumentList(std::vector<Symbol>::iterator param_current,
-                               std::vector<Symbol>::iterator param_end) {
+// this rule is defined recursively, but it makes more sense to use
+// iteratively
+std::vector<llvm::Value *> Parser::ParseArgumentList(
+    std::vector<Symbol>::iterator param_current,
+    std::vector<Symbol>::iterator param_end) {
   DebugPrint("ArgumentList");
 
-  // The type expectation is the current parameter
-  Symbol expression = ParseExpression(*param_current);
+  // flag to continue iterating
+  bool more_args = false;
 
-  // peek a lexeme for possible error reporting
-  Lexeme lexeme = scanner_.PeekNextLexeme();
+  std::vector<llvm::Value *> args;
+  do {
+    // peek a lexeme for possible error reporting
+    Lexeme lexeme = scanner_.PeekNextLexeme();
 
-  // check that the expression matches
-  if (param_current != param_end) {
+    // make sure there are more arguments allowed to be coming
+    if (param_current == param_end) {
+      // the param_current is the end, there should be no more arguments
+      EmitError("Argument miss match, too many arguments.", lexeme);
+      return args;
+    }
+
+    // The type expectation is the current parameter
+    Symbol expression = ParseExpression(*param_current);
+
+    // peek a lexeme for possible error reporting
+    lexeme = scanner_.PeekNextLexeme();
+
+    // check that the expression matches
     if (param_current->GetType() != expression.GetType()) {
       // argument types don't match
       EmitExpectedTypeError(Symbol::GetTypeString(*param_current),
                             Symbol::GetTypeString(expression),
                             lexeme);
-      return; 
+      return args; 
     }
-  } else {
-    // the param_current is the end, there should be no more arguments
-    EmitError("Argument miss match, too many arguments.", lexeme);
-    return;
-  }
 
+    // argument is okay, add it to the vector of values
+    args.push_back(expression.GetLLVMValue());
 
-  // more arguments are optional and indicated by a comma
-  lexeme = scanner_.PeekNextLexeme();
-  if (lexeme.token == T_COMMA) {
-    // consume comma
-    lexeme = scanner_.GetNextLexeme();
+    // more arguments are optional and indicated by a comma
+    lexeme = scanner_.PeekNextLexeme();
+    if (lexeme.token == T_COMMA) {
+      // consume comma
+      lexeme = scanner_.GetNextLexeme();
 
-    // parse the next arguments recursively
-    ParseArgumentList(std::next(param_current), param_end);
-  } else {
-    // it's the end of the argument list
-    if (param_current != param_end) {
-      if (std::next(param_current) != param_end) {
-        // there are more argument that should be present
-        EmitError("Not enough arugments for procedure call", lexeme);
-        return;
+      // continue parsing more args
+      more_args = true;
+
+      // increment current param iterator
+      param_current = std::next(param_current);
+    } else {
+      // it's the end of the argument list
+      if (param_current != param_end) {
+        if (std::next(param_current) != param_end) {
+          // there are more argument that should be present
+          EmitError("Not enough arugments for procedure call", lexeme);
+          return args;
+        }
       }
+
+      more_args = false;
     }
-  }
+  } while (more_args);
+
+  return args;
 }
 
 void Parser::ParseAssignmentStatement() {
@@ -1453,38 +1475,10 @@ void Parser::ParseProcedureBody() {
   LoopDeclarations(end_tokens, tokens_length);
   
   if (codegen_) {
-    //
-    // create a function definition
-    // Do this when entering the body statements so that it isn't overwritten
-    // by new functions being declared
-    //
+    // Declarations are over, generate the basic block to start inserting
+    // statements into
     Symbol procedure_symbol = symbol_table_.GetScopeProcedure();
-    
-    // Go through the list of arguments and create params
-    std::vector<llvm::Type *> params;
-    for (Symbol symbol : procedure_symbol.GetParams()) {
-      params.push_back(GetRespectiveLLVMType(symbol));
-    }
-
-    // define the types of the function
-    llvm::FunctionType *functionType = llvm::FunctionType::get(
-        GetRespectiveLLVMType(procedure_symbol), // return type
-        params, // list of args
-        false); // is varargs - always no our language doesn't support
-        
-    // TODO:codegen - need to add a consistent character to avoid
-    // name conflicts of "main" - if someone creates a function
-    // "main" that will kill it. Alternatively, disallow "main" as procedure id
-    // Actually create the function
-    llvm::Constant *procedure = llvm_module_->getOrInsertFunction(
-        procedure_symbol.GetId(), // name of function
-        functionType);
-
-    // cast it to a function and insert it into the current procedure member var
-    llvm_current_procedure_ = llvm::cast<llvm::Function>(procedure);
-
-    // set the calling convention of our procedure to that of a C program
-    llvm_current_procedure_->setCallingConv(llvm::CallingConv::C);
+    llvm_current_procedure_ = procedure_symbol.GetLLVMFunction();
 
     // generate the starting block
     llvm::BasicBlock *procedure_entrypoint = llvm::BasicBlock::Create(
@@ -1494,24 +1488,6 @@ void Parser::ParseProcedureBody() {
 
     llvm_builder_->SetInsertPoint(procedure_entrypoint);
 
-    // create values for arguments and update their symbol table entries
-    llvm::Function::arg_iterator args = llvm_current_procedure_->arg_begin();
-    for (Symbol symbol : procedure_symbol.GetParams()) {
-      if (args == llvm_current_procedure_->arg_end()) {
-        // this shouldn't happen, because the args were generated from this
-        // same vector, but play it safe
-        EmitError("Error generating IR for arguments.",
-            scanner_.PeekNextLexeme());
-        return;
-      }
-
-      // create value from arg
-      llvm::Value *val = &*args++;
-
-      // update symbol and reinsert it into the symbol table
-      symbol.SetLLVMValue(val);
-      symbol_table_.InsertSymbol(symbol);
-    }
   }
 
   // Parse the 'begin'
@@ -1565,6 +1541,63 @@ void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
 
   // Parse the procedure header and continue to build the symbol
   ParseProcedureHeader(procedure_symbol);
+
+  if (codegen_) {
+    //
+    // create a function definition
+    // Do this when entering the body statements so that it isn't overwritten
+    // by new functions being declared
+    //
+    
+    // Go through the list of arguments and create params
+    std::vector<llvm::Type *> params;
+    for (Symbol symbol : procedure_symbol.GetParams()) {
+      params.push_back(GetRespectiveLLVMType(symbol));
+    }
+
+    // define the types of the function
+    llvm::FunctionType *functionType = llvm::FunctionType::get(
+        GetRespectiveLLVMType(procedure_symbol), // return type
+        params, // list of args
+        false); // is varargs - always no our language doesn't support
+        
+    // TODO:codegen - need to add a consistent character to avoid
+    // name conflicts of "main" - if someone creates a function
+    // "main" that will kill it. Alternatively, disallow "main" as procedure id
+    // Actually create the function
+    llvm::Constant *procedure = llvm_module_->getOrInsertFunction(
+        procedure_symbol.GetId(), // name of function
+        functionType);
+
+    // cast it to a function and insert it into the current procedure member var
+    llvm::Function *function = llvm::cast<llvm::Function>(procedure);
+
+    // set the calling convention of our procedure to that of a C program
+    function->setCallingConv(llvm::CallingConv::C);
+
+    // now that function has been created, update and reinsert symbol
+    procedure_symbol.SetLLVMFunction(function);
+
+
+    // create values for arguments and update their symbol table entries
+    llvm::Function::arg_iterator args = function->arg_begin();
+    for (Symbol symbol : procedure_symbol.GetParams()) {
+      if (args == function->arg_end()) {
+        // this shouldn't happen, because the args were generated from this
+        // same vector, but play it safe
+        EmitError("Error generating IR for arguments.",
+            scanner_.PeekNextLexeme());
+        return;
+      }
+
+      // create value from arg
+      llvm::Value *val = &*args++;
+
+      // update symbol and reinsert it into the symbol table
+      symbol.SetLLVMValue(val);
+      symbol_table_.InsertSymbol(symbol);
+    }
+  }
   
   // commit the symbol to the symbol table so that the body can reference itself
   symbol_table_.InsertSymbol(procedure_symbol);
@@ -1786,6 +1819,10 @@ Symbol Parser::ParseReference() {
       return symbol;
     }
 
+    // copy symbol and make an anonymous symbol for outgoing result of call
+    Symbol procedure_symbol = symbol;
+    symbol = Symbol::GenerateAnonymousSymbol();
+
     // optionally ParseArgumentList
     // need to peek next token and see if it's in the (quite large) first set
     // for argument_list. See docs for derivation of first set 
@@ -1797,7 +1834,33 @@ Symbol Parser::ParseReference() {
         lexeme.token == T_FALSE) {
       // it is an argument!
       // Parameter list needs checked 
-      ParseArgumentList(symbol.GetParams().begin(), symbol.GetParams().end());
+      std::vector<llvm::Value *> args = ParseArgumentList(
+          procedure_symbol.GetParams().begin(), 
+          procedure_symbol.GetParams().end());
+      // argument list length is asserted to be correct in ParseArgumentList
+      if (codegen_) {
+        // make argument call with args
+        llvm::Value *val = llvm_builder_->CreateCall(
+            procedure_symbol.GetLLVMFunction(),
+            args);
+        // update outgoing symbol
+        symbol.SetLLVMValue(val);
+      }
+    } else {
+      // since ParseArgumentList doesn't assert the correct number of args,
+      // assert that there are 0 args before calling function with no args
+      if (procedure_symbol.GetParams().size() != 0) {
+        EmitError("Missing arguments to procedure call.", lexeme);
+        symbol.SetIsValid(false);
+        return symbol;
+      }
+      if (codegen_) {
+        // make argument call without args
+        llvm::Value *val = llvm_builder_->CreateCall(
+            procedure_symbol.GetLLVMFunction());
+        // update outgoing symbol
+        symbol.SetLLVMValue(val);
+      }
     }
 
     lexeme = scanner_.GetNextLexeme();
@@ -1806,7 +1869,7 @@ Symbol Parser::ParseReference() {
       symbol.SetIsValid(false);
       return symbol;
     }
-  } else  {
+  } else {
     // it's a name. Could be indexed. Must be variable
     if (symbol.GetDeclaration() != DECLARATION_VARIABLE) {
       EmitError("Reference to name must be a variable type.", lexeme);

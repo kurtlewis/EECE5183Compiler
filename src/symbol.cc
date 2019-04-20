@@ -19,7 +19,8 @@ Symbol::Symbol()
     array_bound_(0),
     params_(),
     valid_(true),
-    llvm_value_(nullptr) {
+    llvm_value_(nullptr), 
+    llvm_function_(nullptr) {
  
 }
 
@@ -46,6 +47,8 @@ void Symbol::PrintSymbolDebug() {
   std::cout << "  Bound: " << array_bound_ << std::endl;
   std::cout << "  Param count: " << params_.size() << std::endl;
   std::cout << "  Valid: " << valid_ << std::endl;
+  std::cout << "  llvm::Value*: " << llvm_value_ << std::endl;
+  std::cout << "  llvm::Function*: " << llvm_function_ << std::endl;
   std::cout << std::endl;
 }
 
@@ -145,5 +148,13 @@ void Symbol::SetLLVMValue(llvm::Value *value) {
 
 llvm::Value *Symbol::GetLLVMValue() {
   return llvm_value_;
+}
+
+void Symbol::SetLLVMFunction(llvm::Function *function) {
+  llvm_function_ = function;
+}
+
+llvm::Function *Symbol::GetLLVMFunction() {
+  return llvm_function_;
 }
 } // namespace kjlc
