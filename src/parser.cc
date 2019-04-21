@@ -1944,12 +1944,11 @@ Symbol Parser::ParseReference() {
     }
 
     if (codegen_) {
-      // TODO:codegen - re-enable this once codegen is further along
-      //if (symbol.GetLLVMValue() == nullptr) {
-      //  EmitError("Attempt to use variable before it's initialized.", lexeme);
-      //  symbol.SetIsValid(false);
-      //  return symbol;
-      //}
+      if (symbol.GetLLVMValue() == nullptr) {
+        EmitError("Attempt to use variable before it's initialized.", lexeme);
+        symbol.SetIsValid(false);
+        return symbol;
+      }
     }
   }
 
