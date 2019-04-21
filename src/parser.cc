@@ -924,15 +924,67 @@ void Parser::ParseAssignmentStatement() {
         expression.GetType() == TYPE_INT) {
       mismatch = false;
       EmitWarning("Coercing int to bool.", lexeme);
+      if (codegen_) {
+        // Cast expresssion from int to bool
+        // llvm doesn't have native support for this as far as I can tell, 
+        // but we can do a comparison from true to false and use the select
+        // instruction to pick the appropriate value
+        // create an int = 0 to compare to
+        llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
+          GetRespectiveLLVMType(TYPE_INT),
+          llvm::APInt(32, 0, true));
+
+        // compare value to zero to see if it will be true
+        llvm::Value *comparison = llvm_builder_->CreateICmpEQ(
+            expression.GetLLVMValue(),
+            zero_32b);
+
+        // create some constant options for select statement
+        llvm::Value *true_1b = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_BOOL),
+            llvm::APInt(1, 1, true));
+        llvm::Value *false_1b = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_BOOL),
+            llvm::APInt(1, 0, true));
+
+        // do actual select statement
+        // if expression = 0, use false, otherwise use true per language
+        // semantics
+        llvm::Value *val = llvm_builder_->CreateSelect(comparison, false_1b,
+                                                       true_1b);
+        
+        // update expression
+        expression.SetLLVMValue(val);
+      }
     }
 
     if (destination.GetType() == TYPE_INT) {
       if (expression.GetType() == TYPE_BOOL) {
         mismatch = false;
         EmitWarning("Coercing bool to int.", lexeme); 
+
+        if (codegen_) {
+          // convert expression from bool to int
+          llvm::Value *val = llvm_builder_->CreateZExtOrTrunc(
+              expression.GetLLVMValue(),
+              GetRespectiveLLVMType(TYPE_INT));
+
+          // update expression
+          expression.SetLLVMValue(val);
+        }
       } else if (expression.GetType() == TYPE_FLOAT) {
         mismatch = false;
         EmitWarning("Coercing float to int.", lexeme);
+
+        if (codegen_) {
+          // convert expression from float to int
+          llvm::Value *val = llvm_builder_->CreateFPToSI(
+              expression.GetLLVMValue(),
+              GetRespectiveLLVMType(TYPE_INT));
+
+          // update the expression
+          expression.SetLLVMValue(val);
+        }
       }
     }
 
@@ -940,6 +992,16 @@ void Parser::ParseAssignmentStatement() {
         expression.GetType() == TYPE_INT) {
       mismatch = false;
       EmitWarning("Coercing int to float.", lexeme);
+
+      if (codegen_) {
+        // extend the int to a float
+        llvm::Value *val = llvm_builder_->CreateSIToFP(
+            expression.GetLLVMValue(),
+            GetRespectiveLLVMType(TYPE_FLOAT));
+
+        // update the expression
+        expression.SetLLVMValue(val);
+      }
     }
 
     // couldn't recover from mismatch via interoperability
@@ -953,9 +1015,6 @@ void Parser::ParseAssignmentStatement() {
   }
 
   if (codegen_) {
-    // TODO:codegen - this is incomplete, I have no type checking
-    // we know what the destination is, update the symbol value to be
-    // the expression value
     // TODO:codegen this doesn't consider arrays
     destination.SetLLVMValue(expression.GetLLVMValue());
 
