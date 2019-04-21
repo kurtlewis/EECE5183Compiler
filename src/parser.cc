@@ -1277,6 +1277,32 @@ Symbol Parser::ParseFactor(Symbol type_context) {
       symbol.SetIsValid(false);
       return symbol;
     }
+
+    // this number/reference was prefaced by the '-' operator, multiply it by
+    // -1 to make it negative
+    if (symbol.GetType() == TYPE_INT) {
+      if (codegen_) {
+        // make the int negative
+        llvm::Value *val = llvm_builder_->CreateNeg(symbol.GetLLVMValue());
+
+        // update the outgoing symbol
+        symbol.SetLLVMValue(val);
+      }
+    } else if (symbol.GetType() == TYPE_FLOAT) {
+      if (codegen_) {
+        // make the float negative
+        llvm::Value *val = llvm_builder_->CreateFNeg(symbol.GetLLVMValue());
+
+        // update the outgoing symbol
+        symbol.SetLLVMValue(val);
+      }
+    } else {
+        // this is an error because the '-' operator is only defined for
+        // floats and ints
+        EmitExpectedTypeError("integer or float",
+                              Symbol::GetTypeString(symbol),
+                              lexeme);
+    }
   } else if (lexeme.token == T_INT_LITERAL || lexeme.token == T_FLOAT_LITERAL) {
     // number
     symbol = ParseNumber();
