@@ -1527,6 +1527,36 @@ void Parser::ParseLoopStatement() {
     return;
   }
 
+  llvm::BasicBlock *loop_header_block = nullptr; // loop condition
+  llvm::BasicBlock *loop_body_block = nullptr; // loop statements
+  llvm::BasicBlock *loop_end_block = nullptr; // block after loop
+  if (codegen_) {
+    // beggining loop - a couple of things that need to happen
+    // create a new block for the loop - everything here to the end goes in it
+    loop_header_block = llvm::BasicBlock::Create(
+        llvm_context_,
+        "", // doesn't need a name
+        llvm_current_procedure_);
+
+    // create a place for the body of the loop
+    loop_body_block = llvm::BasicBlock::Create(
+        llvm_context_,
+        "", // doesn't need a name
+        llvm_current_procedure_);
+
+    // create an eventual exit place for the loop
+    loop_end_block = llvm::BasicBlock::Create(
+        llvm_context_,
+        "", // doesn't need a name again
+        llvm_current_procedure_);
+
+    // unconditionally jump to the loop header block
+    llvm_builder_->CreateBr(loop_header_block);
+
+    // update builder to insert into loop header block 
+    llvm_builder_->SetInsertPoint(loop_header_block);
+  }
+
   // Expected type is a boolean
   Symbol context = Symbol::GenerateAnonymousSymbol();
   context.SetType(TYPE_BOOL);
@@ -1538,6 +1568,11 @@ void Parser::ParseLoopStatement() {
     EmitWarning("Expression in loop evaluates to integer. "
                 "Will be cast to bool.",
                 lexeme);
+    if (codegen_) {
+      // cast the int expression to a bool
+      llvm::Value *val = ConvertLLVMIntegerToBoolean(expression.GetLLVMValue());
+      expression.SetLLVMValue(val);
+    }
   } else if (expression.GetType() != TYPE_BOOL) {
     EmitError("Expression on loop must evaluate to bool or int.", lexeme);
     return;
@@ -1547,6 +1582,16 @@ void Parser::ParseLoopStatement() {
   if (lexeme.token != T_PAREN_RIGHT) {
     EmitExpectedTokenError(")", lexeme);
     return;
+  }
+
+  if (codegen_) {
+    // conditionally jump based on the expression to either the loop body
+    // or the end of the loop
+    llvm_builder_->CreateCondBr(expression.GetLLVMValue(), loop_body_block,
+                                loop_end_block);
+
+    // now update the insert point to the body block for the statements
+    llvm_builder_->SetInsertPoint(loop_body_block);
   }
 
   // Loop statements until the end token is found
@@ -1565,6 +1610,16 @@ void Parser::ParseLoopStatement() {
   if (lexeme.token != T_FOR) {
     EmitExpectedTokenError("for", lexeme);
     return;
+  }
+
+  if (codegen_) {
+    // leaving the for loop - need to unconditionally jump the loop header
+    // block to see if another go around of the loop is the move
+    llvm_builder_->CreateBr(loop_header_block);
+
+    // but, for the purposes of codegen, we're done with this loop.
+    // Set the insertion point to the block after the for loop
+    llvm_builder_->SetInsertPoint(loop_end_block);
   }
 }
 
