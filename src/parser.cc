@@ -632,19 +632,7 @@ Symbol Parser::ParseArithOpTail(Symbol type_context) {
 void Parser::ParseBound(Symbol &symbol) {
   DebugPrint("Bound");
 
-  bool negative = false;
-  // peek for '-'
-  Lexeme lexeme = scanner_.PeekNextLexeme();
-  if (lexeme.token == T_MINUS) {
-    // consume the dash 
-    lexeme = scanner_.GetNextLexeme();
-    negative = true;
-  }
-
   int bound = ParseNumberInteger();
-  if (negative) {
-    bound = bound * -1;
-  }
   symbol.SetArrayBound(bound);
 }
 
