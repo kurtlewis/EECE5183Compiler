@@ -1086,15 +1086,6 @@ Symbol Parser::ParseArithOpTail(Symbol type_context) {
 void Parser::ParseBound(Symbol &symbol) {
   DebugPrint("Bound");
 
-  bool negative = false;
-  // peek for '-'
-  Lexeme lexeme = scanner_.PeekNextLexeme();
-  if (lexeme.token == T_MINUS) {
-    // consume the dash 
-    lexeme = scanner_.GetNextLexeme();
-    negative = true;
-  }
-
   lexeme = scanner_.PeekNextLexeme();
   // next lexeme must be an integer - floats are not allowed
   if (lexeme.token != T_INT_LITERAL) {
@@ -1107,9 +1098,6 @@ void Parser::ParseBound(Symbol &symbol) {
   // safe because it was checked to be int
   int bound_value = lexeme.int_value;
 
-  if (negative) {
-    bound_value = bound_value * -1;
-  }
   symbol.SetArrayBound(bound_value);
 }
 
