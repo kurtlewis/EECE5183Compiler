@@ -1086,7 +1086,7 @@ Symbol Parser::ParseArithOpTail(Symbol type_context) {
 void Parser::ParseBound(Symbol &symbol) {
   DebugPrint("Bound");
 
-  lexeme = scanner_.PeekNextLexeme();
+  Lexeme lexeme = scanner_.PeekNextLexeme();
   // next lexeme must be an integer - floats are not allowed
   if (lexeme.token != T_INT_LITERAL) {
     EmitExpectedTokenError("int literal", lexeme);
