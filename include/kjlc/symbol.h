@@ -75,12 +75,18 @@ class Symbol {
     bool IsValid();
     void SetIsValid(bool valid);
 
+    bool HasBeenInitialized();
+    void SetHasBeenInitialized(bool initialized);
+
     // LLVM Mutators
     void SetLLVMValue(llvm::Value *value);
     llvm::Value *GetLLVMValue();
 
     void SetLLVMFunction(llvm::Function *function);
     llvm::Function *GetLLVMFunction();
+
+    void SetLLVMAddress(llvm::Value *address_ptr);
+    llvm::Value *GetLLVMAddress();
 
   private:
     // identifier for the symbol
@@ -114,10 +120,14 @@ class Symbol {
     // example invalid symbol: lookup failed
     bool valid_;
 
+    // denotes that this variable has been assigned to
+    bool has_been_initialized_;
+
     //
     // llvm variables
     //
     llvm::Value *llvm_value_;
+    llvm::Value *llvm_address_;
     llvm::Function *llvm_function_;
 };
 } // end namespace kjlc

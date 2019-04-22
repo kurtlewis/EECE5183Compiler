@@ -51,6 +51,10 @@ class SymbolTable {
     // invalid symbol
     Symbol FindSymbolByIdentifier(std::string id);
 
+    std::map<std::string, Symbol>::iterator GetLocalScopeIteratorBegin();
+
+    std::map<std::string, Symbol>::iterator GetLocalScopeIteratorEnd();
+
 
   private:
     // a stack of scope for local scope

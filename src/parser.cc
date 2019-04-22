@@ -1016,11 +1016,19 @@ void Parser::ParseAssignmentStatement() {
 
   if (codegen_) {
     // TODO:codegen this doesn't consider arrays
+    
+    // store the expression value in the address of the destination
+    llvm_builder_->CreateStore(expression.GetLLVMValue(),
+                               destination.GetLLVMAddress());
     destination.SetLLVMValue(expression.GetLLVMValue());
 
     // update the symbol table entry for the destination
     symbol_table_.InsertSymbol(destination);
   }
+   
+  // destination has been written to, to mark that and update it in symbol table
+  destination.SetHasBeenInitialized(true);
+  symbol_table_.InsertSymbol(destination);
 }
 
 // this is a left recursive rule that has been modified to be right recursive
@@ -1653,6 +1661,55 @@ void Parser::ParseProcedureBody() {
 
     llvm_builder_->SetInsertPoint(procedure_entrypoint);
 
+    // create stores for all variables in the local scope so they
+    // are ready to use
+    for (std::map<std::string, Symbol>::iterator
+        it = symbol_table_.GetLocalScopeIteratorBegin();
+        it != symbol_table_.GetLocalScopeIteratorEnd();
+        ++it) {
+      // first it must be a variable declaration
+      if (it->second.GetDeclaration() != DECLARATION_VARIABLE) {
+        continue;
+      }
+
+      // allocate a place for it and update the symbol
+      llvm::Value *address = llvm_builder_->CreateAlloca(
+          GetRespectiveLLVMType(it->second.GetType()));
+
+      it->second.SetLLVMAddress(address);
+
+      // it is safe to update the same key we are iterating over the map 
+      symbol_table_.InsertSymbol(it->second);
+    }
+    
+    // create values for arguments and update their symbol table entries
+    llvm::Function::arg_iterator args = llvm_current_procedure_->arg_begin();
+    for (Symbol symbol : procedure_symbol.GetParams()) {
+      if (args == llvm_current_procedure_->arg_end()) {
+        // this shouldn't happen, because the args were generated from this
+        // same vector, but play it safe
+        EmitError("Error generating IR for arguments.",
+            scanner_.PeekNextLexeme());
+        return;
+      }
+
+      // create value from arg
+      llvm::Value *val = &*args++;
+
+      // need to store this value into the store for the symbol
+      // problem is, the symbol the parameter list represents is out of date
+      // C++ is stupid (READ, I AM STUPID). TODO: rearchitect for heap symbols?
+      // a poor craftsman blames his tools
+      Symbol actual_symbol = symbol_table_.FindSymbolByIdentifier(
+          symbol.GetId());
+
+      // update symbol store and reinsert it into the symbol table 
+      actual_symbol.SetLLVMValue(val);
+      actual_symbol.SetHasBeenInitialized(true);
+      // store that value into the symbol's address
+      llvm_builder_->CreateStore(val, actual_symbol.GetLLVMAddress());
+      symbol_table_.InsertSymbol(actual_symbol);
+    }
   }
 
   // Parse the 'begin'
@@ -1742,26 +1799,7 @@ void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
 
     // now that function has been created, update and reinsert symbol
     procedure_symbol.SetLLVMFunction(function);
-
-
-    // create values for arguments and update their symbol table entries
-    llvm::Function::arg_iterator args = function->arg_begin();
-    for (Symbol symbol : procedure_symbol.GetParams()) {
-      if (args == function->arg_end()) {
-        // this shouldn't happen, because the args were generated from this
-        // same vector, but play it safe
-        EmitError("Error generating IR for arguments.",
-            scanner_.PeekNextLexeme());
-        return;
-      }
-
-      // create value from arg
-      llvm::Value *val = &*args++;
-
-      // update symbol and reinsert it into the symbol table
-      symbol.SetLLVMValue(val);
-      symbol_table_.InsertSymbol(symbol);
-    }
+    
   }
   
   // commit the symbol to the symbol table so that the body can reference itself
@@ -1874,6 +1912,27 @@ void Parser::ParseProgramBody() {
         llvm_current_procedure_); // parent function
 
     llvm_builder_->SetInsertPoint(procedure_entrypoint);
+
+    // create stores for all variables in the local scope so they
+    // are ready to use
+    for (std::map<std::string, Symbol>::iterator
+        it = symbol_table_.GetLocalScopeIteratorBegin();
+        it != symbol_table_.GetLocalScopeIteratorEnd();
+        ++it) {
+      // first it must be a variable declaration
+      if (it->second.GetDeclaration() != DECLARATION_VARIABLE) {
+        continue;
+      }
+
+      // allocate a place for it and update the symbol
+      llvm::Value *address = llvm_builder_->CreateAlloca(
+          GetRespectiveLLVMType(it->second.GetType()));
+
+      it->second.SetLLVMAddress(address);
+
+      // it is safe to update the same key we are iterating over the map 
+      symbol_table_.InsertSymbol(it->second);
+    }
   }
 
   // parse statements until end is found
@@ -2050,11 +2109,22 @@ Symbol Parser::ParseReference() {
     }
 
     if (codegen_) {
-      if (symbol.GetLLVMValue() == nullptr) {
+      // ensure there is a value to get
+      if (symbol.HasBeenInitialized() == false) {
         EmitError("Attempt to use variable before it's initialized.", lexeme);
         symbol.SetIsValid(false);
         return symbol;
       }
+      
+      // load the value out of the store and prepare to update the outgoing
+      // symbol
+      llvm::Value *val = llvm_builder_->CreateLoad(
+          GetRespectiveLLVMType(symbol.GetType()),
+          symbol.GetLLVMAddress());
+      
+      // update outgoing symbol
+      symbol.SetLLVMValue(val);
+
     }
   }
 

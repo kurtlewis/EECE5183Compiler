@@ -98,6 +98,17 @@ Symbol SymbolTable::FindSymbolByIdentifier(std::string id) {
   return symbol;
 }
 
+std::map<std::string, Symbol>::iterator
+    SymbolTable::GetLocalScopeIteratorBegin() {
+  return local_scope_stack_.back().begin();
+}
+
+std::map<std::string, Symbol>::iterator
+    SymbolTable::GetLocalScopeIteratorEnd() {
+  return local_scope_stack_.back().end();
+}
+
+
 void SymbolTable::InsertBuiltInsIntoGlobalScope() {
   //
   // Runtime functions

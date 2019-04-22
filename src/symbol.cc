@@ -19,7 +19,9 @@ Symbol::Symbol()
     array_bound_(0),
     params_(),
     valid_(true),
+    has_been_initialized_(false),
     llvm_value_(nullptr), 
+    llvm_address_(nullptr),
     llvm_function_(nullptr) {
  
 }
@@ -142,6 +144,14 @@ void Symbol::SetIsValid(bool valid) {
   valid_ = valid;
 }
 
+bool Symbol::HasBeenInitialized() {
+  return has_been_initialized_;
+}
+
+void Symbol::SetHasBeenInitialized(bool initialized) {
+  has_been_initialized_ = initialized;
+}
+
 void Symbol::SetLLVMValue(llvm::Value *value) {
   llvm_value_ = value;
 }
@@ -156,5 +166,13 @@ void Symbol::SetLLVMFunction(llvm::Function *function) {
 
 llvm::Function *Symbol::GetLLVMFunction() {
   return llvm_function_;
+}
+
+void Symbol::SetLLVMAddress(llvm::Value *address) {
+  llvm_address_ = address;
+}
+
+llvm::Value *Symbol::GetLLVMAddress() {
+  return llvm_address_;
 }
 } // namespace kjlc
