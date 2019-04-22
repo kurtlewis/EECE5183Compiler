@@ -181,6 +181,10 @@ class Parser {
 
     llvm::Type* GetRespectiveLLVMType(Type type);
 
+    // converts a llvm integer value to an llvm boolean value
+    // following the language semantic rules for conversion
+    llvm::Value *ConvertLLVMIntegerToBoolean(llvm::Value *incoming_val);
+
     //
     // Parse rules functions
     //

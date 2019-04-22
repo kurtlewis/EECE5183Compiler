@@ -831,6 +831,38 @@ llvm::Type *Parser::GetRespectiveLLVMType(Type type) {
   }
 }
 
+llvm::Value *Parser::ConvertLLVMIntegerToBoolean(llvm::Value *incoming_val) {
+  // Cast expresssion from int to bool
+  // llvm doesn't have native support for this as far as I can tell, 
+  // but we can do a comparison from true to false and use the select
+  // instruction to pick the appropriate value
+  // create an int = 0 to compare to
+  llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
+    GetRespectiveLLVMType(TYPE_INT),
+    llvm::APInt(32, 0, true));
+
+  // compare value to zero to see if it will be true
+  llvm::Value *comparison = llvm_builder_->CreateICmpEQ(
+      incoming_val,
+      zero_32b);
+
+  // create some constant options for select statement
+  llvm::Value *true_1b = llvm::ConstantInt::getIntegerValue(
+      GetRespectiveLLVMType(TYPE_BOOL),
+      llvm::APInt(1, 1, true));
+  llvm::Value *false_1b = llvm::ConstantInt::getIntegerValue(
+      GetRespectiveLLVMType(TYPE_BOOL),
+      llvm::APInt(1, 0, true));
+
+  // do actual select statement
+  // if expression = 0, use false, otherwise use true per language
+  // semantics
+  llvm::Value *outgoing_val = llvm_builder_->CreateSelect(comparison, false_1b,
+                                                          true_1b);
+
+  return outgoing_val;
+}
+
 // this rule is defined recursively, but it makes more sense to use
 // iteratively
 std::vector<llvm::Value *> Parser::ParseArgumentList(
@@ -925,35 +957,9 @@ void Parser::ParseAssignmentStatement() {
       mismatch = false;
       EmitWarning("Coercing int to bool.", lexeme);
       if (codegen_) {
-        // Cast expresssion from int to bool
-        // llvm doesn't have native support for this as far as I can tell, 
-        // but we can do a comparison from true to false and use the select
-        // instruction to pick the appropriate value
-        // create an int = 0 to compare to
-        llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
-          GetRespectiveLLVMType(TYPE_INT),
-          llvm::APInt(32, 0, true));
-
-        // compare value to zero to see if it will be true
-        llvm::Value *comparison = llvm_builder_->CreateICmpEQ(
-            expression.GetLLVMValue(),
-            zero_32b);
-
-        // create some constant options for select statement
-        llvm::Value *true_1b = llvm::ConstantInt::getIntegerValue(
-            GetRespectiveLLVMType(TYPE_BOOL),
-            llvm::APInt(1, 1, true));
-        llvm::Value *false_1b = llvm::ConstantInt::getIntegerValue(
-            GetRespectiveLLVMType(TYPE_BOOL),
-            llvm::APInt(1, 0, true));
-
-        // do actual select statement
-        // if expression = 0, use false, otherwise use true per language
-        // semantics
-        llvm::Value *val = llvm_builder_->CreateSelect(comparison, false_1b,
-                                                       true_1b);
-        
         // update expression
+        llvm::Value *val =
+            ConvertLLVMIntegerToBoolean(expression.GetLLVMValue());
         expression.SetLLVMValue(val);
       }
     }
@@ -1390,27 +1396,7 @@ void Parser::ParseIfStatement() {
                 "Will be cast to bool.", lexeme);
     if (codegen_) {
       // convert it from a int to a bool and restore the value in expression
-      // This logic is duplicated from elsewhere, but create a comparison
-      // between 0 with the expression and then use a select statement to
-      // determine if it's true or false
-      llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
-          GetRespectiveLLVMType(TYPE_INT),
-          llvm::APInt(32, 0, true));
-
-      llvm::Value *comparison = llvm_builder_->CreateICmpEQ(
-          expression.GetLLVMValue(),
-          zero_32b);
-
-      // create some constant options for select statement
-      llvm::Value *true_1b = llvm::ConstantInt::getIntegerValue(
-          GetRespectiveLLVMType(TYPE_BOOL),
-          llvm::APInt(1, 1, true));
-      llvm::Value *false_1b = llvm::ConstantInt::getIntegerValue(
-          GetRespectiveLLVMType(TYPE_BOOL),
-          llvm::APInt(1, 0, true));
-
-      llvm::Value *val = llvm_builder_->CreateSelect(comparison, false_1b,
-                                                     true_1b);
+      llvm::Value *val = ConvertLLVMIntegerToBoolean(expression.GetLLVMValue());
 
       // update expression
       expression.SetLLVMValue(val);
