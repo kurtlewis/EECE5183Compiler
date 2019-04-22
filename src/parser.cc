@@ -1380,6 +1380,33 @@ void Parser::ParseIfStatement() {
   if (expression.GetType() == TYPE_INT) {
     EmitWarning("If statement conditional evaluates to integer. "
                 "Will be cast to bool.", lexeme);
+    if (codegen_) {
+      // convert it from a int to a bool and restore the value in expression
+      // This logic is duplicated from elsewhere, but create a comparison
+      // between 0 with the expression and then use a select statement to
+      // determine if it's true or false
+      llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
+          GetRespectiveLLVMType(TYPE_INT),
+          llvm::APInt(32, 0, true));
+
+      llvm::Value *comparison = llvm_builder_->CreateICmpEQ(
+          expression.GetLLVMValue(),
+          zero_32b);
+
+      // create some constant options for select statement
+      llvm::Value *true_1b = llvm::ConstantInt::getIntegerValue(
+          GetRespectiveLLVMType(TYPE_BOOL),
+          llvm::APInt(1, 1, true));
+      llvm::Value *false_1b = llvm::ConstantInt::getIntegerValue(
+          GetRespectiveLLVMType(TYPE_BOOL),
+          llvm::APInt(1, 0, true));
+
+      llvm::Value *val = llvm_builder_->CreateSelect(comparison, false_1b,
+                                                     true_1b);
+
+      // update expression
+      expression.SetLLVMValue(val);
+    }
   } else if (expression.GetType() != TYPE_BOOL) {
     EmitError("If statement conditional must evaluate to bool or int.", lexeme);
     return;
@@ -1397,6 +1424,29 @@ void Parser::ParseIfStatement() {
     return;
   }
 
+  llvm::BasicBlock *true_block = nullptr;
+  llvm::BasicBlock *false_block = nullptr;
+  llvm::BasicBlock *end_block = nullptr;
+  if (codegen_) {
+    // create blocks and conditional jump
+    true_block = llvm::BasicBlock::Create(
+        llvm_context_,
+        "", // don't bother naming block
+        llvm_current_procedure_);
+    false_block = llvm::BasicBlock::Create(
+        llvm_context_,
+        "", // don't bother naming block
+        llvm_current_procedure_);
+
+    // do a conditional jump based on if statement
+    llvm_builder_->CreateCondBr(expression.GetLLVMValue(), true_block,
+                                false_block);
+
+    // set the new builder insert point to the true block
+    llvm_builder_->SetInsertPoint(true_block);
+    // now these statements will be inserted into the true block
+  }
+
   // Loop statements until one of the end tokens is found
   Token end_tokens[] = {T_ELSE, T_END};
   int tokens_length = 2;
@@ -1405,6 +1455,22 @@ void Parser::ParseIfStatement() {
   // the last lexeme was only peeked, read it now
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token == T_ELSE) {
+
+    if (codegen_) {
+      // there is an else statement
+
+      // start with an unconditional jump to a new block which is what comes
+      // after the else since we're wrapping up the true block now
+      end_block = llvm::BasicBlock::Create(
+          llvm_context_,
+          "", // again, don't need to name
+          llvm_current_procedure_);
+           
+      llvm_builder_->CreateBr(end_block);
+
+      // now update insertion point to false_block
+      llvm_builder_->SetInsertPoint(false_block);
+    }
 
     // Loop statements until the end token is found
     Token else_end_tokens[] = {T_END};
@@ -1427,6 +1493,20 @@ void Parser::ParseIfStatement() {
   if (lexeme.token != T_IF) {
     EmitExpectedTokenError("if", lexeme);
     return;
+  }
+
+  if (codegen_) {
+    // if block is over. If there was no else, just use the false block to
+    // continue. If there was an else, use the end block
+    if (end_block == nullptr) {
+      // need to jump from true block to false block
+      llvm_builder_->CreateBr(false_block);
+      llvm_builder_->SetInsertPoint(false_block);
+    } else {
+      // need to jump from false block to end block
+      llvm_builder_->CreateBr(end_block);
+      llvm_builder_->SetInsertPoint(end_block);
+    }
   }
 }
 
