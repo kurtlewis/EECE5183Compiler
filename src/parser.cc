@@ -346,6 +346,7 @@ void Parser::ParseIndex(Symbol identifier) {
   Symbol bound = ParseExpression(context);
     
   // Type checking
+  bound = DoAssignmentTypeCheckingAndConversionCodegen(context, bound, lexeme);
 
   // an index must be an integer
   if (bound.GetType() != TYPE_INT) {
@@ -367,6 +368,29 @@ void Parser::ParseIndex(Symbol identifier) {
   if (lexeme.token != T_BRACK_RIGHT) {
     EmitExpectedTokenError("]", lexeme);
     return;
+  }
+
+  if (codegen_) {
+    // start off with checks to ensure the index is in bounds
+    // compare to make sure >= 0
+    llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
+        GetRespectiveLLVMType(TYPE_INT),
+        llvm::APInt(32, 0, true));
+
+    llvm::Value *greater_than_zero = llvm_builder_->CreateICmpSGE(
+        bound.GetLLVMValue(),
+        zero_32b);
+
+    llvm::Value *less_than_bound = llvm_builder_->CreateICmpSLT(
+        bound.GetLLVMValue(),
+        identifier.GetLLVMBound());
+
+    llvm::Value *correct_bound = llvm_builder_->CreateAnd(
+        greater_than_zero,
+        less_than_bound);
+
+    // TODO:codegen do something to error out if correct_bound is false
+    
   }
 }
 
@@ -820,6 +844,7 @@ Symbol Parser::DoAssignmentTypeCheckingAndConversionCodegen(Symbol destination,
     if (destination.GetType() == TYPE_BOOL &&
         expression.GetType() == TYPE_INT) {
       mismatch = false;
+      expression.SetType(TYPE_BOOL);
       EmitWarning("Coercing int to bool.", location);
       if (codegen_) {
         // update expression
@@ -831,9 +856,9 @@ Symbol Parser::DoAssignmentTypeCheckingAndConversionCodegen(Symbol destination,
 
     if (destination.GetType() == TYPE_INT) {
       if (expression.GetType() == TYPE_BOOL) {
+        expression.SetType(TYPE_INT);
         mismatch = false;
         EmitWarning("Coercing bool to int.", location); 
-
         if (codegen_) {
           // convert expression from bool to int
           llvm::Value *val = llvm_builder_->CreateZExtOrTrunc(
@@ -844,9 +869,9 @@ Symbol Parser::DoAssignmentTypeCheckingAndConversionCodegen(Symbol destination,
           expression.SetLLVMValue(val);
         }
       } else if (expression.GetType() == TYPE_FLOAT) {
+        expression.SetType(TYPE_INT);
         mismatch = false;
         EmitWarning("Coercing float to int.", location);
-
         if (codegen_) {
           // convert expression from float to int
           llvm::Value *val = llvm_builder_->CreateFPToSI(
@@ -863,6 +888,7 @@ Symbol Parser::DoAssignmentTypeCheckingAndConversionCodegen(Symbol destination,
         expression.GetType() == TYPE_INT) {
       mismatch = false;
       EmitWarning("Coercing int to float.", location);
+      expression.SetType(TYPE_FLOAT);
 
       if (codegen_) {
         // extend the int to a float
