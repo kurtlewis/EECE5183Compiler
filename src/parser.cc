@@ -1719,8 +1719,23 @@ void Parser::ParseProcedureBody() {
       }
 
       // allocate a place for it and update the symbol
-      llvm::Value *address = llvm_builder_->CreateAlloca(
-          GetRespectiveLLVMType(it->second.GetType()));
+      llvm::Value *address = nullptr;
+      if (it->second.IsArray()) {
+        // create a value for the bound
+        llvm::Value *bound = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm::APInt(32, it->second.GetArrayBound(), true));
+
+        it->second.SetLLVMBound(bound);
+        
+        // allocate array
+        address = llvm_builder_->CreateAlloca(
+            GetRespectiveLLVMType(it->second.GetType()),
+            bound);
+      } else {
+        address = llvm_builder_->CreateAlloca(
+            GetRespectiveLLVMType(it->second.GetType()));
+      }
 
       it->second.SetLLVMAddress(address);
 
@@ -1971,8 +1986,23 @@ void Parser::ParseProgramBody() {
       }
 
       // allocate a place for it and update the symbol
-      llvm::Value *address = llvm_builder_->CreateAlloca(
-          GetRespectiveLLVMType(it->second.GetType()));
+      llvm::Value *address = nullptr;
+      if (it->second.IsArray()) {
+        // create a value for the bound
+        llvm::Value *bound = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm::APInt(32, it->second.GetArrayBound(), true));
+
+        it->second.SetLLVMBound(bound);
+        
+        // allocate array
+        address = llvm_builder_->CreateAlloca(
+            GetRespectiveLLVMType(it->second.GetType()),
+            bound);
+      } else {
+        address = llvm_builder_->CreateAlloca(
+            GetRespectiveLLVMType(it->second.GetType()));
+      }
 
       it->second.SetLLVMAddress(address);
 
@@ -2513,6 +2543,7 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
   if (codegen_) {
     // if it's a global variable, create it in llvm land
     if (variable_symbol.IsGlobal()) {
+      // TODO:codegen does this support global arrays?
       llvm::Value *val = llvm_module_->getOrInsertGlobal(
           variable_symbol.GetId(),
           GetRespectiveLLVMType(variable_symbol.GetType()));

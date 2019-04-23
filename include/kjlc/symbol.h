@@ -88,6 +88,9 @@ class Symbol {
     void SetLLVMAddress(llvm::Value *address_ptr);
     llvm::Value *GetLLVMAddress();
 
+    void SetLLVMBound(llvm::Value *bound);
+    llvm::Value *GetLLVMBound();
+
   private:
     // identifier for the symbol
     std::string id_;
@@ -129,6 +132,7 @@ class Symbol {
     llvm::Value *llvm_value_;
     llvm::Value *llvm_address_;
     llvm::Function *llvm_function_;
+    llvm::Value *llvm_bound_;
 };
 } // end namespace kjlc
 #endif // EECE5183COMPILER_KJLC_SYMBOL_H
