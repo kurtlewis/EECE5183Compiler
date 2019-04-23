@@ -47,7 +47,9 @@ Parser::~Parser() {
     delete llvm_builder_;
   }
   if (llvm_current_procedure_ != nullptr) {
-    delete llvm_current_procedure_;
+    // TODO:codegen - who owns this pointer? Stop deleting for now.
+    // eventually need to do a memory leak test
+    //delete llvm_current_procedure_;
   }
   if (llvm_module_ != nullptr) {
     delete llvm_module_;
