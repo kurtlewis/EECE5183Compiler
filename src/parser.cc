@@ -74,6 +74,8 @@ void Parser::BuildProgram() {
     return;
   }
 
+  //llvm_module_->print(llvm::outs(), nullptr);
+
   // check the generated module for errors
   bool broken = llvm::verifyModule(*llvm_module_, &llvm::errs());
   
@@ -332,42 +334,47 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
   }
 }
 
-void Parser::ParseIndex(Symbol identifier) {
+Symbol Parser::ParseIndex(Symbol identifier) {
   // Check for open bracket consume token
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_BRACK_LEFT) {
     EmitExpectedTokenError("[", lexeme);
-    return;
+    Symbol symbol = Symbol::GenerateAnonymousSymbol();
+    symbol.SetIsValid(false);
+    return symbol;
   }
 
   // a bound will evaluate to an integer
   Symbol context = Symbol::GenerateAnonymousSymbol();
   context.SetType(TYPE_INT);
-  Symbol bound = ParseExpression(context);
+  Symbol index = ParseExpression(context);
     
   // Type checking
-  bound = DoAssignmentTypeCheckingAndConversionCodegen(context, bound, lexeme);
+  index = DoAssignmentTypeCheckingAndConversionCodegen(context, index, lexeme);
 
   // an index must be an integer
-  if (bound.GetType() != TYPE_INT) {
+  if (index.GetType() != TYPE_INT) {
     // lexeme points to '[' which is okay
     EmitError("Array index must evaluate to integer.", lexeme);
     // return invalid symbol
-    return;
+    identifier.SetIsValid(false);
+    return identifier;
   }
 
   // if there's an index, the indexed symbol must be an array
   if (!identifier.IsArray()) {
     EmitError("Can only index array types.", lexeme);
     // return invalid symbol
-    return;
+    identifier.SetIsValid(false);
+    return identifier;
   }
 
   // ending bracket is required if it was opened
   lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_BRACK_RIGHT) {
     EmitExpectedTokenError("]", lexeme);
-    return;
+    identifier.SetIsValid(false);
+    return identifier;
   }
 
   if (codegen_) {
@@ -378,20 +385,27 @@ void Parser::ParseIndex(Symbol identifier) {
         llvm::APInt(32, 0, true));
 
     llvm::Value *greater_than_zero = llvm_builder_->CreateICmpSGE(
-        bound.GetLLVMValue(),
+        index.GetLLVMValue(),
         zero_32b);
 
     llvm::Value *less_than_bound = llvm_builder_->CreateICmpSLT(
-        bound.GetLLVMValue(),
+        index.GetLLVMValue(),
         identifier.GetLLVMBound());
 
-    llvm::Value *correct_bound = llvm_builder_->CreateAnd(
+    llvm::Value *correct_index = llvm_builder_->CreateAnd(
         greater_than_zero,
         less_than_bound);
 
     // TODO:codegen do something to error out if correct_bound is false
+
+    // update address to be address of element
+    llvm::Value *address = llvm_builder_->CreateGEP(
+        identifier.GetLLVMArrayAddress(),
+        index.GetLLVMValue());
     
+    identifier.SetLLVMAddress(address); 
   }
+  return identifier;
 }
 
 Symbol Parser::DoExpressionTypeCheckingAndCodegen(Symbol type_context,
@@ -1213,7 +1227,7 @@ Symbol Parser::ParseDestination() {
   if (lexeme.token == T_BRACK_LEFT) {
     
     // Parse the index, since there is one -> [ <expression> ]
-    ParseIndex(symbol);
+    symbol = ParseIndex(symbol);
   }
 
   return symbol;
@@ -1758,12 +1772,16 @@ void Parser::ParseProcedureBody() {
         address = llvm_builder_->CreateAlloca(
             GetRespectiveLLVMType(it->second.GetType()),
             bound);
+        it->second.SetLLVMArrayAddress(address);
+
+        // arrays are also considered to already be initialized
+        it->second.SetHasBeenInitialized(true);
       } else {
         address = llvm_builder_->CreateAlloca(
             GetRespectiveLLVMType(it->second.GetType()));
+        it->second.SetLLVMAddress(address);
       }
 
-      it->second.SetLLVMAddress(address);
 
       // it is safe to update the same key we are iterating over the map 
       symbol_table_.InsertSymbol(it->second);
@@ -2025,12 +2043,17 @@ void Parser::ParseProgramBody() {
         address = llvm_builder_->CreateAlloca(
             GetRespectiveLLVMType(it->second.GetType()),
             bound);
+
+        it->second.SetLLVMArrayAddress(address);
+
+        // arrays are also considered to already be initialized
+        it->second.SetHasBeenInitialized(true);
       } else {
         address = llvm_builder_->CreateAlloca(
             GetRespectiveLLVMType(it->second.GetType()));
+        it->second.SetLLVMAddress(address);
       }
 
-      it->second.SetLLVMAddress(address);
 
       // it is safe to update the same key we are iterating over the map 
       symbol_table_.InsertSymbol(it->second);
@@ -2208,7 +2231,7 @@ Symbol Parser::ParseReference() {
     if (lexeme.token == T_BRACK_LEFT) {
       // it's a name reference with an index operation
       // parse the index operation
-      ParseIndex(symbol);
+      symbol = ParseIndex(symbol);
     }
 
     if (codegen_) {

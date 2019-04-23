@@ -124,7 +124,9 @@ class Parser {
 
     // Parse Index statements, i.e. array [ <expression> ]
     // split out from existing references to reduce code duplication
-    void ParseIndex(Symbol identifier);
+    // returns an updated symbol to reflect the address that is being
+    // referenced
+    Symbol ParseIndex(Symbol identifier);
 
     //
     // Type Check / Codegen Functions for Right Recursive rules

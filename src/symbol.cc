@@ -22,6 +22,7 @@ Symbol::Symbol()
     has_been_initialized_(false),
     llvm_value_(nullptr), 
     llvm_address_(nullptr),
+    llvm_array_address_(nullptr),
     llvm_bound_(nullptr),
     llvm_function_(nullptr) {
  
@@ -183,5 +184,13 @@ void Symbol::SetLLVMBound(llvm::Value *bound) {
 
 llvm::Value *Symbol::GetLLVMBound() {
   return llvm_bound_;
+}
+
+void Symbol::SetLLVMArrayAddress(llvm::Value *address_ptr) {
+  llvm_array_address_ = address_ptr;
+}
+
+llvm::Value *Symbol::GetLLVMArrayAddress() {
+  return llvm_array_address_;
 }
 } // namespace kjlc

@@ -91,6 +91,9 @@ class Symbol {
     void SetLLVMBound(llvm::Value *bound);
     llvm::Value *GetLLVMBound();
 
+    void SetLLVMArrayAddress(llvm::Value *address_ptr);
+    llvm::Value *GetLLVMArrayAddress();
+
   private:
     // identifier for the symbol
     std::string id_;
@@ -131,6 +134,7 @@ class Symbol {
     //
     llvm::Value *llvm_value_;
     llvm::Value *llvm_address_;
+    llvm::Value *llvm_array_address_;
     llvm::Function *llvm_function_;
     llvm::Value *llvm_bound_;
 };
