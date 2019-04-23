@@ -2490,6 +2490,17 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
     }
   }
 
+  if (codegen_) {
+    // if it's a global variable, create it in llvm land
+    if (variable_symbol.IsGlobal()) {
+      llvm::Value *val = llvm_module_->getOrInsertGlobal(
+          variable_symbol.GetId(),
+          GetRespectiveLLVMType(variable_symbol.GetType()));
+
+      variable_symbol.SetLLVMAddress(val);
+    }
+  }
+
   // commit the symbol to the symbol table
   symbol_table_.InsertSymbol(variable_symbol);
 }
