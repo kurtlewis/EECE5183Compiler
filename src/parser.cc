@@ -807,6 +807,87 @@ Symbol Parser::DoArithmeticTypeCheckingAndCodegen(Symbol type_context,
   }
 }
 
+Symbol Parser::DoAssignmentTypeCheckingAndConversionCodegen(Symbol destination,
+                                                            Symbol expression,
+                                                            Lexeme location) {
+  // destination and expression evaluation must generally be of the same type
+  // but ints and bools are interoperable
+  // ints and floats are interoperable
+  if (destination.GetType() != expression.GetType()) {
+    // they do not match
+    bool mismatch = true;
+    // check that the types are interoperable
+    if (destination.GetType() == TYPE_BOOL &&
+        expression.GetType() == TYPE_INT) {
+      mismatch = false;
+      EmitWarning("Coercing int to bool.", location);
+      if (codegen_) {
+        // update expression
+        llvm::Value *val =
+            ConvertLLVMIntegerToBoolean(expression.GetLLVMValue());
+        expression.SetLLVMValue(val);
+      }
+    }
+
+    if (destination.GetType() == TYPE_INT) {
+      if (expression.GetType() == TYPE_BOOL) {
+        mismatch = false;
+        EmitWarning("Coercing bool to int.", location); 
+
+        if (codegen_) {
+          // convert expression from bool to int
+          llvm::Value *val = llvm_builder_->CreateZExtOrTrunc(
+              expression.GetLLVMValue(),
+              GetRespectiveLLVMType(TYPE_INT));
+
+          // update expression
+          expression.SetLLVMValue(val);
+        }
+      } else if (expression.GetType() == TYPE_FLOAT) {
+        mismatch = false;
+        EmitWarning("Coercing float to int.", location);
+
+        if (codegen_) {
+          // convert expression from float to int
+          llvm::Value *val = llvm_builder_->CreateFPToSI(
+              expression.GetLLVMValue(),
+              GetRespectiveLLVMType(TYPE_INT));
+
+          // update the expression
+          expression.SetLLVMValue(val);
+        }
+      }
+    }
+
+    if (destination.GetType() == TYPE_FLOAT &&
+        expression.GetType() == TYPE_INT) {
+      mismatch = false;
+      EmitWarning("Coercing int to float.", location);
+
+      if (codegen_) {
+        // extend the int to a float
+        llvm::Value *val = llvm_builder_->CreateSIToFP(
+            expression.GetLLVMValue(),
+            GetRespectiveLLVMType(TYPE_FLOAT));
+
+        // update the expression
+        expression.SetLLVMValue(val);
+      }
+    }
+
+    // couldn't recover from mismatch via interoperability
+    if (mismatch) {
+      // lexeme refers to equals sign, which is ideal
+      EmitExpectedTypeError(Symbol::GetTypeString(destination),
+                            Symbol::GetTypeString(expression),
+                            location);
+      expression.SetIsValid(false);
+      return expression;
+    }
+  }
+  return expression;
+}
+
 llvm::Type *Parser::GetRespectiveLLVMType(Symbol symbol) {
   return GetRespectiveLLVMType(symbol.GetType());
 }
@@ -893,13 +974,13 @@ std::vector<llvm::Value *> Parser::ParseArgumentList(
     // peek a lexeme for possible error reporting
     lexeme = scanner_.PeekNextLexeme();
 
-    // check that the expression matches
-    if (param_current->GetType() != expression.GetType()) {
-      // argument types don't match
-      EmitExpectedTypeError(Symbol::GetTypeString(*param_current),
-                            Symbol::GetTypeString(expression),
-                            lexeme);
-      return args; 
+    // do type checking/conversion
+    expression = DoAssignmentTypeCheckingAndConversionCodegen(*param_current,
+                                                              expression,
+                                                              lexeme);
+
+    if (!expression.IsValid()) {
+      return args;
     }
 
     // argument is okay, add it to the vector of values
@@ -947,79 +1028,13 @@ void Parser::ParseAssignmentStatement() {
   // the expected type is the destination symbol
   Symbol expression = ParseExpression(destination);
 
-  // destination and expression evaluation must generally be of the same type
-  // but ints and bools are interoperable
-  // ints and floats are interoperable
-  if (destination.GetType() != expression.GetType()) {
-    // they do not match
-    bool mismatch = true;
-    // check that the types are interoperable
-    if (destination.GetType() == TYPE_BOOL &&
-        expression.GetType() == TYPE_INT) {
-      mismatch = false;
-      EmitWarning("Coercing int to bool.", lexeme);
-      if (codegen_) {
-        // update expression
-        llvm::Value *val =
-            ConvertLLVMIntegerToBoolean(expression.GetLLVMValue());
-        expression.SetLLVMValue(val);
-      }
-    }
-
-    if (destination.GetType() == TYPE_INT) {
-      if (expression.GetType() == TYPE_BOOL) {
-        mismatch = false;
-        EmitWarning("Coercing bool to int.", lexeme); 
-
-        if (codegen_) {
-          // convert expression from bool to int
-          llvm::Value *val = llvm_builder_->CreateZExtOrTrunc(
-              expression.GetLLVMValue(),
-              GetRespectiveLLVMType(TYPE_INT));
-
-          // update expression
-          expression.SetLLVMValue(val);
-        }
-      } else if (expression.GetType() == TYPE_FLOAT) {
-        mismatch = false;
-        EmitWarning("Coercing float to int.", lexeme);
-
-        if (codegen_) {
-          // convert expression from float to int
-          llvm::Value *val = llvm_builder_->CreateFPToSI(
-              expression.GetLLVMValue(),
-              GetRespectiveLLVMType(TYPE_INT));
-
-          // update the expression
-          expression.SetLLVMValue(val);
-        }
-      }
-    }
-
-    if (destination.GetType() == TYPE_FLOAT &&
-        expression.GetType() == TYPE_INT) {
-      mismatch = false;
-      EmitWarning("Coercing int to float.", lexeme);
-
-      if (codegen_) {
-        // extend the int to a float
-        llvm::Value *val = llvm_builder_->CreateSIToFP(
-            expression.GetLLVMValue(),
-            GetRespectiveLLVMType(TYPE_FLOAT));
-
-        // update the expression
-        expression.SetLLVMValue(val);
-      }
-    }
-
-    // couldn't recover from mismatch via interoperability
-    if (mismatch) {
-      // lexeme refers to equals sign, which is ideal
-      EmitExpectedTypeError(Symbol::GetTypeString(destination),
-                            Symbol::GetTypeString(expression),
-                            lexeme);
-      return;
-    }
+  // do type checking/conversion
+  expression = DoAssignmentTypeCheckingAndConversionCodegen(destination,
+                                                            expression,
+                                                            lexeme);
+  
+  if (!expression.IsValid()) {
+    return;
   }
 
   if (codegen_) {
@@ -2233,10 +2248,12 @@ void Parser::ParseReturnStatement() {
   // return type context is the type of the scope procedure
   Symbol expression = ParseExpression(procedure);
 
-  if (expression.GetType() != procedure.GetType()) {
-    EmitExpectedTypeError(Symbol::GetTypeString(procedure),
-                          Symbol::GetTypeString(expression),
-                          lexeme);
+  // check to see that the types are compatible and do conversion if needed
+  expression = DoAssignmentTypeCheckingAndConversionCodegen(procedure,
+                                                            expression,
+                                                            lexeme);
+
+  if (!expression.IsValid()) {
     return;
   }
 

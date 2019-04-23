@@ -143,6 +143,17 @@ class Parser {
                                               Symbol lead,
                                               Symbol tail,
                                               Lexeme operation);
+    
+    // Checks for the assignment rules for interoperable types
+    // and if they are interoperable, automatically converts to the destination
+    // type and returns the expression as that type
+    // params:
+    //   destination - destination symbol to convert type to
+    //   expression - the expression we're checking to see if needs converted
+    //   location - location for possible warning/error printing
+    Symbol DoAssignmentTypeCheckingAndConversionCodegen(Symbol destination,
+                                                        Symbol expression,
+                                                        Lexeme location);
 
     // Checks the lead and tail symbols for binary operation compatibility
     // for use in ParseExpression and ParseExpressionTail
@@ -173,6 +184,7 @@ class Parser {
                                             Symbol term,
                                             Symbol relation_tail,
                                             Lexeme operation);
+
 
     //
     // Codegen Utility functions 
