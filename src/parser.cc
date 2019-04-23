@@ -2075,6 +2075,7 @@ Symbol Parser::ParseReference() {
     // copy symbol and make an anonymous symbol for outgoing result of call
     Symbol procedure_symbol = symbol;
     symbol = Symbol::GenerateAnonymousSymbol();
+    symbol.SetType(procedure_symbol.GetType());
 
     // optionally ParseArgumentList
     // need to peek next token and see if it's in the (quite large) first set
