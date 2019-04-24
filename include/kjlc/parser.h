@@ -7,6 +7,7 @@
 #ifndef EECE5183COMPILER_KJLC_PARSER_H_
 #define EECE5183COMPILER_KJLC_PARSER_H_
 
+#include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/LLVMContext.h"
@@ -39,6 +40,13 @@ class Parser {
     Scanner scanner_;
     // Symbol table
     SymbolTable symbol_table_;
+    // flag for doing array unwrap 
+    // our language supports acting on entire arrays at once
+    // which requires behind the scenes unwinding 
+    bool array_unwrap_;
+    // max index for type checking on an array index to make sure all arrays
+    // are the correct size
+    int array_unwrap_bound_;
     // True if error state
     bool error_state_;
     // true if parse should end
@@ -63,6 +71,13 @@ class Parser {
     llvm::Function *llvm_current_procedure_;
     // the current builder
     llvm::IRBuilder<> *llvm_builder_;
+    // index if an array unwrap is going on
+    llvm::Value *llvm_array_unwrap_index_;
+    // address of index for load storing
+    llvm::Value *llvm_array_unwrap_index_address_;
+    // blocks for the for loop for unwrapping the array
+    llvm::BasicBlock *llvm_array_unwrap_loop_header_block_;
+    llvm::BasicBlock *llvm_array_unwrap_loop_end_block_;
 
     // Prints out debugging information when requested
     // parse_function: name of parse rule being expanded

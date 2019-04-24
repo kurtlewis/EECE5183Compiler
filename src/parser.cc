@@ -34,10 +34,16 @@ Parser::Parser(std::string filename, bool parser_debug, bool symbol_debug,
       parser_debug_(parser_debug),
       codegen_(codegen_enable),
       codegen_debug_(codegen_debug),
+      array_unwrap_(false),
+      array_unwrap_bound_(0),
       llvm_module_(nullptr),
       llvm_context_(), // create a new global context
       llvm_current_procedure_(nullptr),
-      llvm_builder_(nullptr) {
+      llvm_builder_(nullptr),
+      llvm_array_unwrap_index_(nullptr),
+      llvm_array_unwrap_index_address_(nullptr),
+      llvm_array_unwrap_loop_header_block_(nullptr),
+      llvm_array_unwrap_loop_end_block_(nullptr) {
 
 }
 
@@ -1087,6 +1093,27 @@ void Parser::ParseAssignmentStatement() {
 
     // update the symbol table entry for the destination
     symbol_table_.InsertSymbol(destination);
+
+    // if this assignment block was doing an array unwrap, clean up
+    if (array_unwrap_) {
+      // increment the index and update the stored value
+      // we know it's already been loaded in this context
+      llvm::Value *one_32b = llvm::ConstantInt::getIntegerValue(
+          GetRespectiveLLVMType(TYPE_INT),
+          llvm::APInt(32, 1, true));
+      llvm_array_unwrap_index_ = llvm_builder_->CreateAdd(
+          llvm_array_unwrap_index_,
+          one_32b);
+      llvm_builder_->CreateStore(llvm_array_unwrap_index_,
+                                 llvm_array_unwrap_index_address_);
+      // create a unconditional jump back to the header to test for another
+      // go around
+      llvm_builder_->CreateBr(llvm_array_unwrap_loop_header_block_);
+
+      // statement is now over, further code will be inserted into the end block
+      llvm_builder_->SetInsertPoint(llvm_array_unwrap_loop_end_block_);
+      array_unwrap_ = false;
+    }
   }
    
   // destination has been written to, to mark that and update it in symbol table
@@ -1228,6 +1255,79 @@ Symbol Parser::ParseDestination() {
     
     // Parse the index, since there is one -> [ <expression> ]
     symbol = ParseIndex(symbol);
+  } else {
+    // there is not an index
+    if (symbol.IsArray()) {
+      // but the symbol is an array! this begins an array unwrapping
+      array_unwrap_ = true;
+      array_unwrap_bound_ = symbol.GetArrayBound();
+
+      // create the index
+      llvm_array_unwrap_index_ = llvm::ConstantInt::getIntegerValue(
+          GetRespectiveLLVMType(TYPE_INT),
+          llvm::APInt(32, 0, true));
+
+      // allocate an index storage location and store the value in it
+      llvm_array_unwrap_index_address_ = llvm_builder_->CreateAlloca(
+          GetRespectiveLLVMType(TYPE_INT));
+      llvm_builder_->CreateStore(llvm_array_unwrap_index_,
+                                 llvm_array_unwrap_index_address_);
+
+      // create the blocks of the loop
+      llvm_array_unwrap_loop_header_block_ = llvm::BasicBlock::Create(
+          llvm_context_,
+          "", // don't need to name
+          llvm_current_procedure_);
+
+      // only referenced here, so doesn't need stored as class instance
+      llvm::BasicBlock *unwrap_loop_body_block = llvm::BasicBlock::Create(
+          llvm_context_,
+          "", // no need to name
+          llvm_current_procedure_);
+      llvm_array_unwrap_loop_end_block_ = llvm::BasicBlock::Create(
+          llvm_context_,
+          "", // don't need to name
+          llvm_current_procedure_);
+
+      //
+      // create the header block which compares the index to the the bound
+      // and exits the loop if need be
+      //
+      // jump to the header
+      llvm_builder_->CreateBr(llvm_array_unwrap_loop_header_block_);
+      llvm_builder_->SetInsertPoint(llvm_array_unwrap_loop_header_block_);
+      // load the updated index 
+      llvm_array_unwrap_index_ = llvm_builder_->CreateLoad(
+          GetRespectiveLLVMType(TYPE_INT),
+          llvm_array_unwrap_index_address_);
+
+      // compare index to bound
+      llvm::Value *comparison = llvm_builder_->CreateICmpEQ(
+          llvm_array_unwrap_index_,
+          symbol.GetLLVMBound());
+
+      // conditional jump - if equal exit loop. Otherwise go to body
+      llvm_builder_->CreateCondBr(
+          comparison,
+          llvm_array_unwrap_loop_end_block_,
+          unwrap_loop_body_block);
+
+      // now all code will go into the body until the end of the assignment
+      // statement 
+      llvm_builder_->SetInsertPoint(unwrap_loop_body_block);
+      // load the index for this block
+      llvm_array_unwrap_index_ = llvm_builder_->CreateLoad(
+          GetRespectiveLLVMType(TYPE_INT),
+          llvm_array_unwrap_index_address_);
+      // first set the address the destination will eventually go into
+      // update address to be address of specific element
+      llvm::Value *address = llvm_builder_->CreateGEP(
+          symbol.GetLLVMArrayAddress(),
+          llvm_array_unwrap_index_);
+      
+      // address will be used for destination to write back value
+      symbol.SetLLVMAddress(address); 
+    }
   }
 
   return symbol;
@@ -2232,6 +2332,32 @@ Symbol Parser::ParseReference() {
       // it's a name reference with an index operation
       // parse the index operation
       symbol = ParseIndex(symbol);
+    } else if (array_unwrap_) {
+      // there wasn't an index on this variable, but there is an array unwrap
+      // going on for the current expression tree, so see if this is an array
+      // that needs unwrapped
+      if (symbol.IsArray()) {
+        // it is an array unwrap
+        // type check to ensure the size of this array is at least bigger than
+        // the current bound
+        if (symbol.GetArrayBound() < array_unwrap_bound_) {
+          EmitError("Array unwrapping failed. Array is smaller than target.",
+                    lexeme);
+          symbol = Symbol::GenerateAnonymousSymbol();
+          symbol.SetIsValid(false);
+          return symbol;
+        }
+        // use the index to set the address to load from
+        if (codegen_) {
+          llvm::Value *address = llvm_builder_->CreateGEP(
+              symbol.GetLLVMArrayAddress(),
+              llvm_array_unwrap_index_); // safe - it's been loaded 
+              
+          symbol.SetLLVMAddress(address);
+
+          // now let the code at the end of ParseReference load it!
+        }
+      }
     }
 
     if (codegen_) {
