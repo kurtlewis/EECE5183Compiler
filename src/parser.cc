@@ -604,10 +604,6 @@ Symbol Parser::DoRelationTypeCheckingAndCodegen(Symbol type_context,
       // strings are only compatible for equality tests
       compatible = ((operation.token == T_EQ || operation.token == T_NEQ) &&
                     relation_tail.GetType() == TYPE_STRING);
-
-      // if I understand correctly, llvm will automatically dereference and
-      // compare? IDK
-      // TODO:codegen
     }
     
     if (!compatible) {
@@ -622,63 +618,160 @@ Symbol Parser::DoRelationTypeCheckingAndCodegen(Symbol type_context,
     if (codegen_) {
       // do actual comparison
       llvm::Value *val;
-      switch (operation.token) {
-        case T_EQ:
-            if (floating_point_comparison) {
-              val = llvm_builder_->CreateFCmpOEQ(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            } else {
-              val = llvm_builder_->CreateICmpEQ(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            }
-          break;
-        case T_NEQ:
-            if (floating_point_comparison) {
-              val = llvm_builder_->CreateFCmpONE(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            } else {
-              val = llvm_builder_->CreateICmpNE(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            }
-          break;
-        case T_GT:
-            if (floating_point_comparison) {
-              val = llvm_builder_->CreateFCmpOGT(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            } else {
-              val = llvm_builder_->CreateICmpSGT(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            }
-          break;
-        case T_GT_EQ:
-            if (floating_point_comparison) {
-              val = llvm_builder_->CreateFCmpOGE(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            } else {
-              val = llvm_builder_->CreateICmpSGE(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            }
-          break;
-        case T_LT:
-            if (floating_point_comparison) {
-              val = llvm_builder_->CreateFCmpOLT(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            } else {
-              val = llvm_builder_->CreateICmpSLT(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            }
-          break;
-        case T_LT_EQ:
-            if (floating_point_comparison) {
-              val = llvm_builder_->CreateFCmpOLE(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            } else {
-              val = llvm_builder_->CreateICmpSLE(term.GetLLVMValue(),
-                                                relation_tail.GetLLVMValue());
-            }
-          break;
-        default:
-          std::cout << "Error matching operation to codegen." << std::endl;
+      if (term.GetType() == TYPE_STRING) {
+        // it's a a comparison between strings which is complicated
+        // need to explicitly test the entire array of i8's which involves a
+        // for loop
+        // create an index - unfortunately have to store it to avoid
+        // the builder optimizing addition of it away
+        llvm::Value *index_address = llvm_builder_->CreateAlloca(
+            GetRespectiveLLVMType(TYPE_INT));
+        llvm::Value *index = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm::APInt(32, 0, true));
+        llvm_builder_->CreateStore(index, index_address);
+
+
+        llvm::BasicBlock *string_compare_block = llvm::BasicBlock::Create(
+            llvm_context_,
+            "", // no need to name
+            llvm_current_procedure_);
+
+        llvm::BasicBlock *string_compare_end_block = llvm::BasicBlock::Create(
+            llvm_context_,
+            "", // no need to name
+            llvm_current_procedure_);
+
+        // unconditional jump to loop
+        llvm_builder_->CreateBr(string_compare_block);
+        llvm_builder_->SetInsertPoint(string_compare_block);
+
+        // increment index
+        llvm::Value *one_32b = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm::APInt(32, 1, true));
+
+        index = llvm_builder_->CreateLoad(
+            GetRespectiveLLVMType(TYPE_INT),
+            index_address);
+
+        //index = llvm_builder_->CreateAdd(index, one_32b);
+        index = llvm_builder_->CreateBinOp(
+            llvm::Instruction::Add,
+            index,
+            one_32b);
+
+        llvm_builder_->CreateStore(index, index_address);
+
+        // get the current char in the term
+        llvm::Value *term_address = llvm_builder_->CreateGEP(
+            term.GetLLVMValue(),
+            index);
+        llvm::Value *term_char = llvm_builder_->CreateLoad(
+            llvm_builder_->getInt8Ty(),
+            term_address);
+
+        // now get the current char in the tail
+        llvm::Value *tail_address = llvm_builder_->CreateGEP(
+            relation_tail.GetLLVMValue(),
+            index);
+        llvm::Value *tail_char = llvm_builder_->CreateLoad(
+            llvm_builder_->getInt8Ty(),
+            tail_address);
+        
+        // okay now compare the tails
+        llvm::Value *comparison = llvm_builder_->CreateICmpEQ(
+            term_char,
+            tail_char);
+
+        
+        // need to ensure the strings aren't ending
+        // if one is ending but the other isn't, they won't be equal and the
+        // loop will exit anyways
+        // if they both end at the same time this will catch that
+        llvm::Value *zero_8b = llvm::ConstantInt::getIntegerValue(
+            llvm_builder_->getInt8Ty(),
+            llvm::APInt(8, 0, true));
+        llvm::Value *term_not_ending = llvm_builder_->CreateICmpNE(
+            term_char,
+            zero_8b);
+
+
+        llvm::Value *continue_comparison = llvm_builder_->CreateAnd(
+            comparison,
+            term_not_ending);
+
+        llvm_builder_->CreateCondBr(continue_comparison, string_compare_block,
+                                    string_compare_end_block);
+
+        // output is the end block
+        llvm_builder_->SetInsertPoint(string_compare_end_block);
+
+        if (operation.token == T_EQ) {
+          val = comparison;
+        } else {
+          // not equal, so just invert the not
+          val = llvm_builder_->CreateNot(comparison);
+        }
+      } else {
+        switch (operation.token) {
+          case T_EQ:
+              if (floating_point_comparison) {
+                val = llvm_builder_->CreateFCmpOEQ(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              } else {
+                val = llvm_builder_->CreateICmpEQ(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              }
+            break;
+          case T_NEQ:
+              if (floating_point_comparison) {
+                val = llvm_builder_->CreateFCmpONE(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              } else {
+                val = llvm_builder_->CreateICmpNE(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              }
+            break;
+          case T_GT:
+              if (floating_point_comparison) {
+                val = llvm_builder_->CreateFCmpOGT(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              } else {
+                val = llvm_builder_->CreateICmpSGT(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              }
+            break;
+          case T_GT_EQ:
+              if (floating_point_comparison) {
+                val = llvm_builder_->CreateFCmpOGE(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              } else {
+                val = llvm_builder_->CreateICmpSGE(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              }
+            break;
+          case T_LT:
+              if (floating_point_comparison) {
+                val = llvm_builder_->CreateFCmpOLT(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              } else {
+                val = llvm_builder_->CreateICmpSLT(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              }
+            break;
+          case T_LT_EQ:
+              if (floating_point_comparison) {
+                val = llvm_builder_->CreateFCmpOLE(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              } else {
+                val = llvm_builder_->CreateICmpSLE(term.GetLLVMValue(),
+                                                  relation_tail.GetLLVMValue());
+              }
+            break;
+          default:
+            std::cout << "Error matching operation to codegen." << std::endl;
+        }
       }
       // update the outgoing symbol
       symbol.SetLLVMValue(val);
