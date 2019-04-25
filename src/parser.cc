@@ -15,6 +15,8 @@
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/GlobalValue.h"
+#include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/IRPrintingPasses.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -2812,9 +2814,19 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
     // if it's a global variable, create it in llvm land
     if (variable_symbol.IsGlobal()) {
       // TODO:codegen does this support global arrays?
-      llvm::Value *val = llvm_module_->getOrInsertGlobal(
-          variable_symbol.GetId(),
+      // need to declare a constant to initialize it to
+      llvm::Constant *constant_initializer = llvm::Constant::getNullValue(
           GetRespectiveLLVMType(variable_symbol.GetType()));
+      llvm::Value *val = new llvm::GlobalVariable(
+          *llvm_module_,
+          GetRespectiveLLVMType(variable_symbol.GetType()),
+          false,
+          llvm::GlobalValue::CommonLinkage,
+          constant_initializer,
+          variable_symbol.GetId());
+
+      // global variables are considered initialized
+      variable_symbol.SetHasBeenInitialized(true);
 
       variable_symbol.SetLLVMAddress(val);
     }
