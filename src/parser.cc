@@ -1179,8 +1179,6 @@ void Parser::ParseAssignmentStatement() {
   }
 
   if (codegen_) {
-    // TODO:codegen this doesn't consider arrays
-    
     // store the expression value in the address of the destination
     llvm_builder_->CreateStore(expression.GetLLVMValue(),
                                destination.GetLLVMAddress());
@@ -2813,13 +2811,20 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
   if (codegen_) {
     // if it's a global variable, create it in llvm land
     if (variable_symbol.IsGlobal()) {
-      // TODO:codegen does this support global arrays?
       // need to declare a constant to initialize it to
+      llvm::Type *global_type = nullptr;
+      if (variable_symbol.IsArray()) {
+        global_type = llvm::ArrayType::get(
+            GetRespectiveLLVMType(variable_symbol.GetType()),
+            variable_symbol.GetArrayBound());
+      } else {
+        global_type = GetRespectiveLLVMType(variable_symbol.GetType());
+      }
       llvm::Constant *constant_initializer = llvm::Constant::getNullValue(
-          GetRespectiveLLVMType(variable_symbol.GetType()));
+          global_type);
       llvm::Value *val = new llvm::GlobalVariable(
           *llvm_module_,
-          GetRespectiveLLVMType(variable_symbol.GetType()),
+          global_type,
           false,
           llvm::GlobalValue::CommonLinkage,
           constant_initializer,
@@ -2828,7 +2833,16 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
       // global variables are considered initialized
       variable_symbol.SetHasBeenInitialized(true);
 
-      variable_symbol.SetLLVMAddress(val);
+      if (variable_symbol.IsArray()) {
+        variable_symbol.SetLLVMArrayAddress(val);
+        // also, because it's an array, it expects to have a bound value
+        llvm::Value *bound = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm::APInt(32, variable_symbol.GetArrayBound(), true));
+        variable_symbol.SetLLVMBound(bound);
+      } else {
+        variable_symbol.SetLLVMAddress(val);
+      }
     }
   }
 
