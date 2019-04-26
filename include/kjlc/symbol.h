@@ -26,6 +26,7 @@ enum Declaration {
   DECLARATION_PROCEDURE,
   DECLARATION_VARIABLE,
   DECLARATION_TYPE,
+  DECLARATION_ENUM,
 };
 
 class Symbol {
@@ -74,6 +75,9 @@ class Symbol {
     
     bool IsValid();
     void SetIsValid(bool valid);
+    
+    int GetEnumValue();
+    void SetEnumValue(int value);
 
     bool HasBeenInitialized();
     void SetHasBeenInitialized(bool initialized);
@@ -128,6 +132,9 @@ class Symbol {
 
     // denotes that this variable has been assigned to
     bool has_been_initialized_;
+
+    // enum value - indicates the number value of the enum
+    int enum_value_;
 
     //
     // llvm variables

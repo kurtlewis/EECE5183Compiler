@@ -2414,8 +2414,10 @@ Symbol Parser::ParseReference() {
     }
   } else {
     // it's a name. Could be indexed. Must be variable
-    if (symbol.GetDeclaration() != DECLARATION_VARIABLE) {
-      EmitError("Reference to name must be a variable type.", lexeme);
+    if (symbol.GetDeclaration() != DECLARATION_VARIABLE &&
+        symbol.GetDeclaration() != DECLARATION_ENUM) {
+      EmitError("Reference to name must be a variable or enum declaration.", 
+                lexeme);
       symbol = Symbol::GenerateAnonymousSymbol();
       symbol.SetIsValid(false);
       return symbol;
@@ -2424,6 +2426,13 @@ Symbol Parser::ParseReference() {
     if (lexeme.token == T_BRACK_LEFT) {
       // it's a name reference with an index operation
       // parse the index operation
+      // can't be a enum declaration
+      if (symbol.GetDeclaration() != DECLARATION_VARIABLE) {
+        EmitError("Only array variables can be index.", lexeme);
+        symbol = Symbol::GenerateAnonymousSymbol();
+        symbol.SetIsValid(false);
+        return symbol;
+      }
       symbol = ParseIndex(symbol);
     } else if (array_unwrap_) {
       // there wasn't an index on this variable, but there is an array unwrap
@@ -2454,22 +2463,25 @@ Symbol Parser::ParseReference() {
     }
 
     if (codegen_) {
-      // ensure there is a value to get
-      if (symbol.HasBeenInitialized() == false) {
-        EmitError("Attempt to use variable before it's initialized.", lexeme);
-        symbol.SetIsValid(false);
-        return symbol;
-      }
-      
-      // load the value out of the store and prepare to update the outgoing
-      // symbol
-      llvm::Value *val = llvm_builder_->CreateLoad(
-          GetRespectiveLLVMType(symbol.GetType()),
-          symbol.GetLLVMAddress());
-      
-      // update outgoing symbol
-      symbol.SetLLVMValue(val);
-
+      // only variables and enums get here. Variables need loaded,
+      // enums are good to go
+      if (symbol.GetDeclaration() == DECLARATION_VARIABLE) {
+        // ensure there is a value to get
+        if (symbol.HasBeenInitialized() == false) {
+          EmitError("Attempt to use variable before it's initialized.", lexeme);
+          symbol.SetIsValid(false);
+          return symbol;
+        }
+        
+        // load the value out of the store and prepare to update the outgoing
+        // symbol
+        llvm::Value *val = llvm_builder_->CreateLoad(
+            GetRespectiveLLVMType(symbol.GetType()),
+            symbol.GetLLVMAddress());
+        
+        // update outgoing symbol
+        symbol.SetLLVMValue(val);
+      } 
     }
   }
 
@@ -2713,8 +2725,28 @@ void Parser::ParseTypeMark(Symbol &symbol) {
         return;
       }
 
+      int enum_value = 0;
+
       // always at least one identifier
-      ParseIdentifier();
+      std::string id = ParseIdentifier();
+
+      // create a symbol for the enum
+      Symbol enum_symbol;
+      enum_symbol.SetId(id);
+      // it is global if the symbol is global
+      enum_symbol.SetIsGlobal(symbol.IsGlobal());
+      enum_symbol.SetDeclaration(DECLARATION_ENUM);
+      enum_symbol.SetType(TYPE_INT);
+      enum_symbol.SetEnumValue(enum_value);
+      if (codegen_) {
+        // give it the correct value
+        llvm::Value *val = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm::APInt(32, enum_value, true));
+        enum_symbol.SetLLVMValue(val);
+      }
+      symbol_table_.InsertSymbol(enum_symbol);
+      enum_value++;
 
       // can be multiple identifiers, indicated by comma before next identifier
       lexeme = scanner_.PeekNextLexeme();
@@ -2727,7 +2759,23 @@ void Parser::ParseTypeMark(Symbol &symbol) {
         }
 
         // there's going to be another identifier
-        ParseIdentifier();
+        id = ParseIdentifier();
+        enum_symbol = Symbol();
+        enum_symbol.SetId(id);
+        // it is global if the overall symbol is global
+        enum_symbol.SetIsGlobal(symbol.IsGlobal());
+        enum_symbol.SetDeclaration(DECLARATION_ENUM);
+        enum_symbol.SetType(TYPE_INT);
+        enum_symbol.SetEnumValue(enum_value);
+        if (codegen_) {
+          // give it the correct llvm value
+          llvm::Value *val = llvm::ConstantInt::getIntegerValue(
+              GetRespectiveLLVMType(TYPE_INT),
+              llvm::APInt(32, enum_value, true));
+          enum_symbol.SetLLVMValue(val);
+        }
+        symbol_table_.InsertSymbol(enum_symbol);
+        enum_value++;
 
         // peek for next token to see if more identifiers
         lexeme = scanner_.PeekNextLexeme();

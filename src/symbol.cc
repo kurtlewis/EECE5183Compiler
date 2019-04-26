@@ -146,6 +146,14 @@ void Symbol::SetIsValid(bool valid) {
   valid_ = valid;
 }
 
+int Symbol::GetEnumValue() {
+  return enum_value_;
+}
+
+void Symbol::SetEnumValue(int value) {
+  enum_value_ = value;
+}
+
 bool Symbol::HasBeenInitialized() {
   return has_been_initialized_;
 }
