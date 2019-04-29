@@ -21,7 +21,13 @@
 #include "llvm/IR/IRPrintingPasses.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Host.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetOptions.h"
 #include "kjlc/scanner.h"
 
 namespace kjlc {
@@ -90,11 +96,64 @@ void Parser::BuildProgram() {
   if (!broken) {
     // TODO:codegen Need to actually figure out my build process
     // Module can be safely compiled, it is not broken
-    llvm::legacy::PassManager pass_manager;
+    //llvm::legacy::PassManager pass_manager;
     // print IR to stdout
-    pass_manager.add(llvm::createPrintModulePass(llvm::outs()));
+    //pass_manager.add(llvm::createPrintModulePass(llvm::outs()));
     // run and send to llvm IR to stdout
+    //pass_manager.run(*llvm_module_);
+
+    auto target_triple = llvm::sys::getDefaultTargetTriple();
+
+    // initialize all targets for object code
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllAsmPrinters();
+
+    std::string error;
+    auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
+
+    if (!target) {
+      // there was an error looking up the target in the registry.
+      llvm::errs() << error;
+      return;
+    }
+
+    std::string cpu = "generic";
+    std::string features = "";
+
+    llvm::TargetOptions target_options;
+    auto RM = llvm::Optional<llvm::Reloc::Model>();
+    auto target_machine = target->createTargetMachine(target_triple, cpu,
+                                                     features, target_options,
+                                                     RM);
+
+    // configure data layout
+    llvm_module_->setDataLayout(target_machine->createDataLayout());
+    llvm_module_->setTargetTriple(target_triple);
+
+    std::string filename = "out.s";
+    std::error_code error_code;
+    llvm::raw_fd_ostream dest(filename, error_code, llvm::sys::fs::F_None);
+
+    if (error_code) {
+      llvm::errs() << "Could not open output file: " << error_code.message();
+      return;
+    }
+
+    llvm::legacy::PassManager pass_manager;
+    //auto file_type = llvm::TargetMachine::CGFT_ObjectFile;
+    auto file_type = llvm::TargetMachine::CGFT_AssemblyFile;
+
+    if (target_machine->addPassesToEmitFile(pass_manager, dest, nullptr, 
+                                            file_type)) {
+      llvm::errs() << "TargetMachine cannot emit a file of this type.";
+      return;
+    }
+
     pass_manager.run(*llvm_module_);
+    dest.flush();
   } else {
     std::cout << "Error creating LLVM Module. See stderr." << std::endl;
   }
