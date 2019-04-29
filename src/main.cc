@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 void PrintHelp() {
   std::cout << "KJLC: Kurt Lewis' Compiler for EECE5183." << std::endl;
   std::cout << std::endl;
-  std::cout << "Usage: kjlc [options] [<file>]" << std::endl;
+  std::cout << "Usage: kjlc [<in-file>] [options]" << std::endl;
   std::cout << std::endl;
   std::cout << "Options:" << std::endl;
   std::cout << "  --help            Prints this information." << std::endl;

@@ -88,19 +88,16 @@ void Parser::BuildProgram() {
     return;
   }
 
-  //llvm_module_->print(llvm::outs(), nullptr);
+  // if the user requested codegen debug, print the llvm IR
+  if (codegen_debug_) {
+    llvm_module_->print(llvm::outs(), nullptr);
+  }
 
   // check the generated module for errors
   bool broken = llvm::verifyModule(*llvm_module_, &llvm::errs());
   
   if (!broken) {
-    // TODO:codegen Need to actually figure out my build process
     // Module can be safely compiled, it is not broken
-    //llvm::legacy::PassManager pass_manager;
-    // print IR to stdout
-    //pass_manager.add(llvm::createPrintModulePass(llvm::outs()));
-    // run and send to llvm IR to stdout
-    //pass_manager.run(*llvm_module_);
 
     auto target_triple = llvm::sys::getDefaultTargetTriple();
 
