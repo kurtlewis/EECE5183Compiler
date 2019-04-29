@@ -2082,6 +2082,9 @@ void Parser::ParseProcedureBody() {
 void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
   DebugPrint("ProcedureDeclaration");
 
+  // Peek a lexeme for error reporting
+  Lexeme lexeme = scanner_.PeekNextLexeme();
+
   // Increase the scope as we enter a new procedure
   symbol_table_.IncreaseScope();
 
@@ -2110,9 +2113,6 @@ void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
         params, // list of args
         false); // is varargs - always no our language doesn't support
         
-    // TODO:codegen - need to add a consistent character to avoid
-    // name conflicts of "main" - if someone creates a function
-    // "main" that will kill it. Alternatively, disallow "main" as procedure id
     // Actually create the function
     llvm::Constant *procedure = llvm_module_->getOrInsertFunction(
         procedure_symbol.GetId(), // name of function
@@ -2128,6 +2128,12 @@ void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
     procedure_symbol.SetLLVMFunction(function);
     
   }
+
+  // check to make sure this identifier doesn't already exist
+  if (symbol_table_.CheckForSymbolCollisions(procedure_symbol.GetId())) {
+    EmitError("Identifier collision. Identifier already exists.", lexeme);
+    return;
+  }
   
   // commit the symbol to the symbol table so that the body can reference itself
   symbol_table_.InsertSymbol(procedure_symbol);
@@ -2140,6 +2146,12 @@ void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
 
   // exiting the procedure, decrease the scope
   symbol_table_.DecreaseScope();
+
+  // check again for the new scope
+  if (symbol_table_.CheckForSymbolCollisions(procedure_symbol.GetId())) {
+    EmitError("Identifier collision. Identifier already exists.", lexeme);
+    return;
+  }
 
   // now insert the symbol into the scope of the declarer so it can be called
   symbol_table_.InsertSymbol(procedure_symbol);
@@ -2716,6 +2728,12 @@ void Parser::ParseTypeDeclaration(Symbol &type_symbol) {
   // Parse type mark
   ParseTypeMark(type_symbol);
 
+  // check that the symbol name doesn't conflict
+  if (symbol_table_.CheckForSymbolCollisions(type_symbol.GetId())) {
+    EmitError("Identifier collision. Identifier already exists.", lexeme);
+    return;
+  }
+
   // commit the symbol to the symbol table
   symbol_table_.InsertSymbol(type_symbol);
 }
@@ -2921,6 +2939,12 @@ void Parser::ParseVariableDeclaration(Symbol &variable_symbol) {
         variable_symbol.SetLLVMAddress(val);
       }
     }
+  }
+
+  // check that the symbol name doesn't conflict
+  if (symbol_table_.CheckForSymbolCollisions(variable_symbol.GetId())) {
+    EmitError("Identifier collision. Identifier already exists.", lexeme);
+    return;
   }
 
   // commit the symbol to the symbol table

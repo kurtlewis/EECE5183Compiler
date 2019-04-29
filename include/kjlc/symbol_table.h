@@ -51,6 +51,9 @@ class SymbolTable {
     // invalid symbol
     Symbol FindSymbolByIdentifier(std::string id);
 
+    // returns True if the symbol collides with another already created symbol
+    bool CheckForSymbolCollisions(std::string id);
+
     std::map<std::string, Symbol>::iterator GetLocalScopeIteratorBegin();
 
     std::map<std::string, Symbol>::iterator GetLocalScopeIteratorEnd();

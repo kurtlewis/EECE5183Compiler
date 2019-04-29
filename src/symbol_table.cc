@@ -98,6 +98,26 @@ Symbol SymbolTable::FindSymbolByIdentifier(std::string id) {
   return symbol;
 }
 
+bool SymbolTable::CheckForSymbolCollisions(std::string id) {
+  // look up in both maps that the string does not return a value
+  std::map<std::string, Symbol>::iterator result
+      = local_scope_stack_.back().find(id);
+  if (result != local_scope_stack_.back().end()) {
+    return true;
+  }
+  result = global_scope_map_.find(id);
+  if (result != global_scope_map_.end()) {
+    return true;
+  }
+
+  // a couple of reserved symbol names
+  if (id.compare("main") == 0) {
+    return true;
+  }
+
+  return false;
+}
+
 std::map<std::string, Symbol>::iterator
     SymbolTable::GetLocalScopeIteratorBegin() {
   return local_scope_stack_.back().begin();
