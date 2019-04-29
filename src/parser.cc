@@ -2428,7 +2428,7 @@ Symbol Parser::ParseReference() {
       // parse the index operation
       // can't be a enum declaration
       if (symbol.GetDeclaration() != DECLARATION_VARIABLE) {
-        EmitError("Only array variables can be index.", lexeme);
+        EmitError("Only array variables can be indexed.", lexeme);
         symbol = Symbol::GenerateAnonymousSymbol();
         symbol.SetIsValid(false);
         return symbol;
