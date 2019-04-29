@@ -1365,90 +1365,92 @@ Symbol Parser::ParseDestination() {
     // there is not an index
     if (symbol.IsArray()) {
       // but the symbol is an array! this begins an array unwrapping
-      array_unwrap_ = true;
-      array_unwrap_bound_ = symbol.GetArrayBound();
+      if (codegen_) {
+        array_unwrap_ = true;
+        array_unwrap_bound_ = symbol.GetArrayBound();
 
-      // create the index
-      llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
-          GetRespectiveLLVMType(TYPE_INT),
-          llvm::APInt(32, 0, true));
-      llvm_array_unwrap_index_ = zero_32b;
+        // create the index
+        llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm::APInt(32, 0, true));
+        llvm_array_unwrap_index_ = zero_32b;
 
-      
-      // allocate an index storage location and store the value in it
-      llvm_array_unwrap_index_address_ = llvm_builder_->CreateAlloca(
-          GetRespectiveLLVMType(TYPE_INT));
-      llvm_builder_->CreateStore(llvm_array_unwrap_index_,
-                                 llvm_array_unwrap_index_address_);
+        
+        // allocate an index storage location and store the value in it
+        llvm_array_unwrap_index_address_ = llvm_builder_->CreateAlloca(
+            GetRespectiveLLVMType(TYPE_INT));
+        llvm_builder_->CreateStore(llvm_array_unwrap_index_,
+                                   llvm_array_unwrap_index_address_);
 
-      // create the blocks of the loop
-      llvm_array_unwrap_loop_header_block_ = llvm::BasicBlock::Create(
-          llvm_context_,
-          "", // don't need to name
-          llvm_current_procedure_);
+        // create the blocks of the loop
+        llvm_array_unwrap_loop_header_block_ = llvm::BasicBlock::Create(
+            llvm_context_,
+            "", // don't need to name
+            llvm_current_procedure_);
 
-      // only referenced here, so doesn't need stored as class instance
-      llvm::BasicBlock *unwrap_loop_body_block = llvm::BasicBlock::Create(
-          llvm_context_,
-          "", // no need to name
-          llvm_current_procedure_);
-      llvm_array_unwrap_loop_end_block_ = llvm::BasicBlock::Create(
-          llvm_context_,
-          "", // don't need to name
-          llvm_current_procedure_);
+        // only referenced here, so doesn't need stored as class instance
+        llvm::BasicBlock *unwrap_loop_body_block = llvm::BasicBlock::Create(
+            llvm_context_,
+            "", // no need to name
+            llvm_current_procedure_);
+        llvm_array_unwrap_loop_end_block_ = llvm::BasicBlock::Create(
+            llvm_context_,
+            "", // don't need to name
+            llvm_current_procedure_);
 
-      //
-      // create the header block which compares the index to the the bound
-      // and exits the loop if need be
-      //
-      // jump to the header
-      llvm_builder_->CreateBr(llvm_array_unwrap_loop_header_block_);
-      llvm_builder_->SetInsertPoint(llvm_array_unwrap_loop_header_block_);
-      // load the updated index 
-      llvm_array_unwrap_index_ = llvm_builder_->CreateLoad(
-          GetRespectiveLLVMType(TYPE_INT),
-          llvm_array_unwrap_index_address_);
+        //
+        // create the header block which compares the index to the the bound
+        // and exits the loop if need be
+        //
+        // jump to the header
+        llvm_builder_->CreateBr(llvm_array_unwrap_loop_header_block_);
+        llvm_builder_->SetInsertPoint(llvm_array_unwrap_loop_header_block_);
+        // load the updated index 
+        llvm_array_unwrap_index_ = llvm_builder_->CreateLoad(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm_array_unwrap_index_address_);
 
-      // compare index to bound
-      llvm::Value *comparison = llvm_builder_->CreateICmpEQ(
-          llvm_array_unwrap_index_,
-          symbol.GetLLVMBound());
+        // compare index to bound
+        llvm::Value *comparison = llvm_builder_->CreateICmpEQ(
+            llvm_array_unwrap_index_,
+            symbol.GetLLVMBound());
 
-      // conditional jump - if equal exit loop. Otherwise go to body
-      llvm_builder_->CreateCondBr(
-          comparison,
-          llvm_array_unwrap_loop_end_block_,
-          unwrap_loop_body_block);
+        // conditional jump - if equal exit loop. Otherwise go to body
+        llvm_builder_->CreateCondBr(
+            comparison,
+            llvm_array_unwrap_loop_end_block_,
+            unwrap_loop_body_block);
 
-      // now all code will go into the body until the end of the assignment
-      // statement 
-      llvm_builder_->SetInsertPoint(unwrap_loop_body_block);
-      // load the index for this block
-      llvm_array_unwrap_index_ = llvm_builder_->CreateLoad(
-          GetRespectiveLLVMType(TYPE_INT),
-          llvm_array_unwrap_index_address_);
-      // first set the address the destination will eventually go into
-      // update address to be address of specific element
-      llvm::Value *address = nullptr;
-      
-      if (symbol.IsGlobal()) {
-        // global arrays need accessed differently from local arrays
-        llvm::Value *indices[] = {
-            zero_32b,
-            llvm_array_unwrap_index_
-        };
+        // now all code will go into the body until the end of the assignment
+        // statement 
+        llvm_builder_->SetInsertPoint(unwrap_loop_body_block);
+        // load the index for this block
+        llvm_array_unwrap_index_ = llvm_builder_->CreateLoad(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm_array_unwrap_index_address_);
+        // first set the address the destination will eventually go into
+        // update address to be address of specific element
+        llvm::Value *address = nullptr;
+        
+        if (symbol.IsGlobal()) {
+          // global arrays need accessed differently from local arrays
+          llvm::Value *indices[] = {
+              zero_32b,
+              llvm_array_unwrap_index_
+          };
 
-        address = llvm_builder_->CreateInBoundsGEP(
+          address = llvm_builder_->CreateInBoundsGEP(
+              symbol.GetLLVMArrayAddress(),
+              indices);
+        } else {
+          address = llvm_builder_->CreateGEP(
             symbol.GetLLVMArrayAddress(),
-            indices);
-      } else {
-        address = llvm_builder_->CreateGEP(
-          symbol.GetLLVMArrayAddress(),
-          llvm_array_unwrap_index_);
+            llvm_array_unwrap_index_);
+        }
+        
+        // address will be used for destination to write back value
+        symbol.SetLLVMAddress(address); 
       }
-      
-      // address will be used for destination to write back value
-      symbol.SetLLVMAddress(address); 
     }
   }
 
@@ -2609,7 +2611,6 @@ void Parser::ParseReturnStatement() {
   }
 
   if (codegen_) {
-    // TODO:codegen - is there type coercien that needs to go down?
     // add llvm return statement
     llvm_builder_->CreateRet(expression.GetLLVMValue());
   }
