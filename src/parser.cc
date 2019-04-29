@@ -406,10 +406,23 @@ Symbol Parser::ParseIndex(Symbol identifier) {
 
     // TODO:codegen do something to error out if correct_bound is false
 
-    // update address to be address of element
-    llvm::Value *address = llvm_builder_->CreateGEP(
-        identifier.GetLLVMArrayAddress(),
-        index.GetLLVMValue());
+    llvm::Value *address = nullptr;
+    if (identifier.IsGlobal()) {
+      // global arrays need indexed differently from local arrays
+      llvm::Value *indices[] = {
+          zero_32b,
+          index.GetLLVMValue()
+      };
+
+      address = llvm_builder_->CreateInBoundsGEP(
+          identifier.GetLLVMArrayAddress(),
+          indices);
+    } else {
+      // update address to be address of element
+      address = llvm_builder_->CreateGEP(
+          identifier.GetLLVMArrayAddress(),
+          index.GetLLVMValue());
+    }
     
     identifier.SetLLVMAddress(address); 
   }
@@ -1356,10 +1369,12 @@ Symbol Parser::ParseDestination() {
       array_unwrap_bound_ = symbol.GetArrayBound();
 
       // create the index
-      llvm_array_unwrap_index_ = llvm::ConstantInt::getIntegerValue(
+      llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
           GetRespectiveLLVMType(TYPE_INT),
           llvm::APInt(32, 0, true));
+      llvm_array_unwrap_index_ = zero_32b;
 
+      
       // allocate an index storage location and store the value in it
       llvm_array_unwrap_index_address_ = llvm_builder_->CreateAlloca(
           GetRespectiveLLVMType(TYPE_INT));
@@ -1414,9 +1429,23 @@ Symbol Parser::ParseDestination() {
           llvm_array_unwrap_index_address_);
       // first set the address the destination will eventually go into
       // update address to be address of specific element
-      llvm::Value *address = llvm_builder_->CreateGEP(
+      llvm::Value *address = nullptr;
+      
+      if (symbol.IsGlobal()) {
+        // global arrays need accessed differently from local arrays
+        llvm::Value *indices[] = {
+            zero_32b,
+            llvm_array_unwrap_index_
+        };
+
+        address = llvm_builder_->CreateInBoundsGEP(
+            symbol.GetLLVMArrayAddress(),
+            indices);
+      } else {
+        address = llvm_builder_->CreateGEP(
           symbol.GetLLVMArrayAddress(),
           llvm_array_unwrap_index_);
+      }
       
       // address will be used for destination to write back value
       symbol.SetLLVMAddress(address); 
