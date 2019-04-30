@@ -8,13 +8,18 @@
 
 #include <iostream>
 
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/CallingConv.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Value.h"
+
 namespace kjlc {
 
 SymbolTable::SymbolTable(bool debug)
     : debug_(debug),
       local_scope_stack_(),
       global_scope_map_() {
-  InsertBuiltInsIntoGlobalScope();
 }
 
 SymbolTable::~SymbolTable() {
@@ -128,18 +133,33 @@ std::map<std::string, Symbol>::iterator
   return local_scope_stack_.back().end();
 }
 
-
-void SymbolTable::InsertBuiltInsIntoGlobalScope() {
+void SymbolTable::InsertBuiltInsIntoGlobalScope(
+    bool codegen, 
+    llvm::Module *llvm_module,
+    llvm::LLVMContext &llvm_context,
+    llvm::IRBuilder<> *llvm_builder) {
   //
   // Runtime functions
   //
-  
+
   // getBool() : bool value
   Symbol get_bool;
   get_bool.SetId("getbool");
   get_bool.SetType(TYPE_BOOL);
   get_bool.SetIsGlobal(true);
   get_bool.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+        llvm_builder->getInt1Ty(),
+        {},
+        false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        get_bool.GetId(),
+        llvm_module);
+    get_bool.SetLLVMFunction(procedure);
+  }
   InsertSymbol(get_bool);
 
   // getInteger() : integer value
@@ -148,6 +168,18 @@ void SymbolTable::InsertBuiltInsIntoGlobalScope() {
   get_integer.SetType(TYPE_INT);
   get_integer.SetIsGlobal(true);
   get_integer.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+      llvm_builder->getInt32Ty(),
+      {},
+      false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        get_integer.GetId(),
+        llvm_module);
+    get_integer.SetLLVMFunction(procedure);
+  }
   InsertSymbol(get_integer);
 
   // getFloat() : float value
@@ -156,6 +188,18 @@ void SymbolTable::InsertBuiltInsIntoGlobalScope() {
   get_float.SetType(TYPE_FLOAT);
   get_float.SetIsGlobal(true);
   get_float.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+        llvm_builder->getFloatTy(),
+        {},
+        false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        get_float.GetId(),
+        llvm_module);
+    get_float.SetLLVMFunction(procedure);
+  }
   InsertSymbol(get_float);
 
   // getString() : string value
@@ -164,6 +208,18 @@ void SymbolTable::InsertBuiltInsIntoGlobalScope() {
   get_string.SetType(TYPE_STRING);
   get_string.SetIsGlobal(true);
   get_string.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+        llvm_builder->getInt8PtrTy(),
+        {},
+        false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        get_string.GetId(),
+        llvm_module);
+    get_string.SetLLVMFunction(procedure);
+  }
   InsertSymbol(get_string);
 
   // putBool(bool value) : bool
@@ -177,6 +233,18 @@ void SymbolTable::InsertBuiltInsIntoGlobalScope() {
   put_bool.GetParams().push_back(put_bool_arg);
   put_bool.SetIsGlobal(true);
   put_bool.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+        llvm_builder->getInt1Ty(),
+        {llvm_builder->getInt1Ty()},
+        false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        put_bool.GetId(),
+        llvm_module);
+    put_bool.SetLLVMFunction(procedure);
+  }
   InsertSymbol(put_bool);
 
   // putInteger(integer value) : bool
@@ -190,6 +258,18 @@ void SymbolTable::InsertBuiltInsIntoGlobalScope() {
   put_integer.GetParams().push_back(put_integer_arg);
   put_integer.SetIsGlobal(true);
   put_integer.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+      llvm_builder->getInt1Ty(),
+      {llvm_builder->getInt32Ty()},
+      false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        put_integer.GetId(),
+        llvm_module);
+    put_integer.SetLLVMFunction(procedure);
+  }
   InsertSymbol(put_integer);
 
   // putFloat(float value) : bool
@@ -203,6 +283,18 @@ void SymbolTable::InsertBuiltInsIntoGlobalScope() {
   put_float.GetParams().push_back(put_float_arg);
   put_float.SetIsGlobal(true);
   put_float.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+        llvm_builder->getInt1Ty(),
+        {llvm_builder->getFloatTy()},
+        false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        put_float.GetId(),
+        llvm_module);
+    put_float.SetLLVMFunction(procedure);
+  }
   InsertSymbol(put_float);
 
   // putString(string value) : bool
@@ -216,6 +308,18 @@ void SymbolTable::InsertBuiltInsIntoGlobalScope() {
   put_string.GetParams().push_back(put_string_arg);
   put_string.SetIsGlobal(true);
   put_string.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+        llvm_builder->getInt1Ty(),
+        {llvm_builder->getInt8PtrTy()},
+        false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        put_string.GetId(),
+        llvm_module);
+    put_string.SetLLVMFunction(procedure);
+  }
   InsertSymbol(put_string);
 
   // sqrt(integer value) : float
@@ -229,6 +333,18 @@ void SymbolTable::InsertBuiltInsIntoGlobalScope() {
   sqrt.GetParams().push_back(sqrt_arg);
   sqrt.SetIsGlobal(true);
   sqrt.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+        llvm_builder->getFloatTy(),
+        {llvm_builder->getInt32Ty()},
+        false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        "mysqrt",
+        llvm_module);
+    sqrt.SetLLVMFunction(procedure);
+  }
   InsertSymbol(sqrt);
 }
 

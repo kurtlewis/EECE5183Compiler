@@ -2404,6 +2404,9 @@ void Parser::ParseProgramHeader() {
     llvm_builder_ = new llvm::IRBuilder<>(llvm_context_);
   }
 
+  symbol_table_.InsertBuiltInsIntoGlobalScope(codegen_, llvm_module_, 
+                                              llvm_context_, llvm_builder_);
+
   // read 'is'
   lexeme = scanner_.GetNextLexeme(); 
   if (lexeme.token != T_IS) {

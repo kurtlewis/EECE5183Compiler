@@ -43,6 +43,9 @@ $(ODIR):
 test: $(ODIR)/$(OUT_NAME)
 	python3 testPgms/test.py
 
+runtime: $(SDIR)/runtime.c
+	gcc -c $^ -o $(ODIR)/runtime.o
+
 clean:
 	rm -f $(ODIR)/*.o
 	rm $(ODIR)/$(OUT_NAME)

@@ -11,6 +11,9 @@
 #include <string>
 #include <vector>
 
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Module.h"
 #include "symbol.h"
 
 namespace kjlc {
@@ -58,6 +61,12 @@ class SymbolTable {
 
     std::map<std::string, Symbol>::iterator GetLocalScopeIteratorEnd();
 
+    // Declares globals, and if codegen is enabled, defines them for llvm
+    void InsertBuiltInsIntoGlobalScope(
+        bool codegen,
+        llvm::Module *llvm_module,
+        llvm::LLVMContext &llvm_context,
+        llvm::IRBuilder<> *llvm_builder);
 
   private:
     // a stack of scope for local scope
@@ -74,7 +83,6 @@ class SymbolTable {
     // with underscores, so it is safe from overlap
     const std::string SCOPE_PROCEDURE_KEY = "__PROCEDURE";
 
-    void InsertBuiltInsIntoGlobalScope(); 
 };
 
 } // namespace kjlc
