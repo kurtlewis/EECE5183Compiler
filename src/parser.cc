@@ -1617,8 +1617,7 @@ Symbol Parser::ParseFactor(Symbol type_context) {
       return symbol;
     }
 
-    // this number/reference was prefaced by the '-' operator, multiply it by
-    // -1 to make it negative
+    // make this symbol negative - only works on ints or floats
     if (symbol.GetType() == TYPE_INT) {
       if (codegen_) {
         // make the int negative
@@ -2127,12 +2126,9 @@ void Parser::ParseProcedureBody() {
     // procedure is over - get the current block and ensure it is well formed
     // because it has a terminator
     if (llvm_builder_->GetInsertBlock()->getTerminator() == NULL) {
-      // there is not a terminator, this is an error and should kill
-      // compilation, but leave this for testing
-      llvm::Constant *val = llvm::ConstantInt::getIntegerValue(
-          llvm_builder_->getInt32Ty(),
-          llvm::APInt(32, 0, true));
-      llvm_builder_->CreateRet(val);
+      // there is not a terminator, this is an error and should kill compilation
+      EmitError("Procedure must return a value.", lexeme);
+      return;
     }
   }
 }
@@ -2821,6 +2817,7 @@ void Parser::ParseTypeMark(Symbol &symbol) {
     } else if (lexeme.token == T_ENUM) {
       // enum
       symbol.SetType(TYPE_ENUM);
+      symbol.SetDeclaration(DECLARATION_ENUM);
       
       // there are additional rules
       lexeme = scanner_.GetNextLexeme();

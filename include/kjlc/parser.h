@@ -223,6 +223,8 @@ class Parser {
     //   param_current - iterator to the current parameter, non-recusrive calls
     //                   should be the begin iterator of the vector
     //   param_end - iterator to the end of the vector
+    // returns a vector of the values the expressions in the argument list
+    // evaluate to
     std::vector<llvm::Value *> ParseArgumentList(
         std::vector<Symbol>::iterator param_current,
         std::vector<Symbol>::iterator param_end);
