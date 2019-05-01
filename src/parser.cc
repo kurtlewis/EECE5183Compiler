@@ -122,6 +122,8 @@ void Parser::BuildProgram() {
 
     llvm::TargetOptions target_options;
     auto RM = llvm::Optional<llvm::Reloc::Model>();
+    // need a PIC_ Relocation model for global strings
+    RM = llvm::Reloc::PIC_;
     auto target_machine = target->createTargetMachine(target_triple, cpu,
                                                      features, target_options,
                                                      RM);
