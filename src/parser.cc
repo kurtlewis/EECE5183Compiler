@@ -1200,6 +1200,10 @@ std::vector<llvm::Value *> Parser::ParseArgumentList(
         EmitError("Expected array argument.", lexeme);
         return args;
       }
+    } else if (expression.IsArray() && !expression.IsIndexed()) {
+      // unindexed array as an arg - not allowed
+      EmitError("Unexpected array as argument.", lexeme);
+      return args;
     }
 
     if (!expression.IsValid()) {
