@@ -68,6 +68,9 @@ class Symbol {
 
     int GetArrayBound();
     void SetArrayBound(int bound);
+
+    bool IsIndexed();
+    void SetIsIndexed(bool indexed);
     
     // Params mutated through reference
     // TODO - is this good or bad practice?
@@ -118,6 +121,8 @@ class Symbol {
     bool array_;
     // size of the array if it is an array
     int array_bound_;
+    // indicates if the array has been indexed
+    bool is_indexed_;
 
     // if a procedure, it could have an argument
     // NOTE - this is NOT a vector of references which means

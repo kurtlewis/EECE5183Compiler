@@ -399,6 +399,8 @@ void Parser::LoopStatements(Token end_tokens[], int tokens_length) {
 }
 
 Symbol Parser::ParseIndex(Symbol identifier) {
+  // identifier is being indexed
+  identifier.SetIsIndexed(true);
   // Check for open bracket consume token
   Lexeme lexeme = scanner_.GetNextLexeme();
   if (lexeme.token != T_BRACK_LEFT) {
@@ -1189,12 +1191,26 @@ std::vector<llvm::Value *> Parser::ParseArgumentList(
                                                               expression,
                                                               lexeme);
 
+    // some additional checking to ensure if the param is an array the arg is 2
+    if (param_current->IsArray()) {
+      if (param_current->GetArrayBound() != expression.GetArrayBound() ||
+          expression.IsIndexed()) {
+        EmitError("Expected array argument.", lexeme);
+        return args;
+      }
+    }
+
     if (!expression.IsValid()) {
       return args;
     }
 
+
     // argument is okay, add it to the vector of values
-    args.push_back(expression.GetLLVMValue());
+    if (expression.IsArray() && !expression.IsIndexed()) {
+      args.push_back(expression.GetLLVMArrayAddress());
+    } else {
+      args.push_back(expression.GetLLVMValue());
+    }
 
     // more arguments are optional and indicated by a comma
     lexeme = scanner_.PeekNextLexeme();
@@ -1421,6 +1437,7 @@ Symbol Parser::ParseDestination() {
     // there is not an index
     if (symbol.IsArray()) {
       // but the symbol is an array! this begins an array unwrapping
+      symbol.SetIsIndexed(true);
       if (codegen_) {
         array_unwrap_ = true;
         array_unwrap_bound_ = symbol.GetArrayBound();
@@ -2091,7 +2108,16 @@ void Parser::ParseProcedureBody() {
       actual_symbol.SetLLVMValue(val);
       actual_symbol.SetHasBeenInitialized(true);
       // store that value into the symbol's address
-      llvm_builder_->CreateStore(val, actual_symbol.GetLLVMAddress());
+      if (actual_symbol.IsArray()) {
+        // it is an array, and all values are passed by reference, so store
+        // the array new
+        actual_symbol.SetLLVMArrayAddress(val);
+        // TODO:codegen - need to pass arrays by value which means copying
+        // the array instead of just reusing the address
+      } else {
+        // not an array
+        llvm_builder_->CreateStore(val, actual_symbol.GetLLVMAddress());
+      }
       symbol_table_.InsertSymbol(actual_symbol);
     }
   }
@@ -2158,7 +2184,11 @@ void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
     // Go through the list of arguments and create params
     std::vector<llvm::Type *> params;
     for (Symbol symbol : procedure_symbol.GetParams()) {
-      params.push_back(GetRespectiveLLVMType(symbol));
+      if (symbol.IsArray()) {
+        params.push_back(GetRespectiveLLVMType(symbol)->getPointerTo());
+      } else {
+        params.push_back(GetRespectiveLLVMType(symbol));
+      }
     }
 
     // define the types of the function
@@ -2537,6 +2567,7 @@ Symbol Parser::ParseReference() {
       // going on for the current expression tree, so see if this is an array
       // that needs unwrapped
       if (symbol.IsArray()) {
+        symbol.SetIsIndexed(true);
         // it is an array unwrap
         // type check to ensure the size of this array is at least bigger than
         // the current bound
@@ -2558,6 +2589,10 @@ Symbol Parser::ParseReference() {
           // now let the code at the end of ParseReference load it!
         }
       }
+    } else {
+      // there is neither an array unwrap or an index, so mark it as such
+      symbol.SetIsIndexed(false);
+
     }
 
     if (codegen_) {

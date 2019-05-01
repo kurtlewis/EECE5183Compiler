@@ -17,6 +17,7 @@ Symbol::Symbol()
     global_(false),
     array_(false),
     array_bound_(0),
+    is_indexed_(false),
     params_(),
     valid_(true),
     has_been_initialized_(false),
@@ -132,6 +133,14 @@ int Symbol::GetArrayBound() {
 
 void Symbol::SetArrayBound(int bound) {
   array_bound_ = bound;
+}
+
+bool Symbol::IsIndexed() {
+  return is_indexed_;
+}
+
+void Symbol::SetIsIndexed(bool indexed) {
+  is_indexed_ = indexed;
 }
 
 std::vector<Symbol>& Symbol::GetParams() {
