@@ -2607,15 +2607,21 @@ Symbol Parser::ParseReference() {
           symbol.SetIsValid(false);
           return symbol;
         }
-        
-        // load the value out of the store and prepare to update the outgoing
-        // symbol
-        llvm::Value *val = llvm_builder_->CreateLoad(
-            GetRespectiveLLVMType(symbol.GetType()),
-            symbol.GetLLVMAddress());
-        
-        // update outgoing symbol
-        symbol.SetLLVMValue(val);
+
+        // if it's an unindexed array don't need to load
+        if (symbol.IsArray() && !symbol.IsIndexed()) {
+          // todo: maybe copy the array address into the value to abstract
+          // this?
+        } else {
+          // load the value out of the store and prepare to update the outgoing
+          // symbol
+          llvm::Value *val = llvm_builder_->CreateLoad(
+              GetRespectiveLLVMType(symbol.GetType()),
+              symbol.GetLLVMAddress());
+          
+          // update outgoing symbol
+          symbol.SetLLVMValue(val);
+        }
       } 
     }
   }
