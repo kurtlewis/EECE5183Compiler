@@ -5,6 +5,8 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 bool putinteger(int a) {
   printf("%i\n", a);
   return true;
@@ -23,7 +25,7 @@ bool getbool() {
 }
 
 bool putbool(bool in) {
-  printf("%i", in);
+  printf("%i\n", in);
   return true;
 }
 
@@ -34,13 +36,19 @@ float getfloat() {
 }
 
 bool putfloat(float in) {
-  printf("%f", in);
+  printf("%f\n", in);
   return true;
 }
 
 char* getstring() {
-  char string[256];
-  scanf("%s", string);
+  // THIS IS DEFINITELY A MEMORY LEAK :)
+  int max_length = 256;
+  char *string = malloc(max_length * sizeof(char));
+  fgets(string, max_length, stdin);
+  // remove trailing new line if there is one
+  if ((strlen(string) > 0) && (string[strlen(string) - 1] == '\n')) {
+    string[strlen(string) - 1] = '\0';
+  }
   return string;
 }
 
