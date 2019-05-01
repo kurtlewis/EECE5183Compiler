@@ -60,3 +60,8 @@ bool putstring(char *string) {
 float mysqrt(int in) {
   return sqrt((double)in);
 }
+
+void boundsError() {
+  printf("Error - out of bounds exception!\n");
+  exit(1);
+}

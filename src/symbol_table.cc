@@ -346,6 +346,26 @@ void SymbolTable::InsertBuiltInsIntoGlobalScope(
     sqrt.SetLLVMFunction(procedure);
   }
   InsertSymbol(sqrt);
+  
+  // create a runtime function for out of bounds errors
+  Symbol error_func;
+  error_func.SetId("_error_func"); // hide it with leading '_'
+  error_func.SetType(TYPE_BOOL);
+  error_func.SetIsGlobal(true);
+  error_func.SetDeclaration(DECLARATION_PROCEDURE);
+  if (codegen) {
+    llvm::FunctionType *function_type = llvm::FunctionType::get(
+        llvm_builder->getVoidTy(),
+        {},
+        false);
+    llvm::Function *procedure = llvm::Function::Create(
+        function_type,
+        llvm::Function::ExternalLinkage,
+        "boundsError",
+        llvm_module);
+    error_func.SetLLVMFunction(procedure);
+  }
+  InsertSymbol(error_func);
 }
 
 } // namespace kjlc

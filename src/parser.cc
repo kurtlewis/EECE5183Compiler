@@ -464,7 +464,32 @@ Symbol Parser::ParseIndex(Symbol identifier) {
         greater_than_zero,
         less_than_bound);
 
-    // TODO:codegen do something to error out if correct_bound is false
+    // conditionally jump to call or continue on
+    llvm::BasicBlock *error_block = llvm::BasicBlock::Create(
+        llvm_context_,
+        "", // no need to name
+        llvm_current_procedure_);
+    llvm::BasicBlock *continue_block = llvm::BasicBlock::Create(
+        llvm_context_,
+        "", // no need to name
+        llvm_current_procedure_);
+
+    // jump to error block if out of bounds, else continue block
+    llvm_builder_->CreateCondBr(correct_index, continue_block, error_block);
+
+    // put call in error block
+    llvm_builder_->SetInsertPoint(error_block);
+
+    // look up error function symbol using it's definition - this is ugly
+    Symbol error_func = symbol_table_.FindSymbolByIdentifier("_error_func");
+
+    llvm_builder_->CreateCall(error_func.GetLLVMFunction());
+
+    // need to have terminator, even though it won't be reached
+    llvm_builder_->CreateBr(continue_block);
+
+    // okay now set insert to continue block and keep on keeping on
+    llvm_builder_->SetInsertPoint(continue_block);
 
     llvm::Value *address = nullptr;
     if (identifier.IsGlobal()) {
