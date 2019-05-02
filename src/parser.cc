@@ -42,6 +42,7 @@ Parser::Parser(std::string filename, bool parser_debug, bool symbol_debug,
       parser_debug_(parser_debug),
       codegen_(codegen_enable),
       codegen_debug_(codegen_debug),
+      func_count_(0),
       array_unwrap_(false),
       array_unwrap_bound_(0),
       llvm_module_(nullptr),
@@ -2254,8 +2255,11 @@ void Parser::ParseProcedureDeclaration(Symbol &procedure_symbol) {
         
     // Actually create the function
     llvm::Constant *procedure = llvm_module_->getOrInsertFunction(
-        procedure_symbol.GetId(), // name of function
+        "func_" + std::to_string(func_count_), // name of function
         functionType);
+
+    // increment func count
+    func_count_++;
 
     // cast it to a function and insert it into the current procedure member var
     llvm::Function *function = llvm::cast<llvm::Function>(procedure);

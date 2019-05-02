@@ -47,6 +47,8 @@ class Parser {
     // max index for type checking on an array index to make sure all arrays
     // are the correct size
     int array_unwrap_bound_;
+    // count of the number of functions for function naming
+    int func_count_;
     // True if error state
     bool error_state_;
     // true if parse should end
