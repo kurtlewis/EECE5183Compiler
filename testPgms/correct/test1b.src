@@ -6,13 +6,15 @@ PROGRAM grant IS
     global variable ryan : integer[3];
     global variable zach : integer;
     variable tmp : integer;
+    variable b : bool;
 
 	procedure if_proc : integer()
         variable declaration : integer;
 		begin
 			if(true) then jake := jake + 1;
 			else zach := zach + RYAN[2];
-		end if;
+		    end if;
+            return 0;
 	end procedure;
 
 	procedure for_proc : integer()
@@ -20,10 +22,21 @@ PROGRAM grant IS
 		begin
 			for(i := 0; i < zach)
 				ryan := zach + i;
+                i := i + 1;
 			end for;
+            return 0;
 		end procedure;
 
 	begin
+        zach := 15;
 		tmp := if_proc();
 		tmp := for_proc();
+        b := putString("JAKE:");
+        b := putInteger(JAKE);
+        b := putString("Ryan[0-2]:");
+        b := putInteger(ryan[0]);
+        b := putInteger(ryan[1]);
+        b := putInteger(ryan[2]);
+        b := putString("zach");
+        b := putInteger(zach);
 end program
