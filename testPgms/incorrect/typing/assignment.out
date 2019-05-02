@@ -1,6 +1,5 @@
-Line:12 Col:3 - 
-Expected Type: boolean
-But found: float
+Line:12 Col:7 - Attempt to use variable before it's initialized.
+
 Line:13 Col:3 - 
 Expected Type: boolean
 But found: string
@@ -28,3 +27,4 @@ Coercing bool to int.
 Line:23 Col:3 - Warning:
 Coercing int to float.
 
+Codegen was either disabled or errors were detected. Skipping build.

@@ -1,19 +1,18 @@
-Line:9 Col:11 - Incompatible types for binary operation:
-Type 1: string
-Type 2: N/A
+Line:9 Col:11 - Attempt to use variable before it's initialized.
 
-Line:10 Col:3 - Warning:
-Coercing int to bool.
+Line:10 Col:11 - Incompatible types for binary operation:
+Type 1: integer
+Type 2: N/A
 
 Line:11 Col:11 - Incompatible types for binary operation:
 Type 1: float
 Type 2: N/A
 
-Line:13 Col:11 - Incompatible types for binary operation:
+Line:13 Col:11 - Incompatible types for logical operation:
 Type 1: boolean
 Type 2: integer
 
-Line:14 Col:12 - Incompatible types for binary operation:
+Line:14 Col:12 - Incompatible types for logical operation:
 Type 1: boolean
 Type 2: integer
 
@@ -25,3 +24,4 @@ Line:17 Col:8 - Incompatible types for binary operation:
 Type 1: string
 Type 2: integer
 
+Codegen was either disabled or errors were detected. Skipping build.

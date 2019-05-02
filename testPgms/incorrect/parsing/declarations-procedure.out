@@ -25,5 +25,6 @@ Line:44 Col:19 - Could not parse declaration - expected a variable, type, or pro
 Line:50 Col:5 - Expected token 'procedure'
 Line:50 Col:12 - Expected token 'begin'
 Line:52 Col:0 - Expected token 'begin'
-Line:669204192 Col:32765 - Expected token 'begin'
-Line:669205408 Col:32765 - Expected token ';'
+Line:9 Col:6651901 - Expected token 'begin'
+Line:9 Col:655360 - Expected token ';'
+Codegen was either disabled or errors were detected. Skipping build.

@@ -42,13 +42,11 @@ def run_incorrect_tests():
     fail_count = 0
     dirs = os.listdir(incorrect_path)
     for d in dirs:
-        if len(d.split('.')):
-            continue
         dir_path = os.path.join(incorrect_path, d)
         files = os.listdir(dir_path)
         for f in files:
             split = f.split('.')
-            if split[1] == '.out':
+            if split[1] == 'out':
                 continue
             proc = subprocess.run([kjlc, os.path.join(dir_path, f)],
                                    stdout=subprocess.PIPE)

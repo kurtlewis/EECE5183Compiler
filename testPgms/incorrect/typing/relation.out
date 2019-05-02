@@ -1,3 +1,5 @@
+Line:10 Col:8 - Attempt to use variable before it's initialized.
+
 Line:11 Col:3 - Warning:
 Coercing bool to int.
 
@@ -39,3 +41,4 @@ Line:38 Col:14 - Incompatible types for relational operation:
 Type 1: string
 Type 2: string
 
+Codegen was either disabled or errors were detected. Skipping build.

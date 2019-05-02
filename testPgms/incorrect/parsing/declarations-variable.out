@@ -8,3 +8,4 @@ Line:7 Col:14 - Expected int, string, bool, enum, float, or identifier
 Line:8 Col:14 - Symbol could not be found: str
 
 Line:9 Col:11 - Expected token ':'
+Codegen was either disabled or errors were detected. Skipping build.
