@@ -20,7 +20,7 @@ procedure Fib : integer(variable val : integer)
 	val := val - 1;
 	tmp1 := Fib(val);
 	val := val - 1;
-	tmp1 := Fib(val);
+	tmp2 := Fib(val);
 	ret := tmp1 + tmp2;
 	return ret;
 end procedure;
