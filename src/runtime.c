@@ -15,12 +15,14 @@ bool putinteger(int a) {
 int getinteger() {
   int ret;
   scanf("%i", &ret);
+  getchar();
   return ret;
 }
 
 bool getbool() {
   int ret;
   scanf("%i", &ret);
+  getchar();
   return (ret == 1);
 }
 
@@ -32,6 +34,7 @@ bool putbool(bool in) {
 float getfloat() {
   float ret;
   scanf("%f", &ret);
+  getchar();
   return ret;
 }
 
