@@ -9,10 +9,9 @@ procedure Fib : integer(variable val :integer)
     variable ret : integer;
     variable tmp : integer[2];
 
-	procedure Sub : integer(variable val1 : integer)
-        variable val2 : integer;
+	procedure Sub : integer(variable val1 : integer, variable val2 : integer)
 		begin
-			val2 := val2 - val1;
+			val2 := val1 - val2;
 			return val2;
 		end procedure;
 
@@ -24,10 +23,10 @@ procedure Fib : integer(variable val :integer)
 	if(val == 1) then
 		ret := 1;
 		return ret;
-	end if; // Remove line
-	val := Sub(1);
+	end if; 
+	val := Sub(val, 1);
 	tmp[0] := Fib(val);
-	val := Sub(1);
+	val := Sub(val, 1);
 	tmp[1] := Fib(val);
 	ret := tmp[0] + tmp[1];
 	return ret;
