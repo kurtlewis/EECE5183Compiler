@@ -1848,7 +1848,10 @@ void Parser::ParseIfStatement() {
           "", // again, don't need to name
           llvm_current_procedure_);
            
-      llvm_builder_->CreateBr(end_block);
+      // only need to add a branch if there isn't a terminator on the block
+      if (llvm_builder_->GetInsertBlock()->getTerminator() == NULL) {
+        llvm_builder_->CreateBr(end_block);
+      }
 
       // now update insertion point to false_block
       llvm_builder_->SetInsertPoint(false_block);
@@ -1882,11 +1885,16 @@ void Parser::ParseIfStatement() {
     // continue. If there was an else, use the end block
     if (end_block == nullptr) {
       // need to jump from true block to false block
-      llvm_builder_->CreateBr(false_block);
+      // only need to add a branch if there isn't a terminator on the block
+      if (llvm_builder_->GetInsertBlock()->getTerminator() == NULL) {
+        llvm_builder_->CreateBr(false_block);
+      }
       llvm_builder_->SetInsertPoint(false_block);
     } else {
       // need to jump from false block to end block
-      llvm_builder_->CreateBr(end_block);
+      if (llvm_builder_->GetInsertBlock()->getTerminator() == NULL) {
+        llvm_builder_->CreateBr(end_block);
+      }
       llvm_builder_->SetInsertPoint(end_block);
     }
   }
