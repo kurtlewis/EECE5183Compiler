@@ -1238,7 +1238,23 @@ std::vector<llvm::Value *> Parser::ParseArgumentList(
 
     // argument is okay, add it to the vector of values
     if (expression.IsArray() && !expression.IsIndexed()) {
-      args.push_back(expression.GetLLVMArrayAddress());
+      if (expression.IsGlobal()) {
+        // global arrays are defined differently
+        // so need to cast the array type to a pointer type
+        // this is really ugly but the easiest solution
+        llvm::Value *zero_32b = llvm::ConstantInt::getIntegerValue(
+            GetRespectiveLLVMType(TYPE_INT),
+            llvm::APInt(32, 0, true));
+        llvm::Value *pointer = llvm_builder_->CreateInBoundsGEP(
+            expression.GetLLVMArrayAddress(),
+            zero_32b);
+        pointer = llvm_builder_->CreateBitCast(
+            pointer,
+            GetRespectiveLLVMType(expression)->getPointerTo());
+        args.push_back(pointer);
+      } else {
+        args.push_back(expression.GetLLVMArrayAddress());
+      }
     } else {
       args.push_back(expression.GetLLVMValue());
     }
